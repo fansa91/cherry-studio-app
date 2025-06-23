@@ -1,5 +1,5 @@
 import { CircleDollarSign, Eye, Globe, Languages, Lightbulb, Repeat2, Wrench } from '@tamagui/lucide-icons'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Text, XStack } from 'tamagui'
 
@@ -34,7 +34,7 @@ export const ModelTags: React.FC<ModelTagsProps> = ({
   style
 }) => {
   const { t } = useTranslation()
-  const tags = useMemo(() => {
+  const tags = (() => {
     const result: {
       key: string
       color: string
@@ -107,7 +107,7 @@ export const ModelTags: React.FC<ModelTagsProps> = ({
     }
 
     return result
-  }, [model, showFree, showReasoning, showToolsCalling, size, t])
+  })()
 
   if (tags.length === 0) {
     return null

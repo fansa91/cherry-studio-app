@@ -1,6 +1,6 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ArrowLeftRight, PenLine } from '@tamagui/lucide-icons'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, ScrollView, Text, XStack, YStack } from 'tamagui'
 
@@ -31,33 +31,34 @@ export default function DefaultAssistantSettingsScreen() {
   const [assistantName, setAssistantName] = useState('')
   const [prompt, setPrompt] = useState('')
 
-  const handleTemperatureChange = useCallback((value: number[]) => {
+  const handleTemperatureChange = (value: number[]) => {
     setTemperature(value[0] / 10)
-  }, [])
+  }
 
-  const handleTopPChange = useCallback((value: number[]) => {
+  const handleTopPChange = (value: number[]) => {
     setTopP(value[0] / 10)
-  }, [])
+  }
 
-  const handleContextChange = useCallback((value: number[]) => {
+  const handleContextChange = (value: number[]) => {
     setContext(value[0])
-  }, [])
+  }
 
-  const handleMaxTokensChange = useCallback((value: string) => {
+  const handleMaxTokensChange = (value: string) => {
     const numValue = parseInt(value, 10)
 
     if (!isNaN(numValue) && numValue > 0) {
       setMaxTokens(numValue)
     }
-  }, [])
+  }
 
-  const handleAssistantNameChange = useCallback((text: string) => {
+  const handleAssistantNameChange = (text: string) => {
     setAssistantName(text)
-  }, [])
+  }
 
-  const handlePromptChange = useCallback((text: string) => {
+  const handlePromptChange = (text: string) => {
     setPrompt(text)
-  }, [])
+  }
+
   return (
     <SafeAreaContainer>
       <HeaderBar title={t('settings.models.default_assistant_model')} onBackPress={() => navigation.goBack()} />

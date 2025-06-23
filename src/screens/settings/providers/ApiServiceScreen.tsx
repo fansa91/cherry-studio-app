@@ -2,7 +2,7 @@ import BottomSheet from '@gorhom/bottom-sheet'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Eye, EyeOff, ShieldCheck } from '@tamagui/lucide-icons'
 import { sortBy } from 'lodash'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Input, Stack, useTheme, XStack, YStack } from 'tamagui'
 
@@ -37,65 +37,60 @@ export default function ApiServiceScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
-  const selectOptions = useMemo(() => {
-    if (!provider?.models?.length) return []
+  const selectOptions = !provider?.models?.length
+    ? []
+    : [
+        {
+          label: provider.isSystem ? t(`provider.${provider.id}`) : provider.name,
+          title: provider.name,
+          options: sortBy(provider.models, 'name')
+            .filter(model => !isEmbeddingModel(model))
+            .map(model => ({
+              label: model.name,
+              value: getModelUniqId(model),
+              model
+            }))
+        }
+      ]
 
-    return [
-      {
-        label: provider.isSystem ? t(`provider.${provider.id}`) : provider.name,
-        title: provider.name,
-        options: sortBy(provider.models, 'name')
-          .filter(model => !isEmbeddingModel(model))
-          .map(model => ({
-            label: model.name,
-            value: getModelUniqId(model),
-            model
-          }))
-      }
-    ]
-  }, [provider, t])
-
-  const handleOpenBottomSheet = useCallback(() => {
+  const handleOpenBottomSheet = () => {
     bottomSheetRef.current?.expand()
     setIsBottomSheetOpen(true)
-  }, [])
+  }
 
-  const handleBottomSheetClose = useCallback(() => {
+  const handleBottomSheetClose = () => {
     setIsBottomSheetOpen(false)
-  }, [])
+  }
 
-  const handleModelChange = useCallback(
-    (value: string) => {
-      if (!value) {
-        setSelectedModel(undefined)
-        return
-      }
+  const handleModelChange = (value: string) => {
+    if (!value) {
+      setSelectedModel(undefined)
+      return
+    }
 
-      const allOptions = selectOptions.flatMap(group => group.options)
-      const foundOption = allOptions.find(opt => opt.value === value)
-      setSelectedModel(foundOption?.model)
-    },
-    [selectOptions]
-  )
+    const allOptions = selectOptions.flatMap(group => group.options)
+    const foundOption = allOptions.find(opt => opt.value === value)
+    setSelectedModel(foundOption?.model)
+  }
 
-  const toggleApiKeyVisibility = useCallback(() => {
+  const toggleApiKeyVisibility = () => {
     setShowApiKey(prevShowApiKey => !prevShowApiKey)
-  }, [])
+  }
 
-  const handleApiKeyChange = useCallback((text: string) => {
+  const handleApiKeyChange = (text: string) => {
     setApiKey(text)
-  }, [])
+  }
 
-  const handleApiHostChange = useCallback((text: string) => {
+  const handleApiHostChange = (text: string) => {
     setApiHost(text)
-  }, [])
+  }
 
-  const handleBackPress = useCallback(() => {
+  const handleBackPress = () => {
     navigation.goBack()
-  }, [navigation])
+  }
 
   // 模型检测处理
-  const handleStartModelCheck = useCallback(async () => {
+  const handleStartModelCheck = async () => {
     if (!selectedModel) return
 
     try {
@@ -103,7 +98,7 @@ export default function ApiServiceScreen() {
     } catch (error) {
       console.error('Model check failed:', error)
     }
-  }, [selectedModel, apiKey, apiHost])
+  }
 
   return (
     <SafeAreaContainer

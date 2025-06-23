@@ -1,6 +1,5 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { BookmarkMinus } from '@tamagui/lucide-icons'
-import { useMemo } from 'react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import Markdown from 'react-native-markdown-display'
@@ -20,7 +19,7 @@ interface AssistantItemSheetProps {
 
 export default function AssistantItemSheet({ assistant, bottomSheetRef, isOpen, onClose }: AssistantItemSheetProps) {
   const { t } = useTranslation()
-  const snapPoints = useMemo(() => ['75%'], [])
+  const snapPoints = ['75%']
 
   return (
     <ISheet bottomSheetRef={bottomSheetRef} snapPoints={snapPoints} isOpen={isOpen} onClose={onClose}>

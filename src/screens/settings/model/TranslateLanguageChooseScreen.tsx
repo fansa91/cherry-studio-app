@@ -1,5 +1,5 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Text, useTheme, XStack, YStack } from 'tamagui'
 
@@ -18,9 +18,11 @@ export default function TranslateLanguageChooseScreen() {
   const route = useRoute<TranslateLanguageChooseRouteProp>()
 
   const [currentLanguage, setCurrentLanguage] = useState('')
-  const changeLanguage = useCallback((language: string) => {
+
+  const changeLanguage = (language: string) => {
     setCurrentLanguage(language)
-  }, [])
+  }
+
   return (
     <SafeAreaContainer>
       <HeaderBar

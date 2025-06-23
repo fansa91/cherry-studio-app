@@ -1,6 +1,6 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronRight } from '@tamagui/lucide-icons'
-import { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Text, XStack, YStack } from 'tamagui'
 
@@ -21,9 +21,9 @@ export default function TranslateModelSettingsScreen() {
   const [prompt, setPrompt] = useState('')
   const route = useRoute<TranslateModelSettingsRouteProp>()
 
-  const handlePromptChange = useCallback((value: string) => {
+  const handlePromptChange = (value: string) => {
     setPrompt(value)
-  }, [])
+  }
 
   let content
 

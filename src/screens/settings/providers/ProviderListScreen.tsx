@@ -1,9 +1,9 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
 import { Plus } from '@tamagui/lucide-icons'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, Text, useTheme, YStack } from 'tamagui'
+import { ScrollView, Text, YStack } from 'tamagui'
 
 import { SettingContainer, SettingGroup } from '@/components/settings'
 import { HeaderBar } from '@/components/settings/HeaderBar'
@@ -34,14 +34,14 @@ export default function ProviderListScreen() {
     setProviderName(name)
   }
 
-  const handleOpenBottomSheet = useCallback(() => {
+  const handleOpenBottomSheet = () => {
     bottomSheetRef.current?.expand()
     setIsBottomSheetOpen(true)
-  }, [])
+  }
 
-  const handleBottomSheetClose = useCallback(() => {
+  const handleBottomSheetClose = () => {
     setIsBottomSheetOpen(false)
-  }, [])
+  }
 
   const onAddProvider = () => {
     handleOpenBottomSheet()

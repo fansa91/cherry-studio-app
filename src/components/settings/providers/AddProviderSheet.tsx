@@ -1,6 +1,6 @@
 import BottomSheet, { BottomSheetTextInput } from '@gorhom/bottom-sheet' // Keep this if bottomSheetRef type is needed, or import type directly
 import { PenLine } from '@tamagui/lucide-icons'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Text, XStack, YStack } from 'tamagui'
 
@@ -32,7 +32,7 @@ export function AddProviderSheet({
   onAddProvider
 }: AddProviderSheetProps) {
   const { t } = useTranslation()
-  const snapPoints = useMemo(() => ['55%'], [])
+  const snapPoints = ['55%']
 
   return (
     <ISheet bottomSheetRef={bottomSheetRef} isOpen={isOpen} onClose={onClose} snapPoints={snapPoints}>

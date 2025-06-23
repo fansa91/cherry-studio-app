@@ -1,6 +1,6 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Eye, EyeOff, ShieldCheck } from '@tamagui/lucide-icons'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Input, Stack, useTheme, XStack, YStack } from 'tamagui'
 
@@ -24,21 +24,21 @@ export default function WebSearchProviderSettingsScreen() {
   const [apiKey, setApiKey] = useState(provider.apiKey || '')
   const [apiHost, setApiHost] = useState(provider.apiHost || '')
 
-  const handleBackPress = useCallback(() => {
+  const handleBackPress = () => {
     navigation.goBack()
-  }, [navigation])
+  }
 
-  const toggleApiKeyVisibility = useCallback(() => {
+  const toggleApiKeyVisibility = () => {
     setShowApiKey(prevShowApiKey => !prevShowApiKey)
-  }, [])
+  }
 
-  const handleApiKeyChange = useCallback((text: string) => {
+  const handleApiKeyChange = (text: string) => {
     setApiKey(text)
-  }, [])
+  }
 
-  const handleApiHostChange = useCallback((text: string) => {
+  const handleApiHostChange = (text: string) => {
     setApiHost(text)
-  }, [])
+  }
 
   return (
     <SafeAreaContainer style={{ flex: 1, backgroundColor: theme.background.val }}>

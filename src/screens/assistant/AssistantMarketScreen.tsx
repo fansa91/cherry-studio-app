@@ -2,7 +2,7 @@ import BottomSheet from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
 import { BookmarkMinus } from '@tamagui/lucide-icons'
 import { debounce } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, Tabs, Text } from 'tamagui'
 
@@ -31,22 +31,24 @@ export default function AssistantMarketScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null)
-  const handleBottomSheetClose = useCallback(() => {
+
+  const handleBottomSheetClose = () => {
     setIsBottomSheetOpen(false)
     setSelectedAssistant(null)
-  }, [])
-  const handleAssistantItemPress = useCallback((assistant: Assistant) => {
+  }
+
+  const handleAssistantItemPress = (assistant: Assistant) => {
     setSelectedAssistant(assistant)
     setIsBottomSheetOpen(true)
-  }, [])
+  }
 
   const [actualFilterType, setActualFilterType] = useState<FilterType>('all')
   const [searchText, setSearchText] = useState('')
   const [debouncedSearchText, setDebouncedSearchText] = useState('')
 
-  const systemAssistants = useMemo(() => getSystemAssistants(), [])
+  const systemAssistants = getSystemAssistants()
 
-  const debouncedSetSearchText = useMemo(() => debounce(setDebouncedSearchText, 300), [])
+  const debouncedSetSearchText = debounce(setDebouncedSearchText, 300)
 
   useEffect(() => {
     debouncedSetSearchText(searchText)
@@ -57,7 +59,7 @@ export default function AssistantMarketScreen() {
   }, [searchText, debouncedSetSearchText])
 
   // Filter assistants by search text first
-  const baseFilteredAssistants = useMemo(() => {
+  const baseFilteredAssistants = (() => {
     if (!debouncedSearchText) {
       return systemAssistants
     }
@@ -73,22 +75,22 @@ export default function AssistantMarketScreen() {
         (assistant.name && assistant.name.toLowerCase().includes(lowerSearchText)) ||
         (assistant.id && assistant.id.toLowerCase().includes(lowerSearchText))
     )
-  }, [systemAssistants, debouncedSearchText])
+  })()
 
-  const assistantGroupsForDisplay = useMemo(() => groupByCategories(baseFilteredAssistants), [baseFilteredAssistants])
+  const assistantGroupsForDisplay = groupByCategories(baseFilteredAssistants)
 
-  const assistantGroupsForTabs = useMemo(() => groupByCategories(systemAssistants), [systemAssistants])
+  const assistantGroupsForTabs = groupByCategories(systemAssistants)
 
   // 过滤助手逻辑 for CategoryAssistantsTab
-  const filterAssistants = useMemo(() => {
+  const filterAssistants = (() => {
     if (actualFilterType === 'all') {
       return baseFilteredAssistants
     }
 
     return baseFilteredAssistants.filter(assistant => assistant.group && assistant.group.includes(actualFilterType))
-  }, [actualFilterType, baseFilteredAssistants])
+  })()
 
-  const tabConfigs = useMemo(() => {
+  const tabConfigs = (() => {
     const groupKeys = Object.keys(assistantGroupsForTabs).sort()
 
     const allTab: TabConfig = {
@@ -102,71 +104,62 @@ export default function AssistantMarketScreen() {
     }))
 
     return [allTab, ...dynamicTabs]
-  }, [assistantGroupsForTabs, t])
+  })()
 
-  const getTabStyle = useCallback(
-    (tabValue: string) => ({
-      height: '100%',
-      backgroundColor: actualFilterType === tabValue ? '$background' : 'transparent',
-      borderRadius: 15
-    }),
-    [actualFilterType]
-  )
+  const getTabStyle = (tabValue: string) => ({
+    height: '100%',
+    backgroundColor: actualFilterType === tabValue ? '$background' : 'transparent',
+    borderRadius: 15
+  })
 
-  const handleArrowClick = useCallback((groupKey: string) => {
+  const handleArrowClick = (groupKey: string) => {
     if (groupKey) {
       setActualFilterType(groupKey)
     }
-  }, [])
+  }
 
-  const handleBackPress = useCallback(() => {
+  const handleBackPress = () => {
     navigation.goBack()
-  }, [navigation])
+  }
 
-  const handleBookmarkPress = useCallback(() => {
+  const handleBookmarkPress = () => {
     console.log('Bookmark pressed')
-  }, [])
+  }
 
-  const renderTabList = useMemo(
-    () => (
-      <Tabs.List gap={10} flexDirection="row" height={34}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {tabConfigs.map(({ value, label }) => (
-            <Tabs.Tab key={value} value={value} {...getTabStyle(value)}>
-              <Text>{label}</Text>
-            </Tabs.Tab>
-          ))}
-        </ScrollView>
-      </Tabs.List>
-    ),
-    [tabConfigs, getTabStyle]
+  const renderTabList = (
+    <Tabs.List gap={10} flexDirection="row" height={34}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {tabConfigs.map(({ value, label }) => (
+          <Tabs.Tab key={value} value={value} {...getTabStyle(value)}>
+            <Text>{label}</Text>
+          </Tabs.Tab>
+        ))}
+      </ScrollView>
+    </Tabs.List>
   )
 
-  const renderTabContents = useMemo(
-    () => (
-      <>
-        <Tabs.Content value={'all'} flex={1}>
-          <AllAssistantsTab
-            assistantGroups={assistantGroupsForDisplay}
-            onArrowClick={handleArrowClick}
-            setIsBottomSheetOpen={setIsBottomSheetOpen}
-            onAssistantPress={handleAssistantItemPress}
-          />
-        </Tabs.Content>
-        {tabConfigs
-          .filter(({ value }) => value !== 'all')
-          .map(({ value }) => (
-            <Tabs.Content key={value} value={value} flex={1}>
-              <CategoryAssistantsTab
-                assistants={filterAssistants}
-                setIsBottomSheetOpen={setIsBottomSheetOpen}
-                onAssistantPress={handleAssistantItemPress}
-              />
-            </Tabs.Content>
-          ))}
-      </>
-    ),
-    [assistantGroupsForDisplay, handleArrowClick, handleAssistantItemPress, tabConfigs, filterAssistants]
+  const renderTabContents = (
+    <>
+      <Tabs.Content value={'all'} flex={1}>
+        <AllAssistantsTab
+          assistantGroups={assistantGroupsForDisplay}
+          onArrowClick={handleArrowClick}
+          setIsBottomSheetOpen={setIsBottomSheetOpen}
+          onAssistantPress={handleAssistantItemPress}
+        />
+      </Tabs.Content>
+      {tabConfigs
+        .filter(({ value }) => value !== 'all')
+        .map(({ value }) => (
+          <Tabs.Content key={value} value={value} flex={1}>
+            <CategoryAssistantsTab
+              assistants={filterAssistants}
+              setIsBottomSheetOpen={setIsBottomSheetOpen}
+              onAssistantPress={handleAssistantItemPress}
+            />
+          </Tabs.Content>
+        ))}
+    </>
   )
   return (
     <SafeAreaContainer>

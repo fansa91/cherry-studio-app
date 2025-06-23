@@ -2,7 +2,7 @@ import BottomSheet from '@gorhom/bottom-sheet'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronRight, HeartPulse, Plus, Settings, Settings2 } from '@tamagui/lucide-icons'
 import { debounce, groupBy } from 'lodash'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { Accordion, Button, Separator, Text, XStack, YStack } from 'tamagui'
@@ -30,19 +30,21 @@ export default function ProviderSettingsScreen() {
 
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
-  const handleOpenBottomSheet = useCallback(() => {
+
+  const handleOpenBottomSheet = () => {
     bottomSheetRef.current?.expand()
     setIsBottomSheetOpen(true)
-  }, [])
-  const handleBottomSheetClose = useCallback(() => {
+  }
+
+  const handleBottomSheetClose = () => {
     setIsBottomSheetOpen(false)
-  }, [])
+  }
 
   const { providerId } = route.params
   const { provider } = useProvider(providerId)
 
   // Debounce search text
-  const debouncedSetSearchText = useMemo(() => debounce(setDebouncedSearchText, 300), [])
+  const debouncedSetSearchText = debounce(setDebouncedSearchText, 300)
 
   React.useEffect(() => {
     debouncedSetSearchText(searchText)
@@ -53,40 +55,36 @@ export default function ProviderSettingsScreen() {
   }, [searchText, debouncedSetSearchText])
 
   // 根据搜索文本过滤和分组模型
-  const modelGroups = useMemo(() => {
+  const modelGroups = (() => {
     const filteredModels = debouncedSearchText // Use debouncedSearchText
       ? provider.models.filter(model => model.name.toLowerCase().includes(debouncedSearchText.toLowerCase()))
       : provider.models
     return groupBy(filteredModels, 'group')
-  }, [debouncedSearchText, provider.models]) // Use debouncedSearchText
+  })() // Use debouncedSearchText
 
   // 对分组进行排序
-  const sortedModelGroups = useMemo(() => {
-    return Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
-  }, [modelGroups])
+  const sortedModelGroups = Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
 
   // 默认展开前6个分组
-  const defaultOpenGroups = useMemo(() => {
-    return sortedModelGroups.slice(0, 6).map((_, index) => `item-${index}`)
-  }, [sortedModelGroups])
+  const defaultOpenGroups = sortedModelGroups.slice(0, 6).map((_, index) => `item-${index}`)
 
-  const onAddModel = useCallback(() => {
+  const onAddModel = () => {
     // 添加模型逻辑
     handleOpenBottomSheet()
-  }, [])
+  }
 
-  const onManageModel = useCallback(() => {
+  const onManageModel = () => {
     // 管理模型逻辑
     navigation.navigate('ManageModelsScreen', { providerId })
-  }, [navigation, providerId])
+  }
 
-  const onApiService = useCallback(() => {
+  const onApiService = () => {
     navigation.navigate('ApiServiceScreen', { providerId })
-  }, [])
+  }
 
-  const onSettingModel = useCallback((model: Model) => {
+  const onSettingModel = (model: Model) => {
     console.log('[ProviderSettingsPage] onSettingModel', model)
-  }, [])
+  }
 
   return (
     <SafeAreaContainer>

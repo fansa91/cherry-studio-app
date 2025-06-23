@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { t } from 'i18next'
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { Button, Image, styled, Text, View, XStack, YStack } from 'tamagui'
 
@@ -20,7 +20,7 @@ const HomeScreen = () => {
 
   const [assistant, setAssistant] = useState<Assistant>(getDefaultAssistant())
 
-  const systemAssistants = useMemo(() => getSystemAssistants(), [])
+  const systemAssistants = getSystemAssistants()
 
   const handlePress = () => {
     navigation.navigate('AssistantMarketScreen')

@@ -1,5 +1,5 @@
 import { sortBy } from 'lodash'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Text, YStack } from 'tamagui'
 
@@ -33,65 +33,59 @@ export function ModelTabContent({ assistant, onAssistantChange }: ModelTabConten
   const [maxTokens, setMaxTokens] = useState(assistant?.settings?.maxTokens || 2048)
   const [reasoning, setReasoning] = useState(assistant?.settings?.reasoning_effort || '')
 
-  // 优化：使用 useMemo 缓存 selectOptions
-  const selectOptions = useMemo(() => {
-    return providers
-      .filter(p => p.models && p.models.length > 0)
-      .map(p => ({
-        label: p.isSystem ? t(`provider.${p.id}`) : p.name,
-        title: p.name,
-        options: sortBy(p.models, 'name')
-          .filter(m => !isEmbeddingModel(m))
-          .map(m => ({
-            label: `${m.name}`,
-            value: getModelUniqId(m),
-            model: m
-          }))
-      }))
-  }, [providers, t])
+  const selectOptions = providers
+    .filter(p => p.models && p.models.length > 0)
+    .map(p => ({
+      label: p.isSystem ? t(`provider.${p.id}`) : p.name,
+      title: p.name,
+      options: sortBy(p.models, 'name')
+        .filter(m => !isEmbeddingModel(m))
+        .map(m => ({
+          label: `${m.name}`,
+          value: getModelUniqId(m),
+          model: m
+        }))
+    }))
 
-  const handleModelChange = useCallback(
-    (value: string) => {
-      if (!value) {
-        setSelectedModel(undefined)
-        return
+  const handleModelChange = (value: string) => {
+    if (!value) {
+      setSelectedModel(undefined)
+      return
+    }
+
+    let modelToSet: Model | undefined
+
+    for (const group of selectOptions) {
+      const foundOption = group.options.find(opt => opt.value === value)
+
+      if (foundOption) {
+        modelToSet = foundOption.model
+        break
       }
+    }
 
-      let modelToSet: Model | undefined
+    setSelectedModel(modelToSet)
+  }
 
-      for (const group of selectOptions) {
-        const foundOption = group.options.find(opt => opt.value === value)
-
-        if (foundOption) {
-          modelToSet = foundOption.model
-          break
-        }
-      }
-
-      setSelectedModel(modelToSet)
-    },
-    [selectOptions]
-  )
-
-  const handleTemperatureChange = useCallback((value: number[]) => {
+  const handleTemperatureChange = (value: number[]) => {
     setTemperature(value[0] / 10)
-  }, [])
+  }
 
-  const handleTopPChange = useCallback((value: number[]) => {
+  const handleTopPChange = (value: number[]) => {
     setTopP(value[0] / 10)
-  }, [])
+  }
 
-  const handleContextChange = useCallback((value: number[]) => {
+  const handleContextChange = (value: number[]) => {
     setContext(value[0])
-  }, [])
+  }
 
-  const handleMaxTokensChange = useCallback((value: string) => {
+  const handleMaxTokensChange = (value: string) => {
     const numValue = parseInt(value, 10)
 
     if (!isNaN(numValue) && numValue > 0) {
       setMaxTokens(numValue)
     }
-  }, [])
+  }
 
   return (
     <YStack flex={1} gap={30}>

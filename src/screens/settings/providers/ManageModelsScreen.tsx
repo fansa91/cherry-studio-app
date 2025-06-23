@@ -2,7 +2,7 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list'
 import { Minus, Plus } from '@tamagui/lucide-icons'
 import { debounce, groupBy, isEmpty, uniqBy } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Accordion, Button, ScrollView, Tabs, Text, useTheme, YStack } from 'tamagui'
 
@@ -51,14 +51,11 @@ export default function ManageModelsScreen() {
   const { providerId } = route.params
   const { provider, models: providerModels } = useProvider(providerId)
 
-  const isModelInCurrentProvider = useMemo(() => getIsModelInProvider(providerModels), [providerModels])
-  const isAllModelsInCurrentProvider = useMemo(
-    () => getIsAllInProvider(isModelInCurrentProvider),
-    [isModelInCurrentProvider]
-  )
+  const isModelInCurrentProvider = getIsModelInProvider(providerModels)
+  const isAllModelsInCurrentProvider = getIsAllInProvider(isModelInCurrentProvider)
 
   // Debounce search text
-  const debouncedSetSearchText = useMemo(() => debounce(setDebouncedSearchText, 300), [])
+  const debouncedSetSearchText = debounce(setDebouncedSearchText, 300)
 
   useEffect(() => {
     debouncedSetSearchText(searchText)
@@ -68,58 +65,49 @@ export default function ManageModelsScreen() {
     }
   }, [searchText, debouncedSetSearchText])
 
-  const allModels = useMemo(() => {
-    return uniqBy(listModels, 'id')
-  }, [listModels])
+  const allModels = uniqBy(listModels, 'id')
 
-  const list = useMemo(() => {
-    return allModels.filter(model => {
-      if (
-        debouncedSearchText &&
-        !model.id.toLocaleLowerCase().includes(debouncedSearchText.toLocaleLowerCase()) &&
-        !model.name?.toLocaleLowerCase().includes(debouncedSearchText.toLocaleLowerCase())
-      ) {
-        return false
-      }
+  const list = allModels.filter(model => {
+    if (
+      debouncedSearchText &&
+      !model.id.toLocaleLowerCase().includes(debouncedSearchText.toLocaleLowerCase()) &&
+      !model.name?.toLocaleLowerCase().includes(debouncedSearchText.toLocaleLowerCase())
+    ) {
+      return false
+    }
 
-      switch (actualFilterType) {
-        case 'reasoning':
-          return isReasoningModel(model)
-        case 'vision':
-          return isVisionModel(model)
-        case 'websearch':
-          return isWebSearchModel(model)
-        case 'free':
-          return isFreeModel(model)
-        case 'embedding':
-          return isEmbeddingModel(model)
-        case 'function_calling':
-          return isFunctionCallingModel(model)
-        case 'rerank':
-          return isRerankModel(model)
-        default:
-          return true
-      }
-    })
-  }, [allModels, debouncedSearchText, actualFilterType])
+    switch (actualFilterType) {
+      case 'reasoning':
+        return isReasoningModel(model)
+      case 'vision':
+        return isVisionModel(model)
+      case 'websearch':
+        return isWebSearchModel(model)
+      case 'free':
+        return isFreeModel(model)
+      case 'embedding':
+        return isEmbeddingModel(model)
+      case 'function_calling':
+        return isFunctionCallingModel(model)
+      case 'rerank':
+        return isRerankModel(model)
+      default:
+        return true
+    }
+  })
 
-  const modelGroups = useMemo(
-    () =>
-      provider.id === 'dashscope'
-        ? {
-            ...groupBy(
-              list.filter(model => !model.id.startsWith('qwen')),
-              'group'
-            ),
-            ...groupQwenModels(list.filter(model => model.id.startsWith('qwen')))
-          }
-        : groupBy(list, 'group'),
-    [list, provider.id]
-  )
+  const modelGroups =
+    provider.id === 'dashscope'
+      ? {
+          ...groupBy(
+            list.filter(model => !model.id.startsWith('qwen')),
+            'group'
+          ),
+          ...groupQwenModels(list.filter(model => model.id.startsWith('qwen')))
+        }
+      : groupBy(list, 'group')
 
-  const sortedModelGroups = useMemo(() => {
-    return Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
-  }, [modelGroups])
+  const sortedModelGroups = Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
 
   const tabConfigs = [
     { value: 'all', label: t('models.type.all') },
@@ -139,51 +127,31 @@ export default function ManageModelsScreen() {
     borderRadius: 15
   })
 
-  const onAddModel = useCallback(
-    (model: Model) => {
-      console.log('[ManageModelsPage] onAddModel', model)
-      // addModelToProvider(model.id) // Example: Call mutation from useProvider
-    },
-    [
-      /* addModelToProvider */
-    ]
-  )
+  const onAddModel = (model: Model) => {
+    console.log('[ManageModelsPage] onAddModel', model)
+    // addModelToProvider(model.id) // Example: Call mutation from useProvider
+  }
 
-  const onRemoveModel = useCallback(
-    (model: Model) => {
-      console.log('[ManageModelsPage] onRemoveModel', model)
-      // removeModelFromProvider(model.id) // Example: Call mutation
-    },
-    [
-      /* removeModelFromProvider */
-    ]
-  )
+  const onRemoveModel = (model: Model) => {
+    console.log('[ManageModelsPage] onRemoveModel', model)
+    // removeModelFromProvider(model.id) // Example: Call mutation
+  }
 
-  const onAddAllModels = useCallback(
-    (modelsToAdd: Model[]) => {
-      console.log('[ManageModelsPage] onAddAllModels', modelsToAdd)
-      // addModelsToProvider(modelsToAdd.map(m => m.id)) // Example: Call mutation
-      // modelsToAdd.forEach(model => {
-      //   onAddModel(model)
-      // })
-    },
-    [
-      /* addModelsToProvider */
-    ]
-  )
+  const onAddAllModels = (modelsToAdd: Model[]) => {
+    console.log('[ManageModelsPage] onAddAllModels', modelsToAdd)
+    // addModelsToProvider(modelsToAdd.map(m => m.id)) // Example: Call mutation
+    // modelsToAdd.forEach(model => {
+    //   onAddModel(model)
+    // })
+  }
 
-  const onRemoveAllModels = useCallback(
-    (modelsToRemove: Model[]) => {
-      console.log('[ManageModelsPage] onRemoveAllModels', modelsToRemove)
-      // removeModelsFromProvider(modelsToRemove.map(m => m.id)) // Example: Call mutation
-      // modelsToRemove.forEach(model => {
-      //   onRemoveModel(model)
-      // })
-    },
-    [
-      /* removeModelsFromProvider */
-    ]
-  )
+  const onRemoveAllModels = (modelsToRemove: Model[]) => {
+    console.log('[ManageModelsPage] onRemoveAllModels', modelsToRemove)
+    // removeModelsFromProvider(modelsToRemove.map(m => m.id)) // Example: Call mutation
+    // modelsToRemove.forEach(model => {
+    //   onRemoveModel(model)
+    // })
+  }
 
   useEffect(() => {
     runAsyncFunction(async () => {
@@ -206,57 +174,47 @@ export default function ManageModelsScreen() {
         console.error('Failed to fetch models', error)
       }
     })
-  }, [])
+  }, [provider])
 
-  const renderModelGroupItem = useCallback(
-    ({ item: [groupName, currentModels], index }: ListRenderItemInfo<[string, Model[]]>) => (
-      <ModelGroup
-        groupName={groupName}
-        models={currentModels}
-        index={index}
-        showModelCount={true}
-        renderGroupButton={groupButtonModels => (
-          <Button
-            size={20}
-            chromeless
-            icon={
-              isAllModelsInCurrentProvider(groupButtonModels) ? (
-                <Minus size={14} borderRadius={99} backgroundColor="$backgroundRed" color="$foregroundRed" />
-              ) : (
-                <Plus size={14} borderRadius={99} backgroundColor="$backgroundGreen" color="$foregroundGreen" />
-              )
-            }
-            onPress={
-              isAllModelsInCurrentProvider(groupButtonModels)
-                ? () => onRemoveAllModels(groupButtonModels)
-                : () => onAddAllModels(groupButtonModels)
-            }
-          />
-        )}
-        renderModelButton={model => (
-          <Button
-            size={14}
-            chromeless
-            icon={
-              isModelInCurrentProvider(model.id) ? (
-                <Minus size={14} borderRadius={99} backgroundColor="$backgroundRed" color="$foregroundRed" />
-              ) : (
-                <Plus size={14} borderRadius={99} backgroundColor="$backgroundGreen" color="$foregroundGreen" />
-              )
-            }
-            onPress={isModelInCurrentProvider(model.id) ? () => onRemoveModel(model) : () => onAddModel(model)}
-          />
-        )}
-      />
-    ),
-    [
-      isAllModelsInCurrentProvider,
-      isModelInCurrentProvider,
-      onAddAllModels,
-      onAddModel,
-      onRemoveAllModels,
-      onRemoveModel
-    ]
+  const renderModelGroupItem = ({ item: [groupName, currentModels], index }: ListRenderItemInfo<[string, Model[]]>) => (
+    <ModelGroup
+      groupName={groupName}
+      models={currentModels}
+      index={index}
+      showModelCount={true}
+      renderGroupButton={groupButtonModels => (
+        <Button
+          size={20}
+          chromeless
+          icon={
+            isAllModelsInCurrentProvider(groupButtonModels) ? (
+              <Minus size={14} borderRadius={99} backgroundColor="$backgroundRed" color="$foregroundRed" />
+            ) : (
+              <Plus size={14} borderRadius={99} backgroundColor="$backgroundGreen" color="$foregroundGreen" />
+            )
+          }
+          onPress={
+            isAllModelsInCurrentProvider(groupButtonModels)
+              ? () => onRemoveAllModels(groupButtonModels)
+              : () => onAddAllModels(groupButtonModels)
+          }
+        />
+      )}
+      renderModelButton={model => (
+        <Button
+          size={14}
+          chromeless
+          icon={
+            isModelInCurrentProvider(model.id) ? (
+              <Minus size={14} borderRadius={99} backgroundColor="$backgroundRed" color="$foregroundRed" />
+            ) : (
+              <Plus size={14} borderRadius={99} backgroundColor="$backgroundGreen" color="$foregroundGreen" />
+            )
+          }
+          onPress={isModelInCurrentProvider(model.id) ? () => onRemoveModel(model) : () => onAddModel(model)}
+        />
+      )}
+    />
   )
 
   return (

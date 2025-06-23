@@ -1,6 +1,6 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { ChevronsRight } from '@tamagui/lucide-icons'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Text, XStack, YStack } from 'tamagui'
 
@@ -40,7 +40,7 @@ export function ApiCheckSheet({
   onStartModelCheck
 }: ApiCheckSheetProps) {
   const { t } = useTranslation()
-  const sheetSnapPoints = useMemo(() => ['32%'], [])
+  const sheetSnapPoints = ['32%']
 
   return (
     <ISheet bottomSheetRef={bottomSheetRef} isOpen={isOpen} onClose={onClose} snapPoints={sheetSnapPoints}>
