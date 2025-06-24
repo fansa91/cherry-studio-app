@@ -42,7 +42,8 @@ export default {
       'expo-sqlite'
     ],
     experiments: {
-      typedRoutes: true
+      typedRoutes: true,
+      reactCompiler: true
     },
     extra: {
       eas: {
