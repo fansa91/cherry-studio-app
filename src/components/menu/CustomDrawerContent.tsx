@@ -1,18 +1,52 @@
-import { DrawerContentComponentProps, DrawerItemList } from '@react-navigation/drawer'
+import { DrawerContentComponentProps, DrawerItemList, useDrawerStatus } from '@react-navigation/drawer'
+import { FlashList } from '@shopify/flash-list'
 import { Settings } from '@tamagui/lucide-icons'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Avatar, Button, Text, XStack, YStack } from 'tamagui'
+import { Avatar, Button, Text, View, XStack, YStack } from 'tamagui'
 
 import { MenuTabContent } from '@/components/menu/MenuTabContent'
+import { Topic } from '@/types/assistant'
+import { runAsyncFunction } from '@/utils'
+
+import { getTopics } from '../../../db/queries/topics.queries'
+import TopicItem from '../topic/TopicItem'
 
 export default function CustomDrawerContent(props: DrawerContentComponentProps) {
   const { t } = useTranslation()
+  const [topics, setTopics] = useState<Topic[]>([])
+  const isDrawerOpen = useDrawerStatus() === 'open'
+
+  const refreshTopics = () => {
+    runAsyncFunction(async () => {
+      try {
+        const topicsData = await getTopics()
+        setTopics(topicsData)
+      } catch (error) {
+        console.error('Failed to fetch topics:', error)
+      }
+    })
+  }
 
   const handleTopicSeeAll = () => {
     props.navigation.navigate('Main', { screen: 'TopicScreen' })
     console.log('Navigate to all topics')
   }
+
+  const renderItem = ({ item }: { item: Topic }) => <TopicItem topic={item} onTopicDeleted={refreshTopics} />
+
+  useEffect(() => {
+    if (isDrawerOpen) {
+      runAsyncFunction(async () => {
+        try {
+          const topicsData = await getTopics()
+          setTopics(topicsData)
+        } catch (error) {
+          console.error('Failed to fetch topics:', error)
+        }
+      })
+    }
+  }, [isDrawerOpen])
 
   return (
     <YStack flex={1} backgroundColor="transparent">
@@ -26,7 +60,14 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
             searchPlaceholder={t('common.search_placeholder')}
             title={t('menu.topic.recent')}
             onSeeAllPress={handleTopicSeeAll}>
-            {/* 这里可以添加topic特有的列表内容 */}
+            <View style={{ flex: 1, minHeight: 200 }}>
+              <FlashList
+                ItemSeparatorComponent={() => <YStack height={20} />}
+                data={topics}
+                renderItem={renderItem}
+                estimatedItemSize={50}
+              />
+            </View>
           </MenuTabContent>
         </YStack>
       </YStack>

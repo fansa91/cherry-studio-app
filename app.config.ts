@@ -39,7 +39,19 @@ export default {
       'expo-asset',
       'expo-font',
       'expo-web-browser',
-      'expo-sqlite'
+      'expo-sqlite',
+      [
+        'expo-document-picker',
+        {
+          iCloudContainerEnvironment: 'Production'
+        }
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'The app accesses your photos to let you share them with your friends.'
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,

@@ -7,15 +7,15 @@ import { Button, ScrollView, styled, Tabs, Text, useTheme, XStack, YStack } from
 import { ModelTabContent } from '@/components/assistant/ModelTabContent'
 import { PromptTabContent } from '@/components/assistant/PromptTabContent'
 import { ToolTabContent } from '@/components/assistant/ToolTabContent'
+import { DefaultProviderIcon } from '@/components/icons/DefaultProviderIcon'
 import { SettingContainer } from '@/components/settings'
 import { HeaderBar } from '@/components/settings/HeaderBar'
 import { AvatarEditButton } from '@/components/ui/AvatarEditButton'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { DefaultProviderIcon } from '@/components/ui/SvgIcons'
-import { useAssistant } from '@/hooks/use-assistant'
+import { useAssistant } from '@/hooks/useAssistant'
 import { RootStackParamList } from '@/types/naviagate'
 
-type AssistantDetailRouteProp = RouteProp<RootStackParamList, 'AssistantDetail'>
+type AssistantDetailRouteProp = RouteProp<RootStackParamList, 'AssistantDetailScreen'>
 
 export default function AssistantDetailScreen() {
   const { t } = useTranslation()

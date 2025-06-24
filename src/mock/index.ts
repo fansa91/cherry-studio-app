@@ -74,7 +74,7 @@ export const INITIAL_PROVIDERS: Provider[] = [
     id: 'silicon',
     name: 'Silicon',
     type: 'openai',
-    apiKey: 'sk-pghcgitxbrvxbmbrubwhadqsoubnitjpmnigyxagbzkmpatm',
+    apiKey: '',
     apiHost: 'https://api.siliconflow.cn',
     models: SYSTEM_MODELS.silicon,
     isSystem: true,

@@ -6,7 +6,7 @@ import { Input, Text, YStack } from 'tamagui'
 import { SettingGroup, SettingRow } from '@/components/settings'
 import { ModelSelect } from '@/components/settings/providers/ModelSelect'
 import { isEmbeddingModel } from '@/config/models/embedding'
-import { useAllProviders } from '@/hooks/use-providers'
+import { useAllProviders } from '@/hooks/useProviders'
 import { Assistant, Model } from '@/types/assistant'
 import { getModelUniqId } from '@/utils/model'
 

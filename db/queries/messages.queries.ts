@@ -11,7 +11,20 @@ import { getBlocksIdByMessageId } from './messageBlocks.queries'
  * @param dbRecord - 从数据库检索的记录。
  * @returns 一个 Message 对象。
  */
-function transformDbToMessage(dbRecord: any): Message {
+export function transformDbToMessage(dbRecord: any): Message {
+  const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
+    if (typeof jsonString !== 'string') {
+      return defaultValue
+    }
+
+    try {
+      return JSON.parse(jsonString)
+    } catch (e) {
+      console.error('JSON parse error for string:', jsonString)
+      return defaultValue
+    }
+  }
+
   return {
     id: dbRecord.id,
     role: dbRecord.role,
@@ -21,13 +34,13 @@ function transformDbToMessage(dbRecord: any): Message {
     updatedAt: dbRecord.updatedAt,
     status: dbRecord.status,
     modelId: dbRecord.modelId,
-    model: dbRecord.model ? JSON.parse(dbRecord.model) : undefined,
+    model: dbRecord.model ? safeJsonParse(dbRecord.model) : undefined,
     type: dbRecord.type,
     useful: !!dbRecord.useful,
     askId: dbRecord.askId,
-    mentions: dbRecord.mentions ? JSON.parse(dbRecord.mentions) : undefined,
-    usage: dbRecord.usage ? JSON.parse(dbRecord.usage) : undefined,
-    metrics: dbRecord.metrics ? JSON.parse(dbRecord.metrics) : undefined,
+    mentions: dbRecord.mentions ? safeJsonParse(dbRecord.mentions) : undefined,
+    usage: dbRecord.usage ? safeJsonParse(dbRecord.usage) : undefined,
+    metrics: dbRecord.metrics ? safeJsonParse(dbRecord.metrics) : undefined,
     multiModelMessageStyle: dbRecord.multiModelMessageStyle,
     foldSelected: !!dbRecord.foldSelected,
     // 注意：'blocks' 字段需要通过查询 message_blocks 表来单独填充。
@@ -142,18 +155,21 @@ export async function getMessagesByTopicId(topicId: string): Promise<Message[]> 
  * @param topicId - 主题的 ID。
  * @param message - 要插入或更新的消息对象。
  */
-export async function upsertOneMessage(message: Message) {
+export async function upsertOneMessage(message: Message): Promise<Message> {
   try {
     const existingMessage = await getMessageById(message.id)
 
     if (existingMessage) {
       // 更新现有消息
       const dbRecord = transformMessageToDb(message)
-      await db.update(messages).set(dbRecord).where(eq(messages.id, message.id))
+      return transformDbToMessage(
+        await db.update(messages).set(dbRecord).where(eq(messages.id, message.id)).returning()
+      )
     } else {
       // 插入新消息
       const dbRecord = transformMessageToDb(message)
-      await db.insert(messages).values(dbRecord)
+
+      return transformDbToMessage(await db.insert(messages).values(dbRecord).returning())
     }
   } catch (error) {
     console.error(`Error upserting message with ID ${message.id}:`, error)

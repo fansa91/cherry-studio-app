@@ -11,7 +11,7 @@ import { ProviderItem } from '@/components/settings/providers/ProviderItem'
 import CustomRadialGradientBackground from '@/components/ui/CustomRadialGradientBackground'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { SearchInput } from '@/components/ui/SearchInput'
-import { useAllProviders } from '@/hooks/use-providers'
+import { useAllProviders } from '@/hooks/useProviders'
 import { NavigationProps } from '@/types/naviagate'
 
 export default function ProvidersScreen() {

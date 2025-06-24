@@ -10,7 +10,7 @@ import { HeaderBar } from '@/components/settings/HeaderBar'
 import { ModelSelect } from '@/components/settings/providers/ModelSelect'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { isEmbeddingModel } from '@/config/models/embedding'
-import { useProviders } from '@/hooks/use-providers'
+import { useProviders } from '@/hooks/useProviders'
 import { Model } from '@/types/assistant'
 import { getModelUniqId } from '@/utils/model'
 

@@ -2,7 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from 'tamagui'
 
-import { MdiLightbulbOffOutline } from '../ui/SvgIcons'
+import { MdiLightbulbOffOutline } from '../icons/MdiLightbulbIcon'
 
 export const ThinkButton: React.FC = () => {
   const { t } = useTranslation()

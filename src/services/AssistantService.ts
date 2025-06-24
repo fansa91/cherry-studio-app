@@ -1,12 +1,42 @@
 import { DEFAULT_CONTEXTCOUNT, DEFAULT_MAX_TOKENS, DEFAULT_TEMPERATURE } from '@/constants'
 import i18n from '@/i18n'
-import { getSystemAssistants, INITIAL_PROVIDERS } from '@/mock'
+import { INITIAL_PROVIDERS } from '@/mock'
 import { Assistant, AssistantSettings, Model, Provider, Topic } from '@/types/assistant'
 import { uuid } from '@/utils'
 
+import { getAssistantById as _getAssistantById } from '../../db/queries/assistants.queries'
+
 export function getDefaultAssistant(): Assistant {
+  return {
+    id: 'default',
+    name: i18n.t('chat.default.name'),
+    emoji: '😀',
+    prompt: '',
+    topics: [getDefaultTopic('default')],
+    type: 'assistant',
+    settings: {
+      temperature: DEFAULT_TEMPERATURE,
+      contextCount: DEFAULT_CONTEXTCOUNT,
+      enableMaxTokens: false,
+      maxTokens: 0,
+      streamOutput: true,
+      topP: 1,
+      toolUseMode: 'prompt',
+      customParameters: []
+    }
+  }
+}
+
+export async function getAssistantById(assistantId: string): Promise<Assistant> {
   // todo get from store
-  return getSystemAssistants()[0]
+  const assistant = await _getAssistantById(assistantId)
+
+  if (!assistant) {
+    console.error(`Assistant with ID ${assistantId} not found`)
+    throw new Error(`Assistant with ID ${assistantId} not found`)
+  }
+
+  return assistant
 }
 
 export function getAssistantProvider(assistant: Assistant): Provider {

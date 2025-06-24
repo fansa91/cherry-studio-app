@@ -169,12 +169,12 @@ export class AnthropicAPIClient extends BaseApiClient<
     const parts: MessageParam['content'] = [
       {
         type: 'text',
-        text: getMainTextContent(message)
+        text: await getMainTextContent(message)
       }
     ]
 
     // Get and process image blocks
-    const imageBlocks = findImageBlocks(message)
+    const imageBlocks = await findImageBlocks(message)
 
     // for (const imageBlock of imageBlocks) {
     //   if (imageBlock.file) {
@@ -464,7 +464,7 @@ export class AnthropicAPIClient extends BaseApiClient<
         if (typeof messages === 'string') {
           sdkMessages.push({ role: 'user', content: messages })
         } else {
-          const processedMessages = addImageFileToContents(messages)
+          const processedMessages = await addImageFileToContents(messages)
 
           for (const message of processedMessages) {
             sdkMessages.push(await this.convertMessageToSdkParam(message))

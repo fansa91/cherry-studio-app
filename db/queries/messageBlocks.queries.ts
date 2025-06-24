@@ -9,7 +9,7 @@ import { messageBlocks } from '../schema'
 type KeysOfUnion<T> = T extends T ? keyof T : never
 
 // 数据库记录转换为 MessageBlock 类型
-function transformDbToMessageBlock(dbRecord: any): MessageBlock {
+export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
   const base = {
     id: dbRecord.id,
     messageId: dbRecord.messageId,
@@ -359,6 +359,21 @@ export async function getBlocksIdByMessageId(messageId: string): Promise<string[
     return dbRecords.map(record => record.id)
   } catch (error) {
     console.error(`Error getting block IDs for message ID ${messageId}:`, error)
+    throw error
+  }
+}
+
+export async function getBlockById(blockId: string): Promise<MessageBlock | null> {
+  try {
+    const dbRecord = await db.select().from(messageBlocks).where(eq(messageBlocks.id, blockId)).limit(1).execute()
+
+    if (dbRecord.length === 0) {
+      return null
+    }
+
+    return transformDbToMessageBlock(dbRecord[0])
+  } catch (error) {
+    console.error(`Error getting block with ID ${blockId}:`, error)
     throw error
   }
 }

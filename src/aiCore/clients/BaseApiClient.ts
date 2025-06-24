@@ -1,8 +1,10 @@
+import { File } from 'expo-file-system/next'
 import { isEmpty } from 'lodash'
 
 import { GenerateImageParams } from '@/config/models/image'
 import { DEFAULT_TIMEOUT } from '@/constants'
 import { Assistant, Model, Provider } from '@/types/assistant'
+import { FileTypes } from '@/types/file'
 import { MCPCallToolResponse, MCPTool, MCPToolResponse, ToolCallResponse } from '@/types/mcp'
 import { Message } from '@/types/message'
 import {
@@ -18,7 +20,7 @@ import {
 } from '@/types/sdk'
 import { addAbortController, removeAbortController } from '@/utils/abortController'
 import { isJSON, parseJSON } from '@/utils/json'
-import { getMainTextContent } from '@/utils/messageUtils/find'
+import { findFileBlocks, getMainTextContent } from '@/utils/messageUtils/find'
 
 import { ApiClient, RawStreamListener, RequestTransformer, ResponseChunkTransformer } from './types'
 
@@ -233,31 +235,31 @@ export abstract class BaseApiClient<
    * @param message - The message
    * @returns The file content
    */
-  // protected async extractFileContent(message: Message) {
-  //   const fileBlocks = findFileBlocks(message)
+  protected async extractFileContent(message: Message) {
+    const fileBlocks = await findFileBlocks(message)
 
-  //   if (fileBlocks.length > 0) {
-  //     const textFileBlocks = fileBlocks.filter(
-  //       fb => fb.file && [FileTypes.TEXT, FileTypes.DOCUMENT].includes(fb.file.type)
-  //     )
+    if (fileBlocks.length > 0) {
+      const textFileBlocks = fileBlocks.filter(
+        fb => fb.file && [FileTypes.TEXT, FileTypes.DOCUMENT].includes(fb.file.type)
+      )
 
-  //     if (textFileBlocks.length > 0) {
-  //       let text = ''
-  //       const divider = '\n\n---\n\n'
+      if (textFileBlocks.length > 0) {
+        let text = ''
+        const divider = '\n\n---\n\n'
 
-  //       for (const fileBlock of textFileBlocks) {
-  //         const file = fileBlock.file
-  //         const fileContent = (await window.api.file.read(file.id + file.ext)).trim()
-  //         const fileNameRow = 'file: ' + file.origin_name + '\n\n'
-  //         text = text + fileNameRow + fileContent + divider
-  //       }
+        for (const fileBlock of textFileBlocks) {
+          const file = fileBlock.file
+          const fileContent = new File(file.path).text().trim()
+          const fileNameRow = 'file: ' + file.origin_name + '\n\n'
+          text = text + fileNameRow + fileContent + divider
+        }
 
-  //       return text
-  //     }
-  //   }
+        return text
+      }
+    }
 
-  //   return ''
-  // }
+    return ''
+  }
 
   // private async getWebSearchReferencesFromCache(message: Message) {
   //   const content = getMainTextContent(message)

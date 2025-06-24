@@ -41,7 +41,13 @@ English | [中文](./README-zh.md)
      yarn install
    ```
 
-4. **Start the app**
+4. **Generate Database**
+
+```bash
+npx drizzle-kit generate
+```
+
+5. **Start the app**
 
    ```bash
      yarn ios

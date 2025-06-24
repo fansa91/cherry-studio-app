@@ -7,7 +7,6 @@ import { Assistant } from '@/types/assistant'
 
 interface AssistantSelectionProps {
   assistant: Assistant
-  setAssistant: (assistant: Assistant) => void
 }
 
 export const AssistantSelection: React.FC<AssistantSelectionProps> = ({ assistant }) => {

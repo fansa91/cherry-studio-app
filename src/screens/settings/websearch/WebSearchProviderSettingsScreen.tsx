@@ -8,7 +8,7 @@ import ExternalLink from '@/components/ExternalLink'
 import { SettingContainer, SettingGroupTitle, SettingHelpText } from '@/components/settings'
 import { HeaderBar } from '@/components/settings/HeaderBar'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { useWebsearchProvider } from '@/hooks/use-websearch-providers'
+import { useWebsearchProvider } from '@/hooks/useWebsearchProviders'
 import { RootStackParamList } from '@/types/naviagate'
 
 type WebsearchProviderSettingsRouteProp = RouteProp<RootStackParamList, 'WebSearchProviderSettingsScreen'>

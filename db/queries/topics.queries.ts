@@ -5,7 +5,6 @@ import { Message } from '@/types/message'
 
 import { db } from '..'
 import { topics } from '../schema'
-import { getMessagesByTopicId } from './messages.queries'
 
 /**
  * 将数据库记录转换为 Topic 类型。
@@ -13,13 +12,26 @@ import { getMessagesByTopicId } from './messages.queries'
  * @returns 一个 Topic 对象。
  */
 function transformDbToTopic(dbRecord: any): Topic {
+  const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
+    if (typeof jsonString !== 'string') {
+      return defaultValue
+    }
+
+    try {
+      return JSON.parse(jsonString)
+    } catch (e) {
+      console.error('JSON parse error for string:', jsonString)
+      return defaultValue
+    }
+  }
+
   return {
     id: dbRecord.id,
     assistantId: dbRecord.assistantId,
     name: dbRecord.name,
     createdAt: dbRecord.createdAt,
     updatedAt: dbRecord.updatedAt,
-    messages: dbRecord.messages ? JSON.parse(dbRecord.messages) : [],
+    messages: dbRecord.messages ? safeJsonParse(dbRecord.messages) : [],
     // 将数字（0 或 1）转换为布尔值
     pinned: !!dbRecord.pinned,
     prompt: dbRecord.prompt,
@@ -60,10 +72,7 @@ export async function getTopicById(topicId: string): Promise<Topic | undefined> 
       return undefined
     }
 
-    // query messages by topicId
-    const messages = await getMessagesByTopicId(topicId)
     const topic = transformDbToTopic(result[0])
-    topic.messages = messages
     return topic
   } catch (error) {
     console.error(`Error getting topic by ID ${topicId}:`, error)
@@ -117,6 +126,40 @@ export async function upsertOneTopic(topic: Topic): Promise<void> {
     })
   } catch (error) {
     console.error(`Error upserting topic with ID ${topic.id}:`, error)
+    throw error
+  }
+}
+
+export async function getTopics(): Promise<Topic[]> {
+  try {
+    const results = await db.select().from(topics)
+
+    if (results.length === 0) {
+      return []
+    }
+
+    // 获取所有主题的消息
+    const topicsWithMessages = await Promise.all(
+      results.map(async dbRecord => {
+        const topic = transformDbToTopic(dbRecord)
+        // topic.messages = await getMessagesByTopicId(topic.id)
+        return topic
+      })
+    )
+
+    // 按 updatedAt 排序，最新的在前面
+    return topicsWithMessages.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  } catch (error) {
+    console.error('Error getting topics:', error)
+    throw error
+  }
+}
+
+export async function deleteTopicById(topicId: string): Promise<void> {
+  try {
+    await db.delete(topics).where(eq(topics.id, topicId))
+  } catch (error) {
+    console.error(`Error deleting topic with ID ${topicId}:`, error)
     throw error
   }
 }

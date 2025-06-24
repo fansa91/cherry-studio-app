@@ -13,7 +13,7 @@ import { Assistant, Model, Provider } from '@/types/assistant'
 import { Chunk, ChunkType } from '@/types/chunk'
 import { Message } from '@/types/message'
 
-import { getAssistantProvider, getAssistantSettings, getDefaultAssistant, getDefaultModel } from './AssistantService'
+import { getAssistantById, getAssistantProvider, getAssistantSettings, getDefaultModel } from './AssistantService'
 import {
   filterContextMessages,
   filterEmptyMessages,
@@ -172,7 +172,7 @@ export async function mockCheckApi(provider: Provider, model: Model): Promise<vo
 
   const ai = new AiProvider(provider)
 
-  const assistant = getDefaultAssistant()
+  const assistant = await getAssistantById('1')
   assistant.model = model
 
   try {

@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm'
+
 import { Assistant } from '@/types/assistant'
 
 import { db } from '..'
@@ -9,6 +11,19 @@ import { assistants } from '../schema'
  * @returns 一个 Assistant 对象。
  */
 function transformDbToAssistant(dbRecord: any): Assistant {
+  const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
+    if (typeof jsonString !== 'string') {
+      return defaultValue
+    }
+
+    try {
+      return JSON.parse(jsonString)
+    } catch (e) {
+      console.error('JSON parse error for string:', e, jsonString)
+      return defaultValue
+    }
+  }
+
   return {
     id: dbRecord.id,
     name: dbRecord.name,
@@ -17,16 +32,16 @@ function transformDbToAssistant(dbRecord: any): Assistant {
     type: dbRecord.type,
     emoji: dbRecord.emoji,
     description: dbRecord.description,
-    model: dbRecord.model ? JSON.parse(dbRecord.model) : undefined,
-    defaultModel: dbRecord.defaultModel ? JSON.parse(dbRecord.defaultModel) : undefined,
-    settings: dbRecord.settings ? JSON.parse(dbRecord.settings) : undefined,
+    model: safeJsonParse(dbRecord.model),
+    defaultModel: safeJsonParse(dbRecord.defaultModel),
+    settings: safeJsonParse(dbRecord.settings),
     enableWebSearch: !!dbRecord.enableWebSearch,
     // websearchProviderId: dbRecord.websearchProviderId,
     enableGenerateImage: !!dbRecord.enableGenerateImage,
     // mcpServers: dbRecord.mcpServers ? JSON.parse(dbRecord.mcpServers) : undefined,
     knowledgeRecognition: dbRecord.knowledgeRecognition,
-    tags: dbRecord.tags ? JSON.parse(dbRecord.tags) : [],
-    group: dbRecord.group ? JSON.parse(dbRecord.groups) : [],
+    tags: safeJsonParse(dbRecord.tags, []),
+    group: safeJsonParse(dbRecord.group, []),
     topics: [] // 初始化 topics 为一个空数组
   }
 }
@@ -68,6 +83,21 @@ export async function getAllAssistants(): Promise<Assistant[]> {
     return result.map(transformDbToAssistant)
   } catch (error) {
     console.error('Error getting all assistants:', error)
+    throw error
+  }
+}
+
+export async function getAssistantById(id: string): Promise<Assistant | null> {
+  try {
+    const result = await db.select().from(assistants).where(eq(assistants.id, id)).limit(1)
+
+    if (result.length === 0) {
+      return null
+    }
+
+    return transformDbToAssistant(result[0])
+  } catch (error) {
+    console.error('Error getting assistant by ID:', error)
     throw error
   }
 }

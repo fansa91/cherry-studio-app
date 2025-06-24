@@ -1,36 +1,34 @@
 import { FileType } from '@/types/file'
-import type {
-  CitationMessageBlock,
-  FileMessageBlock,
-  ImageMessageBlock,
-  MainTextMessageBlock,
-  Message,
-  MessageBlock,
-  ThinkingMessageBlock,
-  TranslationMessageBlock
+import {
+  type CitationMessageBlock,
+  type FileMessageBlock,
+  type ImageMessageBlock,
+  type MainTextMessageBlock,
+  type Message,
+  type MessageBlock,
+  MessageBlockType,
+  type ThinkingMessageBlock,
+  type TranslationMessageBlock
 } from '@/types/message'
 
-export const findAllBlocks = (message: Message): MessageBlock[] => {
-  return []
+import { getBlockById } from '../../../db/queries/messageBlocks.queries'
 
-  // todo
+export const findAllBlocks = async (message: Message): Promise<MessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  const allBlocks: MessageBlock[] = []
 
-  // const state = store.getState()
-  // const allBlocks: MessageBlock[] = []
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
+    if (block) {
+      allBlocks.push(block)
+    }
+  }
 
-  //   if (block) {
-  //     allBlocks.push(block)
-  //   }
-  // }
-
-  // return allBlocks
+  return allBlocks
 }
 
 /**
@@ -38,27 +36,22 @@ export const findAllBlocks = (message: Message): MessageBlock[] => {
  * @param message - The message object.
  * @returns An array of MainTextMessageBlocks (empty if none found).
  */
-export const findMainTextBlocks = (message: Message): MainTextMessageBlock[] => {
-  return []
+export const findMainTextBlocks = async (message: Message): Promise<MainTextMessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // todo
+  const textBlocks: MainTextMessageBlock[] = []
 
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // const state = store.getState()
-  // const textBlocks: MainTextMessageBlock[] = []
+    if (block && block.type === MessageBlockType.MAIN_TEXT) {
+      textBlocks.push(block as MainTextMessageBlock)
+    }
+  }
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
-
-  //   if (block && block.type === MessageBlockType.MAIN_TEXT) {
-  //     textBlocks.push(block as MainTextMessageBlock)
-  //   }
-  // }
-
-  // return textBlocks
+  return textBlocks
 }
 
 /**
@@ -66,27 +59,22 @@ export const findMainTextBlocks = (message: Message): MainTextMessageBlock[] => 
  * @param message - The message object.
  * @returns An array of ThinkingMessageBlocks (empty if none found).
  */
-export const findThinkingBlocks = (message: Message): ThinkingMessageBlock[] => {
-  return []
+export const findThinkingBlocks = async (message: Message): Promise<ThinkingMessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // todo
+  const thinkingBlocks: ThinkingMessageBlock[] = []
 
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // const state = store.getState()
-  // const thinkingBlocks: ThinkingMessageBlock[] = []
+    if (block && block.type === MessageBlockType.THINKING) {
+      thinkingBlocks.push(block as ThinkingMessageBlock)
+    }
+  }
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
-
-  //   if (block && block.type === MessageBlockType.THINKING) {
-  //     thinkingBlocks.push(block as ThinkingMessageBlock)
-  //   }
-  // }
-
-  // return thinkingBlocks
+  return thinkingBlocks
 }
 
 /**
@@ -94,27 +82,22 @@ export const findThinkingBlocks = (message: Message): ThinkingMessageBlock[] => 
  * @param message - The message object.
  * @returns An array of ImageMessageBlocks (empty if none found).
  */
-export const findImageBlocks = (message: Message): ImageMessageBlock[] => {
-  return []
+export const findImageBlocks = async (message: Message): Promise<ImageMessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // todo
+  const imageBlocks: ImageMessageBlock[] = []
 
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // const state = store.getState()
-  // const imageBlocks: ImageMessageBlock[] = []
+    if (block && block.type === MessageBlockType.IMAGE) {
+      imageBlocks.push(block as ImageMessageBlock)
+    }
+  }
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
-
-  //   if (block && block.type === MessageBlockType.IMAGE) {
-  //     imageBlocks.push(block as ImageMessageBlock)
-  //   }
-  // }
-
-  // return imageBlocks
+  return imageBlocks
 }
 
 /**
@@ -122,26 +105,22 @@ export const findImageBlocks = (message: Message): ImageMessageBlock[] => {
  * @param message - The message object.
  * @returns An array of FileMessageBlocks (empty if none found).
  */
-export const findFileBlocks = (message: Message): FileMessageBlock[] => {
-  return []
+export const findFileBlocks = async (message: Message): Promise<FileMessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // todo
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  const fileBlocks: FileMessageBlock[] = []
 
-  // const state = store.getState()
-  // const fileBlocks: FileMessageBlock[] = []
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
+    if (block && block.type === MessageBlockType.FILE) {
+      fileBlocks.push(block as FileMessageBlock)
+    }
+  }
 
-  //   if (block && block.type === MessageBlockType.FILE) {
-  //     fileBlocks.push(block as FileMessageBlock)
-  //   }
-  // }
-
-  // return fileBlocks
+  return fileBlocks
 }
 
 /**
@@ -149,8 +128,8 @@ export const findFileBlocks = (message: Message): FileMessageBlock[] => {
  * @param message - The message object.
  * @returns The concatenated content string or an empty string if no text blocks are found.
  */
-export const getMainTextContent = (message: Message): string => {
-  const textBlocks = findMainTextBlocks(message)
+export const getMainTextContent = async (message: Message): Promise<string> => {
+  const textBlocks = await findMainTextBlocks(message)
   return textBlocks.map(block => block.content).join('\n\n')
 }
 
@@ -159,21 +138,46 @@ export const getMainTextContent = (message: Message): string => {
  * @param message
  * @returns The concatenated content string or an empty string if no thinking blocks are found.
  */
-export const getThinkingContent = (message: Message): string => {
-  const thinkingBlocks = findThinkingBlocks(message)
+export const getThinkingContent = async (message: Message): Promise<string> => {
+  const thinkingBlocks = await findThinkingBlocks(message)
   return thinkingBlocks.map(block => block.content).join('\n\n')
 }
 
-export const getCitationContent = (message: Message): string => {
-  return ''
+export const getCitationContent = async (message: Message): Promise<string> => {
+  const citationBlocks = await findCitationBlocks(message)
+  const citations: string[] = []
 
-  // todo
-  // const citationBlocks = findCitationBlocks(message)
-  // return citationBlocks
-  //   .map(block => formatCitationsFromBlock(block))
-  //   .flat()
-  //   .map(citation => `[${citation.number}] [${citation.title || citation.url}](${citation.url})`)
-  //   .join('\n\n')
+  citationBlocks.forEach(block => {
+    // Handle web search results
+    if (block.response?.results) {
+      const results = block.response.results as any
+
+      // Handle different types of results based on the union type
+      if (Array.isArray(results)) {
+        results.forEach((result: any, index: number) => {
+          if (result.title && result.url) {
+            citations.push(`[${index + 1}] [${result.title}](${result.url})`)
+          }
+        })
+      } else if (results.results && Array.isArray(results.results)) {
+        results.results.forEach((result: any, index: number) => {
+          if (result.title && result.url) {
+            citations.push(`[${index + 1}] [${result.title}](${result.url})`)
+          }
+        })
+      }
+    }
+
+    // Handle knowledge base references
+    if (block.knowledge) {
+      block.knowledge.forEach((ref, index) => {
+        const displayText = ref.file?.name || ref.sourceUrl || ref.content?.substring(0, 50) + '...'
+        citations.push(`[${index + 1}] ${displayText}`)
+      })
+    }
+  })
+
+  return citations.join('\n\n')
 }
 
 /**
@@ -182,9 +186,9 @@ export const getCitationContent = (message: Message): string => {
  * @param message - The message object.
  * @returns The knowledgeBaseIds array or undefined if not found.
  */
-export const getKnowledgeBaseIds = (message: Message): string[] | undefined => {
-  const firstTextBlock = findMainTextBlocks(message)
-  return firstTextBlock?.flatMap(block => block.knowledgeBaseIds).filter((id): id is string => Boolean(id))
+export const getKnowledgeBaseIds = async (message: Message): Promise<string[] | undefined> => {
+  const textBlocks = await findMainTextBlocks(message)
+  return textBlocks?.flatMap(block => block.knowledgeBaseIds).filter((id): id is string => Boolean(id))
 }
 
 /**
@@ -192,9 +196,9 @@ export const getKnowledgeBaseIds = (message: Message): string[] | undefined => {
  * @param message - The message object.
  * @returns The file content or an empty string if no file blocks are found.
  */
-export const getFileContent = (message: Message): FileType[] => {
+export const getFileContent = async (message: Message): Promise<FileType[]> => {
   const files: FileType[] = []
-  const fileBlocks = findFileBlocks(message)
+  const fileBlocks = await findFileBlocks(message)
 
   for (const block of fileBlocks) {
     if (block.file) {
@@ -202,7 +206,7 @@ export const getFileContent = (message: Message): FileType[] => {
     }
   }
 
-  const imageBlocks = findImageBlocks(message)
+  const imageBlocks = await findImageBlocks(message)
 
   for (const block of imageBlocks) {
     if (block.file) {
@@ -218,26 +222,22 @@ export const getFileContent = (message: Message): FileType[] => {
  * @param message - The message object.
  * @returns An array of CitationBlocks (empty if none found).
  */
-export const findCitationBlocks = (message: Message): CitationMessageBlock[] => {
-  return []
+export const findCitationBlocks = async (message: Message): Promise<CitationMessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // todo
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  const citationBlocks: CitationMessageBlock[] = []
 
-  // const state = store.getState()
-  // const citationBlocks: CitationMessageBlock[] = []
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
+    if (block && block.type === MessageBlockType.CITATION) {
+      citationBlocks.push(block as CitationMessageBlock)
+    }
+  }
 
-  //   if (block && block.type === MessageBlockType.CITATION) {
-  //     citationBlocks.push(block as CitationMessageBlock)
-  //   }
-  // }
-
-  // return citationBlocks
+  return citationBlocks
 }
 
 /**
@@ -245,26 +245,22 @@ export const findCitationBlocks = (message: Message): CitationMessageBlock[] => 
  * @param message - The message object.
  * @returns An array of TranslationMessageBlocks (empty if none found).
  */
-export const findTranslationBlocks = (message: Message): TranslationMessageBlock[] => {
-  return []
+export const findTranslationBlocks = async (message: Message): Promise<TranslationMessageBlock[]> => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
 
-  // todo
-  // if (!message || !message.blocks || message.blocks.length === 0) {
-  //   return []
-  // }
+  const translationBlocks: TranslationMessageBlock[] = []
 
-  // const state = store.getState()
-  // const translationBlocks: TranslationMessageBlock[] = []
+  for (const blockId of message.blocks) {
+    const block = await getBlockById(blockId)
 
-  // for (const blockId of message.blocks) {
-  //   const block = messageBlocksSelectors.selectById(state, blockId)
+    if (block && block.type === MessageBlockType.TRANSLATION) {
+      translationBlocks.push(block as TranslationMessageBlock)
+    }
+  }
 
-  //   if (block && block.type === 'translation') {
-  //     translationBlocks.push(block as TranslationMessageBlock)
-  //   }
-  // }
-
-  // return translationBlocks
+  return translationBlocks
 }
 
 /**

@@ -4,7 +4,7 @@ import { YStack } from 'tamagui'
 
 import { SettingGroup, SettingGroupTitle } from '@/components/settings'
 import { WebsearchProviderRow } from '@/components/settings/websearch/WebsearchProviderRow'
-import { useWebsearchProviders } from '@/hooks/use-websearch-providers'
+import { useWebsearchProviders } from '@/hooks/useWebsearchProviders'
 
 export default function ProviderSettings() {
   const { t } = useTranslation()

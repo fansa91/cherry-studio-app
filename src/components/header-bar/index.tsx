@@ -12,10 +12,9 @@ import { NewTopicButton } from './NewTopicButton'
 
 interface HeaderBarProps {
   assistant: Assistant
-  setAssistant: (assistant: Assistant) => void
 }
 
-export const HeaderBar = ({ assistant, setAssistant }: HeaderBarProps) => {
+export const HeaderBar = ({ assistant }: HeaderBarProps) => {
   const navigation = useNavigation<DrawerNavigationProp<ParamListBase>>()
 
   const handleMenuPress = () => {
@@ -29,10 +28,10 @@ export const HeaderBar = ({ assistant, setAssistant }: HeaderBarProps) => {
           <MenuButton onMenuPress={handleMenuPress} />
         </XStack>
         <XStack flex={1} justifyContent="center" alignItems="center">
-          <AssistantSelection assistant={assistant} setAssistant={setAssistant} />
+          <AssistantSelection assistant={assistant} />
         </XStack>
         <XStack alignItems="center" minWidth={40} justifyContent="flex-end">
-          <NewTopicButton />
+          <NewTopicButton assistant={assistant} />
         </XStack>
       </XStack>
     </>

@@ -1,45 +1,28 @@
-// import db from '@/db'
+import { Directory, File, Paths } from 'expo-file-system/next'
+
 import { FileType } from '@/types/file'
+const fileStorageDir = new Directory(Paths.cache, 'Files')
 
-export default class FileManager {
-  static async getFile(id: string): Promise<FileType | undefined> {
-    // const file = await db.files.get(id)
-
-    // if (file) {
-    //   // todo
-    //   // const filesPath = store.getState().runtime.filesPath
-    //   const filesPath = ''
-    //   console.warn('[FileManager] TODO')
-    //   file.path = filesPath + '/' + file.id + file.ext
-    // }
-
-    // return file
-    return undefined
+export async function uploadFiles(files: FileType[]): Promise<FileType[]> {
+  if (!fileStorageDir.exists) {
+    fileStorageDir.create({ intermediates: true, overwrite: true })
   }
-  static async deleteFile(id: string, force: boolean = false): Promise<void> {
-    // const file = await this.getFile(id)
 
-    // if (!file) {
-    //   return
-    // }
+  const filePromises = files.map(async file => {
+    try {
+      const sourceFile = new File(file.path)
+      const destinationFile = new File(fileStorageDir, `${file.id}.${file.ext}`)
+      sourceFile.copy(destinationFile)
+      return {
+        ...file,
+        path: destinationFile.uri
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      throw new Error(`Failed to upload file: ${file.name}`)
+    }
+  })
+  const uploadedFiles = await Promise.all(filePromises)
 
-    // if (!force) {
-    //   if (file.count > 1) {
-    //     await db.files.update(id, { ...file, count: file.count - 1 })
-    //     return
-    //   }
-    // }
-
-    // await db.files.delete(id)
-
-    // try {
-    //   await FileSystem.deleteAsync(id + file.ext)
-    // } catch (error) {
-    //   console.error('[FileManager] Failed to delete file:', error)
-    // }
-    return
-  }
-  static async deleteFiles(files: FileType[]): Promise<void> {
-    await Promise.all(files.map(file => this.deleteFile(file.id)))
-  }
+  return uploadedFiles
 }

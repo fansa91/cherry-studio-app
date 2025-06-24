@@ -15,7 +15,7 @@ import { ModelGroup } from '@/components/settings/providers/ModelGroup'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { CustomSwitch } from '@/components/ui/Switch'
-import { useProvider } from '@/hooks/use-providers'
+import { useProvider } from '@/hooks/useProviders'
 import { Model } from '@/types/assistant'
 import { NavigationProps, RootStackParamList } from '@/types/naviagate'
 

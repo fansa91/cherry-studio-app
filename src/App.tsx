@@ -7,38 +7,37 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import * as SplashScreen from 'expo-splash-screen'
 import { SQLiteProvider } from 'expo-sqlite'
 import { StatusBar } from 'expo-status-bar'
-import { Suspense } from 'react'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import React from 'react'
-import { ActivityIndicator } from 'react-native'
-import { useColorScheme } from 'react-native'
+import { ActivityIndicator, useColorScheme } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { Provider } from 'react-redux'
+import { Provider, useSelector } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { PortalProvider } from 'tamagui'
 
-import store, { persistor } from '@/store'
+import store, { persistor, RootState, useAppDispatch } from '@/store'
+import { setInitialized } from '@/store/app'
 
 import { DATABASE_NAME, db, expoDb } from '../db'
-import { removeAllBlocks } from '../db/queries/messageBlocks.queries'
-import { removeAllMessages } from '../db/queries/messages.queries'
+import { upsertAssistants } from '../db/queries/assistants.queries'
 import migrations from '../drizzle/migrations'
 import tamaguiConfig from '../tamagui.config'
+import { getSystemAssistants } from './mock'
 import AppNavigator from './navigators/AppNavigator'
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
 
-export default function App() {
+function AppContent() {
   const colorScheme = useColorScheme()
   const { success, error } = useMigrations(db, migrations)
+  const initialized = useSelector((state: RootState) => state.app.initialized)
 
+  const dispatch = useAppDispatch()
   useEffect(() => {
     const handleMigrations = async () => {
       if (success) {
         console.log('Migrations completed successfully', expoDb.databasePath)
-        await removeAllMessages()
-        await removeAllBlocks()
       } else if (error) {
         console.error('Migrations failed', error)
       }
@@ -48,25 +47,50 @@ export default function App() {
   }, [success, error])
 
   useEffect(() => {
+    const initializeApp = async () => {
+      // 确保迁移成功且尚未初始化
+      if (success && !initialized) {
+        try {
+          console.log('First launch, initializing app data...')
+          const assistants = getSystemAssistants()
+          await upsertAssistants(assistants)
+          dispatch(setInitialized(true))
+          console.log('App data initialized successfully.')
+        } catch (e) {
+          console.error('Failed to initialize app data', e)
+        }
+      }
+    }
+
+    initializeApp()
+  }, [success, initialized, dispatch])
+
+  useEffect(() => {
     SplashScreen.hideAsync()
   }, [])
 
+  return (
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme ?? 'light'}>
+      <PortalProvider>
+        <NavigationContainer theme={DefaultTheme}>
+          <ThemeProvider value={DefaultTheme}>
+            <AppNavigator />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </NavigationContainer>
+      </PortalProvider>
+    </TamaguiProvider>
+  )
+}
+
+export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Suspense fallback={<ActivityIndicator size="large" />}>
         <SQLiteProvider databaseName={DATABASE_NAME} options={{ enableChangeListener: true }} useSuspense>
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
-              <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme ?? 'light'}>
-                <PortalProvider>
-                  <NavigationContainer theme={DefaultTheme}>
-                    <ThemeProvider value={DefaultTheme}>
-                      <AppNavigator />
-                      <StatusBar style="auto" />
-                    </ThemeProvider>
-                  </NavigationContainer>
-                </PortalProvider>
-              </TamaguiProvider>
+              <AppContent />
             </PersistGate>
           </Provider>
         </SQLiteProvider>

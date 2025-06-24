@@ -4,9 +4,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Text, XStack, YStack } from 'tamagui'
 
+import { DefaultProviderIcon } from '@/components/icons/DefaultProviderIcon'
 import { AvatarEditButton } from '@/components/ui/AvatarEditButton'
 import { ISheet } from '@/components/ui/Sheet'
-import { DefaultProviderIcon } from '@/components/ui/SvgIcons'
 
 import { ProviderSelect } from './ProviderSelect'
 

@@ -14,6 +14,7 @@ export interface FileType {
   size: number
   ext: string
   type: FileTypes
+  mimeType: string
   created_at: string
   count: number
   tokens?: number
