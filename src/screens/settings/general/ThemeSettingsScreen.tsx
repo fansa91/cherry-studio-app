@@ -18,19 +18,17 @@ export default function ThemeSettingsScreen() {
   const [currentTheme, setCurrentTheme] = useState('system')
 
   // TODO 当前主题切换还存在问题
-  useFocusEffect(
-    React.useCallback(() => {
-      const loadTheme = async () => {
-        const storedTheme = await AsyncStorage.getItem('theme')
+  useFocusEffect(() => {
+    const loadTheme = async () => {
+      const storedTheme = await AsyncStorage.getItem('theme')
 
-        if (storedTheme) {
-          setCurrentTheme(storedTheme)
-        }
+      if (storedTheme) {
+        setCurrentTheme(storedTheme)
       }
+    }
 
-      loadTheme()
-    }, [])
-  )
+    loadTheme()
+  })
 
   const changeTheme = async (themeValue: string) => {
     setCurrentTheme(themeValue)

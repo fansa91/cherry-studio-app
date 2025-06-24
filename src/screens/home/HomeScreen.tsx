@@ -1,5 +1,5 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Keyboard, KeyboardAvoidingView, Platform } from 'react-native'
 import { Image, ScrollView, styled, Text, View, XStack, YStack } from 'tamagui'
@@ -24,7 +24,7 @@ const HomeScreen = () => {
   const navigation = useNavigation<NavigationProps>()
   const [assistant, setAssistant] = useState<Assistant | null>(null)
   const [topic, setTopic] = useState<Topic | null>(null)
-  const systemAssistants = useMemo(() => getSystemAssistants(), [])
+  const systemAssistants = getSystemAssistants()
   const [hasMessages, setHasMessages] = useState(false)
   const route = useRoute<HomeScreenRouteProp>()
 

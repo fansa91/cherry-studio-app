@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Message } from '@/types/message'
 
@@ -10,10 +10,11 @@ import { transformDbToMessage } from '../../db/queries/messages.queries'
 import { messages as messagesSchema } from '../../db/schema/messages'
 
 export const useMessages = (topicId: string) => {
-  const query = useMemo(
-    () => db.select().from(messagesSchema).where(eq(messagesSchema.topicId, topicId)).orderBy(messagesSchema.createdAt),
-    [topicId]
-  )
+  const query = db
+    .select()
+    .from(messagesSchema)
+    .where(eq(messagesSchema.topicId, topicId))
+    .orderBy(messagesSchema.createdAt)
   const { data: rawMessages } = useLiveQuery(query)
 
   const [processedMessages, setProcessedMessages] = useState<Message[]>([])

@@ -1,5 +1,5 @@
 import { isEmpty } from 'lodash'
-import { FC, memo, useMemo } from 'react'
+import { FC, memo } from 'react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import Markdown from 'react-native-markdown-display'
@@ -17,12 +17,12 @@ const ReactNativeMarkdown: FC<Props> = ({ block }) => {
   const theme = useThemeName()
   const textColor = theme === 'dark' ? 'white' : 'black'
 
-  const messageContent = useMemo(() => {
+  const messageContent = (() => {
     const empty = isEmpty(block.content)
     const paused = block.status === 'paused'
     const content = empty && paused ? t('message.chat.completion.paused') : block.content
     return removeSvgEmptyLines(escapeBrackets(content))
-  }, [block, t])
+  })()
 
   const style = {
     text: {
