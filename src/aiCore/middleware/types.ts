@@ -1,5 +1,7 @@
+import { Chunk } from 'drizzle-orm'
+
 import { Metrics, Usage } from '@/types/assistant'
-import { Chunk, ErrorChunk } from '@/types/chunk'
+import { ErrorChunk } from '@/types/chunk'
 import { MCPToolResponse } from '@/types/mcp'
 import { SdkInstance, SdkMessageParam, SdkParams, SdkRawChunk, SdkRawOutput, SdkTool, SdkToolCall } from '@/types/sdk'
 import { WebSearchResponse } from '@/types/websearch'

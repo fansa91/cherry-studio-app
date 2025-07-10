@@ -1,4 +1,3 @@
-import { fetch as expoFetch } from 'expo/fetch'
 import OpenAI, { AzureOpenAI } from 'openai'
 
 import { isSupportedModel } from '@/config/models'
@@ -137,16 +136,6 @@ export abstract class OpenAIBaseClient<
       return this.sdkInstance
     }
 
-    const customFetch = async (url, options) => {
-      const response = await expoFetch(url, {
-        ...options,
-        headers: {
-          ...options.headers
-        }
-      })
-      return response
-    }
-
     const apiKeyForSdkInstance = this.provider.apiKey
 
     // if (this.provider.id === 'copilot') {
@@ -173,8 +162,7 @@ export abstract class OpenAIBaseClient<
           ...this.defaultHeaders(),
           ...(this.provider.id === 'copilot' ? { 'editor-version': 'vscode/1.97.2' } : {}),
           ...(this.provider.id === 'copilot' ? { 'copilot-vision-request': 'true' } : {})
-        },
-        fetch: customFetch
+        }
       }) as TSdkInstance
     }
 

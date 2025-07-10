@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
-import { StyleSheet } from 'react-native'
-import { Image, View } from 'tamagui'
+import { View } from 'tamagui'
 
+import ImageItem from '@/components/message-input/preview-items/ImageItem'
 import { ImageMessageBlock } from '@/types/message'
 
 interface Props {
@@ -9,24 +9,15 @@ interface Props {
 }
 
 const ImageBlock: React.FC<Props> = ({ block }) => {
+  if (!block.file) {
+    return null
+  }
+
   return (
-    <View style={styles.container}>
-      <Image style={styles.image} source={{ height: 168, width: 168, uri: block.file?.path }} />
+    <View>
+      <ImageItem file={block.file} />
     </View>
   )
 }
 
 export default memo(ImageBlock)
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  image: {
-    flex: 1,
-    backgroundColor: '#0553'
-  }
-})

@@ -1,27 +1,58 @@
-import { INITIAL_PROVIDERS } from '@/mock'
+import { eq } from 'drizzle-orm'
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
 
+import { Provider } from '@/types/assistant'
+
+import { db } from '../../db'
+import { transformDbToProvider, upsertProviders } from '../../db/queries/providers.queries'
+import { providers as providersSchema } from '../../db/schema'
+
+/**
+ * Fetch all providers from the database.
+ */
 export function useAllProviders() {
+  const query = db.select().from(providersSchema)
+  const { data: rawProviders, updatedAt } = useLiveQuery(query)
+
+  if (!updatedAt) {
+    return {
+      providers: [],
+      isLoading: true
+    }
+  }
+
+  const processedProviders = rawProviders.map(provider => transformDbToProvider(provider))
   return {
-    providers: INITIAL_PROVIDERS
+    providers: processedProviders,
+    isLoading: false
   }
 }
 
-export function useProviders() {
-  const providers = INITIAL_PROVIDERS.filter(provider => provider.enabled)
-  return {
-    providers: providers
+/**
+ * Fetch a single provider by its ID.
+ * @param providerId
+ */
+export function useProvider(providerId: string) {
+  console.log('useProvider', providerId)
+  const query = db.select().from(providersSchema).where(eq(providersSchema.id, providerId))
+  const { data: rawProvider, updatedAt } = useLiveQuery(query)
+
+  const updateProvider = async (provider: Provider) => {
+    await upsertProviders([provider])
   }
-}
 
-export function useProvider(id: string) {
-  const provider = INITIAL_PROVIDERS.find(p => p.id === id)
-
-  if (!provider) {
-    throw new Error(`Provider with id ${id} not found`)
+  if (!updatedAt) {
+    return {
+      provider: null,
+      isLoading: true,
+      updateProvider
+    }
   }
 
+  const provider = transformDbToProvider(rawProvider[0])
   return {
     provider,
-    models: provider?.models || []
+    isLoading: false,
+    updateProvider
   }
 }

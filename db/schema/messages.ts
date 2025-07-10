@@ -8,25 +8,28 @@ export const messages = sqliteTable(
   {
     id: text('id').notNull().unique().primaryKey(),
     role: text('role').notNull(),
-    assistantId: text('assistant_id')
+    assistant_id: text('assistant_id')
       .notNull()
       .references(() => assistants.id),
-    topicId: text('topic_id')
+    topic_id: text('topic_id')
       .notNull()
       .references(() => topics.id),
-    createdAt: text('created_at').notNull(),
-    updatedAt: text('updated_at'),
+    created_at: text('created_at').notNull(),
+    updated_at: text('updated_at'),
     status: text('status').notNull(),
-    modelId: text('model_id'),
+    model_id: text('model_id'),
     model: text('model'),
     type: text('type'),
     useful: integer('useful', { mode: 'boolean' }),
-    askId: text('ask_id'),
+    ask_id: text('ask_id'),
     mentions: text('mentions'),
     usage: text('usage'),
     metrics: text('metrics'),
-    multiModelMessageStyle: text('multi_model_message_style'),
-    foldSelected: integer('fold_selected', { mode: 'boolean' })
+    multi_model_message_style: text('multi_model_message_style'),
+    fold_selected: integer('fold_selected', { mode: 'boolean' })
   },
-  table => [index('idx_messages_topic_id').on(table.topicId), index('idx_messages_assistant_id').on(table.assistantId)]
+  table => [
+    index('idx_messages_topic_id').on(table.topic_id),
+    index('idx_messages_assistant_id').on(table.assistant_id)
+  ]
 )

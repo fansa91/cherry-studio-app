@@ -1,34 +1,17 @@
+import { getSystemProviders } from '@/config/providers'
 import { DEFAULT_CONTEXTCOUNT, DEFAULT_MAX_TOKENS, DEFAULT_TEMPERATURE } from '@/constants'
 import i18n from '@/i18n'
-import { INITIAL_PROVIDERS } from '@/mock'
 import { Assistant, AssistantSettings, Model, Provider, Topic } from '@/types/assistant'
 import { uuid } from '@/utils'
 
-import { getAssistantById as _getAssistantById } from '../../db/queries/assistants.queries'
+import { getAssistantById as _getAssistantById, upsertAssistants } from '../../db/queries/assistants.queries'
+import { getProviderById } from '../../db/queries/providers.queries'
 
-export function getDefaultAssistant(): Assistant {
-  return {
-    id: 'default',
-    name: i18n.t('chat.default.name'),
-    emoji: '😀',
-    prompt: '',
-    topics: [getDefaultTopic('default')],
-    type: 'assistant',
-    settings: {
-      temperature: DEFAULT_TEMPERATURE,
-      contextCount: DEFAULT_CONTEXTCOUNT,
-      enableMaxTokens: false,
-      maxTokens: 0,
-      streamOutput: true,
-      topP: 1,
-      toolUseMode: 'prompt',
-      customParameters: []
-    }
-  }
+export async function getDefaultAssistant(): Promise<Assistant> {
+  return await getAssistantById('default')
 }
 
 export async function getAssistantById(assistantId: string): Promise<Assistant> {
-  // todo get from store
   const assistant = await _getAssistantById(assistantId)
 
   if (!assistant) {
@@ -39,11 +22,8 @@ export async function getAssistantById(assistantId: string): Promise<Assistant> 
   return assistant
 }
 
-export function getAssistantProvider(assistant: Assistant): Provider {
-  // todo
-  // const providers = store.getState().llm.providers
-  const providers = INITIAL_PROVIDERS
-  const provider = providers.find(p => p.id === assistant.model?.provider)
+export async function getAssistantProvider(assistant: Assistant): Promise<Provider> {
+  const provider = await getProviderById(assistant.model?.provider || '')
   return provider || getDefaultProvider()
 }
 
@@ -66,12 +46,12 @@ export function getDefaultProvider() {
 
 export function getDefaultModel() {
   // todo
-  return INITIAL_PROVIDERS[0].models[0]
+  return getSystemProviders()[0].models[0]
 }
 
 export function getProviderByModel(model?: Model): Provider {
   // todo
-  const providers = INITIAL_PROVIDERS
+  const providers = getSystemProviders()
   const providerId = model ? model.provider : getDefaultProvider().id
   return providers.find(p => p.id === providerId) as Provider
 }
@@ -104,4 +84,37 @@ export const getAssistantSettings = (assistant: Assistant): AssistantSettings =>
     defaultModel: assistant?.defaultModel ?? undefined,
     customParameters: assistant?.settings?.customParameters ?? []
   }
+}
+
+export async function saveAssistant(assistant: Assistant): Promise<void> {
+  try {
+    await upsertAssistants([assistant])
+  } catch (error) {
+    console.error('Error saving assistant:', error)
+    throw new Error('Failed to save assistant')
+  }
+}
+
+export async function createAssistant() {
+  const newAssistant: Assistant = {
+    id: uuid(),
+    name: i18n.t('assistant.default.name'),
+    prompt: i18n.t('assistant.default.prompt'),
+    topics: [],
+    type: 'assistant'
+  }
+
+  await saveAssistant(newAssistant)
+  return newAssistant
+}
+
+export function createBlankAssistant() {
+  const blankAssistant: Assistant = {
+    id: 'blank',
+    name: 'Blank Assistant',
+    prompt: '',
+    topics: [],
+    type: 'assistant'
+  }
+  return blankAssistant
 }

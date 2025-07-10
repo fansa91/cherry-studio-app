@@ -17,7 +17,6 @@ interface HeaderBarProps {
 }
 
 export function HeaderBar({ title, onBackPress, rightButton, rightButtons, showBackButton = true }: HeaderBarProps) {
-  // 如果同时提供了 rightButton 和 rightButtons，优先使用 rightButtons
   const buttonsToRender = rightButtons || (rightButton ? [rightButton] : [])
 
   return (

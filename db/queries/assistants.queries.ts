@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 
 import { Assistant } from '@/types/assistant'
+import { safeJsonParse } from '@/utils/json'
 
 import { db } from '..'
 import { assistants } from '../schema'
@@ -10,36 +11,23 @@ import { assistants } from '../schema'
  * @param dbRecord - 从数据库检索的记录。
  * @returns 一个 Assistant 对象。
  */
-function transformDbToAssistant(dbRecord: any): Assistant {
-  const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
-    if (typeof jsonString !== 'string') {
-      return defaultValue
-    }
-
-    try {
-      return JSON.parse(jsonString)
-    } catch (e) {
-      console.error('JSON parse error for string:', e, jsonString)
-      return defaultValue
-    }
-  }
-
+export function transformDbToAssistant(dbRecord: any): Assistant {
   return {
     id: dbRecord.id,
     name: dbRecord.name,
     prompt: dbRecord.prompt,
-    // knowledgeIds: dbRecord.knowledgeIds ? JSON.parse(dbRecord.knowledgeIds) : [],
+    // knowledgeIds: safeJsonParse(dbRecord.knowledge_ids, []),
     type: dbRecord.type,
     emoji: dbRecord.emoji,
     description: dbRecord.description,
     model: safeJsonParse(dbRecord.model),
-    defaultModel: safeJsonParse(dbRecord.defaultModel),
+    defaultModel: safeJsonParse(dbRecord.default_model),
     settings: safeJsonParse(dbRecord.settings),
-    enableWebSearch: !!dbRecord.enableWebSearch,
-    // websearchProviderId: dbRecord.websearchProviderId,
-    enableGenerateImage: !!dbRecord.enableGenerateImage,
-    // mcpServers: dbRecord.mcpServers ? JSON.parse(dbRecord.mcpServers) : undefined,
-    knowledgeRecognition: dbRecord.knowledgeRecognition,
+    enableWebSearch: !!dbRecord.enable_web_search,
+    // websearchProviderId: dbRecord.websearch_provider_id,
+    enableGenerateImage: !!dbRecord.enable_generate_image,
+    // mcpServers: safeJsonParse(dbRecord.mcp_servers),
+    knowledgeRecognition: dbRecord.knowledge_recognition,
     tags: safeJsonParse(dbRecord.tags, []),
     group: safeJsonParse(dbRecord.group, []),
     topics: [] // 初始化 topics 为一个空数组
@@ -56,18 +44,18 @@ function transformAssistantToDb(assistant: Assistant): any {
     id: assistant.id,
     name: assistant.name,
     prompt: assistant.prompt,
-    // knowledgeIds: assistant.knowledgeIds ? JSON.stringify(assistant.knowledgeIds) : null,
+    // knowledge_ids: assistant.knowledgeIds ? JSON.stringify(assistant.knowledgeIds) : null,
     type: assistant.type,
     emoji: assistant.emoji,
     description: assistant.description,
     model: assistant.model ? JSON.stringify(assistant.model) : null,
-    defaultModel: assistant.defaultModel ? JSON.stringify(assistant.defaultModel) : null,
+    default_model: assistant.defaultModel ? JSON.stringify(assistant.defaultModel) : null,
     settings: assistant.settings ? JSON.stringify(assistant.settings) : null,
-    enableWebSearch: assistant.enableWebSearch ? 1 : 0,
-    // websearchProviderId: assistant.websearchProviderId,
-    enableGenerateImage: assistant.enableGenerateImage ? 1 : 0,
-    // mcpServers: assistant.mcpServers ? JSON.stringify(assistant.mcpServers) : null,
-    knowledgeRecognition: assistant.knowledgeRecognition,
+    enable_web_search: assistant.enableWebSearch ? 1 : 0,
+    // websearch_provider_id: assistant.websearchProviderId,
+    enable_generate_image: assistant.enableGenerateImage ? 1 : 0,
+    // mcp_servers: assistant.mcpServers ? JSON.stringify(assistant.mcpServers) : null,
+    knowledge_recognition: assistant.knowledgeRecognition,
     tags: assistant.tags ? JSON.stringify(assistant.tags) : null,
     group: assistant.group ? JSON.stringify(assistant.group) : null
   }

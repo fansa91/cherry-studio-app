@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 
 import { Message } from '@/types/message'
+import { safeJsonParse } from '@/utils/json'
 
 import { db } from '..'
 import { messages } from '../schema'
@@ -12,37 +13,24 @@ import { getBlocksIdByMessageId } from './messageBlocks.queries'
  * @returns 一个 Message 对象。
  */
 export function transformDbToMessage(dbRecord: any): Message {
-  const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
-    if (typeof jsonString !== 'string') {
-      return defaultValue
-    }
-
-    try {
-      return JSON.parse(jsonString)
-    } catch (e) {
-      console.error('JSON parse error for string:', jsonString)
-      return defaultValue
-    }
-  }
-
   return {
     id: dbRecord.id,
     role: dbRecord.role,
-    assistantId: dbRecord.assistantId,
-    topicId: dbRecord.topicId,
-    createdAt: dbRecord.createdAt,
-    updatedAt: dbRecord.updatedAt,
+    assistantId: dbRecord.assistant_id,
+    topicId: dbRecord.topic_id,
+    createdAt: dbRecord.created_at,
+    updatedAt: dbRecord.updated_at,
     status: dbRecord.status,
-    modelId: dbRecord.modelId,
+    modelId: dbRecord.model_id,
     model: dbRecord.model ? safeJsonParse(dbRecord.model) : undefined,
     type: dbRecord.type,
     useful: !!dbRecord.useful,
-    askId: dbRecord.askId,
+    askId: dbRecord.ask_id,
     mentions: dbRecord.mentions ? safeJsonParse(dbRecord.mentions) : undefined,
     usage: dbRecord.usage ? safeJsonParse(dbRecord.usage) : undefined,
     metrics: dbRecord.metrics ? safeJsonParse(dbRecord.metrics) : undefined,
-    multiModelMessageStyle: dbRecord.multiModelMessageStyle,
-    foldSelected: !!dbRecord.foldSelected,
+    multiModelMessageStyle: dbRecord.multi_model_message_style,
+    foldSelected: !!dbRecord.fold_selected,
     // 注意：'blocks' 字段需要通过查询 message_blocks 表来单独填充。
     blocks: []
   }
@@ -59,22 +47,22 @@ function transformMessageToDb(message: Partial<Message>): any {
 
   if (message.id !== undefined) dbRecord.id = message.id
   if (message.role !== undefined) dbRecord.role = message.role
-  if (message.assistantId !== undefined) dbRecord.assistantId = message.assistantId
-  if (message.topicId !== undefined) dbRecord.topicId = message.topicId
-  if (message.createdAt !== undefined) dbRecord.createdAt = message.createdAt
-  if (message.updatedAt !== undefined) dbRecord.updatedAt = message.updatedAt
+  if (message.assistantId !== undefined) dbRecord.assistant_id = message.assistantId
+  if (message.topicId !== undefined) dbRecord.topic_id = message.topicId
+  if (message.createdAt !== undefined) dbRecord.created_at = message.createdAt
+  if (message.updatedAt !== undefined) dbRecord.updated_at = message.updatedAt
   if (message.status !== undefined) dbRecord.status = message.status
-  if (message.modelId !== undefined) dbRecord.modelId = message.modelId
+  if (message.modelId !== undefined) dbRecord.model_id = message.modelId
   if (message.type !== undefined) dbRecord.type = message.type
-  if (message.askId !== undefined) dbRecord.askId = message.askId
-  if (message.multiModelMessageStyle !== undefined) dbRecord.multiModelMessageStyle = message.multiModelMessageStyle
+  if (message.askId !== undefined) dbRecord.ask_id = message.askId
+  if (message.multiModelMessageStyle !== undefined) dbRecord.multi_model_message_style = message.multiModelMessageStyle
 
   if (message.useful !== undefined) {
     dbRecord.useful = message.useful ? 1 : 0
   }
 
   if (message.foldSelected !== undefined) {
-    dbRecord.foldSelected = message.foldSelected ? 1 : 0
+    dbRecord.fold_selected = message.foldSelected ? 1 : 0
   }
 
   if (message.model !== undefined) {
@@ -126,7 +114,7 @@ export async function getMessageById(messageId: string): Promise<Message | undef
  */
 export async function getMessagesByTopicId(topicId: string): Promise<Message[]> {
   try {
-    const results = await db.select().from(messages).where(eq(messages.topicId, topicId))
+    const results = await db.select().from(messages).where(eq(messages.topic_id, topicId))
 
     if (results.length === 0) {
       return []
@@ -150,29 +138,35 @@ export async function getMessagesByTopicId(topicId: string): Promise<Message[]> 
 }
 
 /**
- * 插入或更新单个消息。
- * 如果消息已存在，则更新它；如果不存在，则插入新消息。
- * @param topicId - 主题的 ID。
- * @param message - 要插入或更新的消息对象。
+ * 插入或更新一个或多个消息 (Upsert)。
+ * @param messagesToUpsert - 要插入或更新的 Message 对象或对象数组。
+ * @returns 包含已更新或插入的消息的数组的 Promise。
  */
-export async function upsertOneMessage(message: Message): Promise<Message> {
+export async function upsertMessages(messagesToUpsert: Message | Message[]): Promise<Message[]> {
+  const messagesArray = Array.isArray(messagesToUpsert) ? messagesToUpsert : [messagesToUpsert]
+  if (messagesArray.length === 0) return []
+
   try {
-    const existingMessage = await getMessageById(message.id)
+    const dbRecords = messagesArray.map(transformMessageToDb)
 
-    if (existingMessage) {
-      // 更新现有消息
-      const dbRecord = transformMessageToDb(message)
-      return transformDbToMessage(
-        await db.update(messages).set(dbRecord).where(eq(messages.id, message.id)).returning()
-      )
-    } else {
-      // 插入新消息
-      const dbRecord = transformMessageToDb(message)
+    // 为每个记录创建一个 upsert promise
+    const upsertPromises = dbRecords.map(record =>
+      db
+        .insert(messages)
+        .values(record)
+        .onConflictDoUpdate({
+          target: messages.id,
+          set: record // 更新除主键外的所有字段
+        })
+        .returning()
+    )
 
-      return transformDbToMessage(await db.insert(messages).values(dbRecord).returning())
-    }
+    const results = await Promise.all(upsertPromises)
+    const flattenedResults = results.flat() // .returning() 为每个 promise 返回一个数组，因此需要展平
+
+    return flattenedResults.map(transformDbToMessage)
   } catch (error) {
-    console.error(`Error upserting message with ID ${message.id}:`, error)
+    console.error('Error upserting message(s):', error)
     throw error
   }
 }

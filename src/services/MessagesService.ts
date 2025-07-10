@@ -6,9 +6,9 @@ import {
   MessageBlock,
   MessageBlockStatus,
   MessageBlockType,
-  PlaceholderMessageBlock
+  PlaceholderMessageBlock,
+  Response
 } from '@/types/message'
-import { Response } from '@/types/message'
 import { uuid } from '@/utils'
 import { formatErrorMessage, isAbortError } from '@/utils/error'
 import {
@@ -19,25 +19,19 @@ import {
   createImageBlock,
   createMainTextBlock,
   createMessage,
-  createThinkingBlock
+  createThinkingBlock,
+  resetAssistantMessage
 } from '@/utils/messageUtils/create'
 import { getMainTextContent } from '@/utils/messageUtils/find'
+import { getTopicQueue } from '@/utils/queue'
 
-import { updateOneBlock, upsertManyBlocks, upsertOneBlock } from '../../db/queries/messageBlocks.queries'
-import { getMessageById, getMessagesByTopicId, upsertOneMessage } from '../../db/queries/messages.queries'
+import { removeManyBlocks, updateOneBlock, upsertBlocks } from '../../db/queries/messageBlocks.queries'
+import { getMessageById, getMessagesByTopicId, upsertMessages } from '../../db/queries/messages.queries'
 import { getTopicById, updateTopicMessages } from '../../db/queries/topics.queries'
-import { fetchChatCompletion } from './ApiService'
 import { getDefaultModel } from './AssistantService'
+import { OrchestrationService } from './OrchestrationService'
 import { createStreamProcessor, StreamProcessorCallbacks } from './StreamProcessingService'
 import { estimateMessagesUsage } from './TokenService'
-export {
-  filterContextMessages,
-  filterEmptyMessages,
-  filterMessages,
-  filterUsefulMessages,
-  filterUserRoleStartMessages,
-  getGroupedMessages
-} from '@/utils/messageUtils/filters'
 
 /**
  * Creates a user message object and associated blocks based on input.
@@ -70,16 +64,6 @@ export function getUserMessage({
   const blocks: MessageBlock[] = []
   const blockIds: string[] = []
 
-  // 内容为空也应该创建空文本块
-  if (content !== undefined) {
-    // Pass messageId when creating blocks
-    const textBlock = createMainTextBlock(messageId, content, {
-      status: MessageBlockStatus.SUCCESS
-    })
-    blocks.push(textBlock)
-    blockIds.push(textBlock.id)
-  }
-
   if (files?.length) {
     files.forEach(file => {
       if (file.type === FileTypes.IMAGE) {
@@ -92,6 +76,16 @@ export function getUserMessage({
         blockIds.push(fileBlock.id)
       }
     })
+  }
+
+  // 内容为空也应该创建空文本块
+  if (content !== undefined) {
+    // Pass messageId when creating blocks
+    const textBlock = createMainTextBlock(messageId, content, {
+      status: MessageBlockStatus.SUCCESS
+    })
+    blocks.push(textBlock)
+    blockIds.push(textBlock.id)
   }
 
   // 直接在createMessage中传入id
@@ -128,6 +122,12 @@ export async function sendMessage(
   topicId: Topic['id']
 ) {
   try {
+    // mock mentions model
+    // userMessage.mentions = [
+    //   { id: 'deepseek-ai/DeepSeek-V3', name: 'deepseek-ai/DeepSeek-V3', provider: 'silicon', group: 'deepseek-ai' },
+    //   { id: 'deepseek-ai/DeepSeek-R1', name: 'deepseek-ai/DeepSeek-R1', provider: 'silicon', group: 'deepseek-ai' }
+    // ]
+
     if (userMessage.blocks.length === 0) {
       console.warn('sendMessage: No blocks in the provided message.')
       return
@@ -135,24 +135,102 @@ export async function sendMessage(
 
     // add message to database
     await saveMessageAndBlocksToDB(userMessage, userMessageBlocks)
-    await upsertOneMessage(userMessage)
+    await upsertMessages(userMessage)
 
-    const assistantMessage = createAssistantMessage(assistant.id, topicId, {
-      askId: userMessage.id,
-      model: assistant.model
-    })
-    await saveMessageAndBlocksToDB(assistantMessage, [])
-    await upsertOneMessage(assistantMessage)
-    await fetchAndProcessAssistantResponseImpl(topicId, assistant, assistantMessage)
+    const mentionedModels = userMessage.mentions
+
+    if (mentionedModels && mentionedModels.length > 0) {
+      await multiModelResponses(topicId, assistant, userMessage, mentionedModels)
+    } else {
+      const assistantMessage = createAssistantMessage(assistant.id, topicId, {
+        askId: userMessage.id,
+        model: assistant.model
+      })
+      await saveMessageAndBlocksToDB(assistantMessage, [])
+      await upsertMessages(assistantMessage)
+      await fetchAndProcessAssistantResponseImpl(topicId, assistant, assistantMessage)
+    }
   } catch (error) {
     console.error('Error in sendMessage:', error)
+  }
+}
+
+export async function regenerateAssistantMessage(assistantMessage: Message, assistant: Assistant) {
+  const topicId = assistantMessage.topicId
+
+  try {
+    // 1. Use selector to get all messages for the topic
+    const allMessagesForTopic = await getMessagesByTopicId(topicId)
+
+    // 2. Find the original user query (Restored Logic)
+    const originalUserQuery = allMessagesForTopic.find(m => m.id === assistantMessage.askId)
+
+    if (!originalUserQuery) {
+      console.error(
+        `[regenerateAssistantResponseThunk] Original user query (askId: ${assistantMessage.askId}) not found for assistant message ${assistantMessage.id}. Cannot regenerate.`
+      )
+      return
+    }
+
+    // 3. Verify the assistant message itself exists in entities
+    const messageToResetEntity = await getMessageById(assistantMessage.id)
+
+    if (!messageToResetEntity) {
+      // No need to check topicId again as selector implicitly handles it
+      console.error(
+        `[regenerateAssistantResponseThunk] Assistant message ${assistantMessage.id} not found in entities despite being in the topic list. State might be inconsistent.`
+      )
+      return
+    }
+
+    // 4. Get Block IDs to delete
+    const blockIdsToDelete = [...(messageToResetEntity.blocks || [])]
+
+    // 5. Reset the message entity in Database
+    const resetAssistantMsg = resetAssistantMessage(
+      messageToResetEntity,
+      // Grouped message (mentioned model message) should not reset model and modelId, always use the original model
+      assistantMessage.modelId
+        ? {
+            status: AssistantMessageStatus.PENDING,
+            updatedAt: new Date().toISOString()
+          }
+        : {
+            status: AssistantMessageStatus.PENDING,
+            updatedAt: new Date().toISOString(),
+            model: assistant.model
+          }
+    )
+
+    await upsertMessages(resetAssistantMsg)
+    // 6. Remove old blocks from Database
+    await cleanupMultipleBlocks(blockIdsToDelete)
+
+    // // 7. Update DB: Save the reset message state within the topic and delete old blocks
+    // // Fetch the current state *after* Database updates to get the latest message list
+    // // Use the selector to get the final ordered list of messages for the topic
+    // const finalMessagesToSave = await getMessagesByTopicId(topicId)
+
+    // 7. Add fetch/process call to the queue
+    const queue = getTopicQueue(topicId)
+    const assistantConfigForRegen = {
+      ...assistant,
+      ...(resetAssistantMsg.model ? { model: resetAssistantMsg.model } : {})
+    }
+
+    // Add the fetch/process call to the queue
+    queue.add(
+      async () => await fetchAndProcessAssistantResponseImpl(topicId, assistantConfigForRegen, resetAssistantMsg)
+    )
+  } catch (error) {
+    console.error('Error in regenerateAssistantMessage:', error)
   }
 }
 
 export async function saveMessageAndBlocksToDB(message: Message, blocks: MessageBlock[], messageIndex: number = -1) {
   try {
     if (blocks.length > 0) {
-      await upsertManyBlocks(blocks)
+      await upsertBlocks(blocks)
     }
 
     // get topic from database
@@ -182,10 +260,11 @@ export async function saveMessageAndBlocksToDB(message: Message, blocks: Message
   }
 }
 
+// Internal function extracted from sendMessage to handle fetching and processing assistant response
 export async function fetchAndProcessAssistantResponseImpl(
   topicId: string,
   assistant: Assistant,
-  assistantMessage: Message // Pass the prepared assistant message (new or reset)
+  assistantMessage: Message
 ) {
   const assistantMsgId = assistantMessage.id
   let callbacks: StreamProcessorCallbacks = {}
@@ -220,7 +299,7 @@ export async function fetchAndProcessAssistantResponseImpl(
       }
 
       // add new block to database
-      await upsertOneBlock(newBlock)
+      await upsertBlocks(newBlock)
 
       // change message status
       const toBeUpdatedMessage = await getMessageById(newBlock.messageId)
@@ -247,7 +326,7 @@ export async function fetchAndProcessAssistantResponseImpl(
         toBeUpdatedMessage.status = AssistantMessageStatus.PROCESSING
       }
 
-      const updatedMessage = await upsertOneMessage(toBeUpdatedMessage)
+      const updatedMessage = await upsertMessages(toBeUpdatedMessage)
 
       if (!updatedMessage) {
         console.error(`[handleBlockTransition] Failed to update message ${toBeUpdatedMessage.id} in state.`)
@@ -438,7 +517,7 @@ export async function fetchAndProcessAssistantResponseImpl(
 
         toBeUpdatedMessage.status = errorStatus
 
-        const updatedMessage = await upsertOneMessage(toBeUpdatedMessage)
+        const updatedMessage = await upsertMessages(toBeUpdatedMessage)
 
         if (!updatedMessage) {
           console.error(`[onError] Failed to update message ${toBeUpdatedMessage.id} in state.`)
@@ -502,8 +581,7 @@ export async function fetchAndProcessAssistantResponseImpl(
               response?.usage?.prompt_tokens === 0 ||
               response?.usage?.completion_tokens === 0)
           ) {
-            const usage = await estimateMessagesUsage({ assistant, messages: finalContextWithAssistant })
-            response.usage = usage
+            response.usage = await estimateMessagesUsage({ assistant, messages: finalContextWithAssistant })
           }
 
           // todo set topic loading
@@ -524,18 +602,88 @@ export async function fetchAndProcessAssistantResponseImpl(
 
         const messageUpdates: Partial<Message> = { status, metrics: response?.metrics, usage: response?.usage }
 
-        await upsertOneMessage({ ...finalAssistantMsg, ...messageUpdates })
+        await upsertMessages({ ...finalAssistantMsg, ...messageUpdates })
       }
     }
     const streamProcessorCallbacks = createStreamProcessor(callbacks)
 
     const startTime = Date.now()
-    await fetchChatCompletion({
-      messages: messagesForContext,
-      assistant: assistant,
-      onChunkReceived: streamProcessorCallbacks
-    })
+    const orchestrationService = new OrchestrationService()
+    await orchestrationService.handleUserMessage(
+      {
+        messages: messagesForContext,
+        assistant,
+        options: {
+          timeout: 30000
+        }
+      },
+      streamProcessorCallbacks
+    )
   } catch (error) {
     console.error('Error in fetchAndProcessAssistantResponseImpl:', error)
+  }
+}
+
+// --- Helper Function for Multi-Model Dispatch ---
+// 多模型创建和发送请求的逻辑，用于用户消息多模型发送和重发
+export async function multiModelResponses(
+  topicId: string,
+  assistant: Assistant,
+  triggeringMessage: Message, // userMessage or messageToResend
+  mentionedModels: Model[]
+) {
+  console.log('multiModelResponses')
+  const assistantMessageStubs: Message[] = []
+  const tasksToQueue: { assistantConfig: Assistant; messageStub: Message }[] = []
+
+  for (const mentionedModel of mentionedModels) {
+    const assistantForThisMention = { ...assistant, model: mentionedModel }
+    const assistantMessage = createAssistantMessage(assistant.id, topicId, {
+      askId: triggeringMessage.id,
+      model: mentionedModel,
+      modelId: mentionedModel.id
+    })
+    await upsertMessages(assistantMessage)
+    assistantMessageStubs.push(assistantMessage)
+    tasksToQueue.push({ assistantConfig: assistantForThisMention, messageStub: assistantMessage })
+  }
+
+  const queue = getTopicQueue(topicId)
+
+  for (const task of tasksToQueue) {
+    queue.add(async () => {
+      await fetchAndProcessAssistantResponseImpl(topicId, task.assistantConfig, task.messageStub)
+    })
+  }
+}
+// --- End Helper Function ---
+
+/**
+ * 批量清理多个消息块。
+ */
+export async function cleanupMultipleBlocks(blockIds: string[]) {
+  // blockIds.forEach(id => {
+  //   cancelThrottledBlockUpdate(id)
+  // })
+
+  // const getBlocksFiles = async (blockIds: string[]) => {
+  //   const blocks = await Promise.all(blockIds.map(id => getBlockById(id)))
+
+  //   const files = blocks
+  //     .filter((block): block is MessageBlock => block !== null)
+  //     .filter(block => block.type === MessageBlockType.FILE || block.type === MessageBlockType.IMAGE)
+  //     .map(block => block.file)
+  //     .filter((file): file is FileType => file !== undefined)
+  //   return isEmpty(files) ? [] : files
+  // }
+
+  // const cleanupFiles = async (files: FileType[]) => {
+  //   await Promise.all(files.map(file => FileManager.deleteFile(file.id, false)))
+  // }
+
+  // getBlocksFiles(blockIds).then(cleanupFiles)
+
+  if (blockIds.length > 0) {
+    await removeManyBlocks(blockIds)
   }
 }

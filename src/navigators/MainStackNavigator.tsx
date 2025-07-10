@@ -8,19 +8,20 @@ import AssistantMarketScreen from '@/screens/assistant/AssistantMarketScreen'
 import AssistantScreen from '@/screens/assistant/AssistantScreen'
 import HomeScreen from '@/screens/home/HomeScreen'
 import AboutScreen from '@/screens/settings/about/AboutScreen'
+import AssistantSettingsScreen from '@/screens/settings/assistant/AssistantSettingsScreen'
 import BasicDataSettingsScreen from '@/screens/settings/data/BasicDataSettingsScreen'
 import DataSettingsScreen from '@/screens/settings/data/DataSettingsScreen'
+import JoplinSettingsScreen from '@/screens/settings/data/JoplinSettingsScreen'
+import NotionSettingsScreen from '@/screens/settings/data/NotionSettingsScreen'
 import NutstoreLoginScreen from '@/screens/settings/data/NutstoreLoginScreen'
+import ObsidianSettingsScreen from '@/screens/settings/data/ObsidianSettingsScreen'
+import SiyuanSettingsScreen from '@/screens/settings/data/SiyuanSettingsScreen'
 import WebDavConfigScreen from '@/screens/settings/data/WebDavConfigScreen'
 import WebDavScreen from '@/screens/settings/data/WebDavScreen'
+import YuqueSettingsScreen from '@/screens/settings/data/YuqueSettingsScreen'
 import GeneralSettingsScreen from '@/screens/settings/general/GeneralSettingsScreen'
 import LanguageChangeScreen from '@/screens/settings/general/LanguageChangeScreen'
 import ThemeSettingsScreen from '@/screens/settings/general/ThemeSettingsScreen'
-import DefaultAssistantSettingsScreen from '@/screens/settings/model/DefaultAssistantSettingsScreen'
-import ModelSettingsScreen from '@/screens/settings/model/ModelSettingsScreen'
-import NamingModelSettingsScreen from '@/screens/settings/model/NamingModelSettingsScreen'
-import TranslateLanguageChooseScreen from '@/screens/settings/model/TranslateLanguageChooseScreen'
-import TranslateModelSettingsScreen from '@/screens/settings/model/TranslateModelSettingsScreen'
 import ApiServiceScreen from '@/screens/settings/providers/ApiServiceScreen'
 import ManageModelsScreen from '@/screens/settings/providers/ManageModelsScreen'
 import ProviderListScreen from '@/screens/settings/providers/ProviderListScreen'
@@ -60,11 +61,7 @@ export default function MainStackNavigator() {
       <Stack.Screen name="ApiServiceScreen" component={ApiServiceScreen} />
 
       {/* Model Settings Screen */}
-      <Stack.Screen name="ModelSettingsScreen" component={ModelSettingsScreen} />
-      <Stack.Screen name="DefaultAssistantSettingsScreen" component={DefaultAssistantSettingsScreen} />
-      <Stack.Screen name="NamingModelSettingsScreen" component={NamingModelSettingsScreen} />
-      <Stack.Screen name="TranslateModelSettingsScreen" component={TranslateModelSettingsScreen} />
-      <Stack.Screen name="TranslateLanguageChooseScreen" component={TranslateLanguageChooseScreen} />
+      <Stack.Screen name="AssistantSettingsScreen" component={AssistantSettingsScreen} />
 
       {/* Web Search Screen */}
       <Stack.Screen name="WebSearchSettingsScreen" component={WebSearchSettingsScreen} />
@@ -77,6 +74,13 @@ export default function MainStackNavigator() {
       <Stack.Screen name="DataSettingsScreen" component={DataSettingsScreen} />
       <Stack.Screen name="BasicDataSettingsScreen" component={BasicDataSettingsScreen} />
       <Stack.Screen name="NutstoreLoginScreen" component={NutstoreLoginScreen} />
+      <Stack.Screen name="NotionSettingsScreen" component={NotionSettingsScreen} />
+      <Stack.Screen name="YuqueSettingsScreen" component={YuqueSettingsScreen} />
+      <Stack.Screen name="JoplinSettingsScreen" component={JoplinSettingsScreen} />
+      <Stack.Screen name="ObsidianSettingsScreen" component={ObsidianSettingsScreen} />
+      <Stack.Screen name="SiyuanSettingsScreen" component={SiyuanSettingsScreen} />
+
+      {/* WebDav Screen */}
       <Stack.Screen name="WebDavScreen" component={WebDavScreen} />
       <Stack.Screen name="WebDavConfigScreen" component={WebDavConfigScreen} />
 

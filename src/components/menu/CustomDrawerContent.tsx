@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Avatar, Button, Text, View, XStack, YStack } from 'tamagui'
 
 import { MenuTabContent } from '@/components/menu/MenuTabContent'
+import { deleteTopicById } from '@/services/TopicService'
 import { Topic } from '@/types/assistant'
 import { runAsyncFunction } from '@/utils'
 
@@ -17,15 +18,13 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
   const [topics, setTopics] = useState<Topic[]>([])
   const isDrawerOpen = useDrawerStatus() === 'open'
 
-  const refreshTopics = () => {
-    runAsyncFunction(async () => {
-      try {
-        const topicsData = await getTopics()
-        setTopics(topicsData)
-      } catch (error) {
-        console.error('Failed to fetch topics:', error)
-      }
-    })
+  const refreshTopics = async () => {
+    try {
+      const topicsData = await getTopics()
+      setTopics(topicsData)
+    } catch (error) {
+      console.error('Failed to fetch topics:', error)
+    }
   }
 
   const handleTopicSeeAll = () => {
@@ -33,7 +32,20 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
     console.log('Navigate to all topics')
   }
 
-  const renderItem = ({ item }: { item: Topic }) => <TopicItem topic={item} onTopicDeleted={refreshTopics} />
+  const handleDeleteTopic = async (topicId: string) => {
+    // 1. 乐观更新UI：立即从状态中移除该项
+    setTopics(prevTopics => prevTopics.filter(topic => topic.id !== topicId))
+
+    // 2. 在后台执行实际的删除操作
+    try {
+      await deleteTopicById(topicId)
+    } catch (error) {
+      console.error('Failed to delete topic in background:', error)
+      await refreshTopics()
+    }
+  }
+
+  const renderItem = ({ item }: { item: Topic }) => <TopicItem topic={item} onDelete={handleDeleteTopic} />
 
   useEffect(() => {
     if (isDrawerOpen) {

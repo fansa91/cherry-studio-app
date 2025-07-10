@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetTextInput } from '@gorhom/bottom-sheet' // For type if needed
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Text, XStack, YStack } from 'tamagui'
 
@@ -20,7 +20,7 @@ export function AddModelSheet({
   // onAddModel,
 }: AddModelSheetProps) {
   const { t } = useTranslation()
-  const snapPoints = useMemo(() => ['55%'], [])
+  const snapPoints = ['55%']
   const [modelId, setModelId] = useState('')
   const [modelName, setModelName] = useState('')
   const [modelGroup, setModelGroup] = useState('')

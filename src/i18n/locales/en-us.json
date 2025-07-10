@@ -90,7 +90,20 @@
       "tool": "Tool",
       "added": " Added",
       "visit": "Visit",
-      "see_all": "See All"
+      "see_all": "See All",
+      "ok": "OK",
+      "error_occurred": "An error occurred",
+      "loading": "Loading...",
+      "file": "File",
+      "photo": "Photo",
+      "camera": "Camera",
+      "clear_all": "Clear All"
+    },
+    "errors": {
+      "cannotOpenLink": "Cannot open link: {{error}}",
+      "linkErrorTitle": "Link Opening Error",
+      "deviceCannotHandleLink": "Your device cannot handle this link: {{href}}",
+      "cannotOpenLinkTitle": "Cannot Open Link"
     },
     "history": {
       "topics.empty": " No topics found",
@@ -140,6 +153,22 @@
           "button": "Website"
         }
       },
+      "assistant": {
+        "title": "Default Assistant",
+        "default_assistant": {
+          "name": "Default Assistant",
+          "description": "Assistant used when creating a new assistant, if the assistant is not set, this assistant will be used"
+        },
+        "topic_naming_assistant": {
+          "name": "Topic Naming Assistant",
+          "description": "Assistant used when automatically naming a new topic"
+        },
+        "translate_assistant": {
+          "name": "Translation Assistant",
+          "description": "Assistant used for translation service"
+        },
+        "empty": "No Assistant yet..."
+      },
       "data": {
         "app_data": "App Data",
         "app_logs": "App Logs",
@@ -160,41 +189,11 @@
       },
       "models": {
         "default_model": "Default Model",
-        "default_assistant_model": "Default Assistant",
-        "default_assistant_model_description": "Model used when creating a new assistant, if the assistant is not set, this model will be used",
-        "default_assistant_settings": {
-          "hint.name": "Name",
-          "hint.placeholder": "Default Assistant",
-          "hint.prompt": "Prompt",
-          "hint.params": "Model Parameters"
-        },
         "empty": "No Model yet...",
         "empty.tooltip": "The page you were looking for is beyond our reach. Sorry for the inconvenience.",
         "empty.add_model": "Let's add your first model",
-        "translate_model": "Translate Model",
-        "translate_model_description": "Model used for translation service",
-        "translate_model_setting": {
-          "hint": {
-            "assistant": "Translation Assistant",
-            "specify_language": "Specify Language",
-            "target_language": "Target Language",
-            "local_language": "Local Language",
-            "prompt": "Prompt"
-          },
-          "language_choose": {
-            "title": "Language Selection"
-          }
-        },
         "search": "Search Models...",
         "title": "Models",
-        "topic_naming_model": "Topic Naming Model",
-        "topic_naming_model_description": "Model used for naming new topic",
-        "topic_naming_settings": {
-          "hint.autonaming": "Session Auto Naming",
-          "hint.prompt": "Prompt"
-        },
-        "quick_assistant": "Quick Assistant",
-        "quick_assistant_description": "The model used by the Quick Assistant",
         "add.model": "Add Model",
         "add.model.id": "Model ID",
         "add.model.id.placeholder": "Required e.g. gpt-4o",
@@ -232,7 +231,9 @@
           "login": "Log in",
           "balance_recharge": "Balance Recharge",
           "free_bills": "Free Bills"
-        }
+        },
+        "not_found": "Provider not found",
+        "not_found_message": "There is an error navigate to the provider page."
       },
       "proxy.title": "Proxy Address",
       "theme.window.style.opaque": "Opaque Window",
@@ -256,6 +257,87 @@
         "backupPath": "Backup Storage Path",
         "logout": "Log Out",
         "login": "Login with Nutstore Account"
+      },
+      "notion": {
+        "api_key": "Notion API Key",
+        "api_key_placeholder": "Enter Notion API Key",
+        "check": {
+          "button": "Check",
+          "empty_api_key": "API key is not configured",
+          "empty_database_id": "Database ID is not configured",
+          "error": "Connection error, please check network configuration and API key and Database ID",
+          "fail": "Connection failed, please check network and API key and Database ID",
+          "success": "Connection successful"
+        },
+        "database_id": "Notion Database ID",
+        "database_id_placeholder": "Enter Notion Database ID",
+        "help": "Notion Configuration Documentation",
+        "page_name_key": "Page Title Field Name",
+        "page_name_key_placeholder": "Enter page title field name, default is Name",
+        "title": "Notion Settings",
+        "export_reasoning.title": "Include Reasoning Chain in Export",
+        "export_reasoning.help": "When enabled, exported content will include reasoning chain (thought process)."
+      },
+      "yuque": {
+        "check": {
+          "button": "Check",
+          "empty_repo_url": "Please enter the knowledge base URL first",
+          "empty_token": "Please enter the Yuque Token first",
+          "fail": "Yuque connection verification failed",
+          "success": "Yuque connection verified successfully"
+        },
+        "help": "Get Yuque Token",
+        "repo_url": "Yuque URL",
+        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
+        "title": "Yuque Configuration",
+        "token": "Yuque Token",
+        "token_placeholder": "Please enter the Yuque Token"
+      },
+      "joplin": {
+        "check": {
+          "button": "Check",
+          "empty_token": "Please enter Joplin Authorization Token",
+          "empty_url": "Please enter Joplin Clipper Service URL",
+          "fail": "Joplin connection verification failed",
+          "success": "Joplin connection verification successful"
+        },
+        "help": "Click here to get Joplin Authorization Token",
+        "title": "Joplin Configuration",
+        "token": "Joplin Authorization Token",
+        "token_placeholder": "Joplin Authorization Token",
+        "url": "Joplin Web Clipper Service URL",
+        "url_placeholder": "http://127.0.0.1:41184/",
+        "export_reasoning.title": "Include Reasoning Chain in Export",
+        "export_reasoning.help": "When enabled, the exported content will include the reasoning chain (thought process) generated by the assistant."
+      },
+      "obsidian": {
+        "title": "Obsidian Configuration",
+        "default_vault": "Default Obsidian Vault",
+        "default_vault_placeholder": "Please select the default Obsidian vault",
+        "default_vault_loading": "Loading Obsidian vault...",
+        "default_vault_no_vaults": "No Obsidian vaults found",
+        "default_vault_fetch_error": "Failed to fetch Obsidian vault",
+        "default_vault_export_failed": "Export failed"
+      },
+      "siyuan": {
+        "title": "Siyuan Note Configuration",
+        "api_url": "Siyuan Note API URL",
+        "api_url_placeholder": "e.g.: http://127.0.0.1:6806",
+        "token": "Siyuan Note Token",
+        "token.help": "Get Siyuan Note Token",
+        "token_placeholder": "Please enter Siyuan Note Token",
+        "box_id": "Siyuan Note Box ID",
+        "box_id_placeholder": "Please enter Siyuan Note Box ID",
+        "root_path": "Siyuan Note Root Path",
+        "root_path_placeholder": "e.g.: /CherryStudio",
+        "check": {
+          "title": "Connection Check",
+          "button": "Check",
+          "empty_config": "Please fill in the API address and token",
+          "success": "Connection successful",
+          "fail": "Connection failed, please check API address and token",
+          "error": "Connection error, please check network connection"
+        }
       },
       "websearch": {
         "api_service": "API Service",
@@ -284,7 +366,11 @@
           "api": {
             "title": "API Service Providers"
           }
-        }
+        },
+        "check_success": "Check Success",
+        "check_success_message": "The API is working properly",
+        "check_fail": "Check Fail",
+        "check_error": "Check Error"
       },
       "modelAndService": "AI Models & Services",
       "dataAndSecurity": "Data & Security",

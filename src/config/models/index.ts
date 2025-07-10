@@ -1,7 +1,10 @@
 // 导出所有模型相关功能
 import OpenAI from 'openai'
 
+import { getProviderByModel } from '@/services/AssistantService'
 import { Model } from '@/types/assistant'
+
+import { isOpenAIReasoningModel } from './reasoning'
 
 export interface ModelGroup {
   [provider: string]: Model[]
@@ -103,4 +106,42 @@ export function isGemmaModel(model?: Model): boolean {
   }
 
   return model.id.includes('gemma-') || model.group === 'Gemma'
+}
+
+export function isNotSupportTemperatureAndTopP(model: Model): boolean {
+  if (!model) {
+    return true
+  }
+
+  if (isOpenAIReasoningModel(model) || isOpenAIChatCompletionOnlyModel(model)) {
+    return true
+  }
+
+  return false
+}
+
+export function isSupportedFlexServiceTier(model: Model): boolean {
+  if (!model) {
+    return false
+  }
+
+  return (model.id.includes('o3') && !model.id.includes('o3-mini')) || model.id.includes('o4-mini')
+}
+
+export function isOpenRouterBuiltInWebSearchModel(model: Model): boolean {
+  if (!model) {
+    return false
+  }
+
+  const provider = getProviderByModel(model)
+
+  if (provider.id !== 'openrouter') {
+    return false
+  }
+
+  return isOpenAIWebSearchChatCompletionOnlyModel(model) || model.id.includes('sonar')
+}
+
+export function isOpenAIWebSearchChatCompletionOnlyModel(model: Model): boolean {
+  return model.id.includes('gpt-4o-search-preview') || model.id.includes('gpt-4o-mini-search-preview')
 }

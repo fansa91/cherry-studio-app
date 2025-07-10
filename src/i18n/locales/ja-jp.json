@@ -90,7 +90,14 @@
       "tool": "ツール",
       "added": "追加済み",
       "visit": "訪問",
-      "see_all": "すべて表示"
+      "see_all": "すべて表示",
+      "ok": "OK",
+      "error_occurred": "エラーが発生しました",
+      "loading": "読み込み中...",
+      "file": "ファイル",
+      "photo": "写真",
+      "clear_all": "すべてクリア",
+      "camera": "カメラ"
     },
     "history": {
       "topics.empty": "トピックが見つかりません。",
@@ -118,40 +125,11 @@
       },
       "models": {
         "default_model": "デフォルトモデル",
-        "default_assistant_model": "デフォルトアシスタントモデル",
-        "default_assistant_model_description": "新しいアシスタントを作成する際に使用するモデル。アシスタントが設定されていない場合、このモデルが使用されます。",
-        "default_assistant_settings": {
-          "hint.name": "名前",
-          "hint.placeholder": "デフォルトアシスタント",
-          "hint.prompt": "プロンプト",
-          "hint.params": "モデルパラメータ"
-        },
         "empty": "まだモデルがありません...",
         "empty.tooltip": "お探しのページは見つかりませんでした。ご不便をおかけして申し訳ありません。",
         "empty.add_model": "最初のモデルを追加しましょう。",
-        "translate_model": "翻訳モデル",
-        "translate_model_description": "翻訳サービスに使用されるモデル",
-        "translate_model_setting": {
-          "hint": {
-            "assistant": "翻訳アシスタント",
-            "specify_language": "言語を指定",
-            "target_language": "ターゲット言語",
-            "local_language": "ローカル言語",
-            "prompt": "プロンプト"
-          },
-          "language_choose": {
-            "title": "言語選択"
-          }
-        },
         "search": "モデルを検索...",
         "title": "モデル",
-        "topic_naming_model": "トピック命名",
-        "topic_naming_settings": {
-          "hint.autonaming": "セッションの自動命名",
-          "hint.prompt": "プロンプト"
-        },
-        "quick_assistant": "クイックアシスタント",
-        "quick_assistant_description": "クイックアシスタントが使用するモデル",
         "add.model": "モデルを追加",
         "add.model.id": "モデルID",
         "add.model.id.placeholder": "必須 例: gpt-4o",
@@ -189,7 +167,9 @@
           "balance_recharge": "残高チャージ",
           "free_bills": "無料請求"
         },
-        "api_host.placeholder": "APIホストを入力してください"
+        "api_host.placeholder": "APIホストを入力してください",
+        "not_found": "プロバイダーが見つかりません",
+        "not_found_message": "プロバイダーページに移動する際にエラーが発生しました。"
       },
       "proxy.title": "プロキシ アドレス",
       "theme.window.style.opaque": "不透明ウィンドウ",
@@ -229,7 +209,11 @@
           "api": {
             "title": "APIサービスプロバイダー"
           }
-        }
+        },
+        "check_success": "チェック成功",
+        "check_success_message": "APIは正常に動作しています",
+        "check_fail": "チェック失敗",
+        "check_error": "チェックエラー"
       },
       "modelAndService": "AIモデル＆サービス",
       "dataAndSecurity": "データ & セキュリティ",
@@ -304,6 +288,103 @@
         "backupPath": "バックアップ保存パス",
         "logout": "ログアウト",
         "login": "Nutstoreアカウントでログイン"
+      },
+      "assistant": {
+        "title": "デフォルトアシスタント",
+        "default_assistant": {
+          "name": "デフォルトアシスタント",
+          "description": "新しいアシスタントを作成するときに使用されるアシスタント。設定されていない場合、このアシスタントが使用されます"
+        },
+        "topic_naming_assistant": {
+          "name": "トピック命名アシスタント",
+          "description": "新しいトピックを自動的に命名するときに使用されるアシスタント"
+        },
+        "translate_assistant": {
+          "name": "翻訳アシスタント",
+          "description": "翻訳サービスに使用されるアシスタント"
+        },
+        "empty": "まだアシスタントがありません..."
+      },
+      "notion": {
+        "api_key": "Notion APIキー",
+        "api_key_placeholder": "Notion APIキーを入力してください",
+        "check": {
+          "button": "確認",
+          "empty_api_key": "APIキーが設定されていません",
+          "empty_database_id": "データベースIDが設定されていません",
+          "error": "接続エラー、ネットワーク設定とAPIキーとデータベースIDを確認してください",
+          "fail": "接続に失敗しました、ネットワークとAPIキーとデータベースIDを確認してください",
+          "success": "接続成功"
+        },
+        "database_id": "NotionデータベースID",
+        "database_id_placeholder": "NotionデータベースIDを入力してください",
+        "help": "Notion設定ドキュメント",
+        "page_name_key": "ページタイトルフィールド名",
+        "page_name_key_placeholder": "ページタイトルフィールド名を入力してください（デフォルトはName）",
+        "title": "Notion設定",
+        "export_reasoning.title": "エクスポートに推論チェーンを含める",
+        "export_reasoning.help": "有効にすると、エクスポートされるコンテンツに推論チェーン（思考過程）が含まれます。"
+      },
+      "yuque": {
+        "check": {
+          "button": "確認",
+          "empty_repo_url": "ナレッジベースURLを先に入力してください",
+          "empty_token": "Yuqueトークンを先に入力してください",
+          "fail": "Yuque接続の検証に失敗しました",
+          "success": "Yuque接続の検証に成功しました"
+        },
+        "help": "Yuqueトークンを取得",
+        "repo_url": "Yuque URL",
+        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
+        "title": "Yuque設定",
+        "token": "Yuqueトークン",
+        "token_placeholder": "Yuqueトークンを入力してください"
+      },
+      "joplin": {
+        "check": {
+          "button": "確認",
+          "empty_token": "Joplin認証トークンを入力してください",
+          "empty_url": "JoplinクリッパーサービスURLを入力してください",
+          "fail": "Joplin接続の検証に失敗しました",
+          "success": "Joplin接続の検証に成功しました"
+        },
+        "help": "Joplin認証トークンを取得するにはここをクリック",
+        "title": "Joplin設定",
+        "token": "Joplin認証トークン",
+        "token_placeholder": "Joplin認証トークン",
+        "url": "JoplinウェブクリッパーサービスURL",
+        "url_placeholder": "http://127.0.0.1:41184/",
+        "export_reasoning.title": "エクスポートに推論チェーンを含める",
+        "export_reasoning.help": "有効にすると、エクスポートされるコンテンツにアシスタントが生成した推論チェーン（思考過程）が含まれます。"
+      },
+      "obsidian": {
+        "title": "Obsidian設定",
+        "default_vault": "デフォルトのObsidianボールト",
+        "default_vault_placeholder": "デフォルトのObsidianボールトを選択してください",
+        "default_vault_loading": "Obsidianボールトを読み込み中...",
+        "default_vault_no_vaults": "Obsidianボールトが見つかりません",
+        "default_vault_fetch_error": "Obsidianボールトの取得に失敗しました",
+        "default_vault_export_failed": "エクスポートに失敗しました"
+      },
+      "siyuan": {
+        "title": "思源ノート設定",
+        "api_url": "思源ノートAPI URL",
+        "api_url_placeholder": "例：http://127.0.0.1:6806",
+        "token": "思源ノートトークン",
+        "token.help": "思源ノートトークンを取得",
+        "token_placeholder": "思源ノートトークンを入力してください",
+        "box_id": "思源ノートボックスID",
+        "box_id_placeholder": "思源ノートボックスIDを入力してください",
+        "root_path": "思源ノートルートパス",
+        "root_path_placeholder": "例：/CherryStudio",
+        "check": {
+          "title": "接続確認",
+          "button": "確認",
+          "empty_config": "APIアドレスとトークンを入力してください",
+          "success": "接続成功",
+          "fail": "接続失敗、APIアドレスとトークンを確認してください",
+          "error": "接続エラー、ネットワーク接続を確認してください"
+        }
       }
     },
     "profile": {
@@ -393,6 +474,12 @@
     "topics": {
       "title": "トピック",
       "title.recent": "最近のトピック"
+    },
+    "errors": {
+      "cannotOpenLink": "リンクを開けません: {{error}}",
+      "linkErrorTitle": "リンクのオープンに失敗",
+      "deviceCannotHandleLink": "このデバイスはリンクを処理できません: {{href}}",
+      "cannotOpenLinkTitle": "リンクを開けません"
     }
   }
 }

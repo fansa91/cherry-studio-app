@@ -27,3 +27,21 @@ export function parseJSON(str: string): any | null {
     return null
   }
 }
+
+/**
+ * 尝试将JSON 字符串转换为 对象，如果转换失败则返回 defaultValue(默认为 undefined)。
+ * @param {string} jsonString 要转换的 JSON 字符串
+ * @returns {string | null} 转换后的 对象，转换失败返回 defaultValue
+ */
+export const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
+  if (typeof jsonString !== 'string') {
+    return defaultValue
+  }
+
+  try {
+    return JSON.parse(jsonString)
+  } catch (e) {
+    console.error('JSON parse error for string:', e, jsonString)
+    return defaultValue
+  }
+}

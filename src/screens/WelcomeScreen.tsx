@@ -53,7 +53,7 @@ export default function WelcomeScreen() {
   const [activeIndex, setActiveIndex] = useState(0)
   const pagerRef = useRef<PagerView>(null)
   // 为每个指示器创建动画值
-  const indicatorWidths = useRef(carouselItems.map((_, index) => new Animated.Value(index === 0 ? 24 : 8))).current
+  const [indicatorWidths] = useState(carouselItems.map((_, index) => new Animated.Value(index === 0 ? 24 : 8)))
 
   const handleStart = () => {
     navigation.dispatch(StackActions.replace('HomeScreen'))

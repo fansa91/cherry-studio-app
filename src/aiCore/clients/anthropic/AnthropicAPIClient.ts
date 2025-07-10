@@ -193,7 +193,7 @@ export class AnthropicAPIClient extends BaseApiClient<
     // }
 
     // Get and process file blocks
-    const fileBlocks = findFileBlocks(message)
+    const fileBlocks = await findFileBlocks(message)
 
     // for (const fileBlock of fileBlocks) {
     //   const { file } = fileBlock

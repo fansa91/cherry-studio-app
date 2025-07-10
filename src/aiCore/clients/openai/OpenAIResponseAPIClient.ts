@@ -78,8 +78,8 @@ export class OpenAIResponseAPIClient extends OpenAIBaseClient<
   public async convertMessageToSdkParam(message: Message, model: Model): Promise<OpenAIResponseSdkMessageParam> {
     const isVision = isVisionModel(model)
     const content = await this.getMessageContent(message)
-    const fileBlocks = await findFileBlocks(message)
-    const imageBlocks = await findImageBlocks(message)
+    const fileBlocks = findFileBlocks(message)
+    const imageBlocks = findImageBlocks(message)
 
     // if (fileBlocks.length === 0 && imageBlocks.length === 0) {
     //   if (message.role === 'assistant') {
@@ -248,7 +248,7 @@ export class OpenAIResponseAPIClient extends OpenAIBaseClient<
       return [{ role: 'user', content: sdkPayload.input }]
     }
 
-    return sdkPayload.input
+    return sdkPayload.input || []
   }
 
   getRequestTransformer(): RequestTransformer<OpenAIResponseSdkParams, OpenAIResponseSdkMessageParam> {

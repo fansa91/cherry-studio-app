@@ -1,7 +1,7 @@
 import MaskedView from '@react-native-masked-view/masked-view'
 import { FlashList } from '@shopify/flash-list'
 import { ArrowUpRight } from '@tamagui/lucide-icons'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { ScrollView, Text, XStack, YStack } from 'tamagui'
 import { LinearGradient } from 'tamagui/linear-gradient'
 
@@ -28,15 +28,13 @@ const AllAssistantsTab: React.FC<AllAssistantsTabProps> = ({
   onAssistantPress
 }) => {
   // 将分组数据转换为扁平化的列表数据
-  const flatData = useMemo(() => {
-    return Object.keys(assistantGroups).map(
-      (groupKey): GroupItem => ({
-        type: 'group',
-        groupKey,
-        assistants: assistantGroups[groupKey]
-      })
-    )
-  }, [assistantGroups])
+  const flatData = Object.keys(assistantGroups).map(
+    (groupKey): GroupItem => ({
+      type: 'group',
+      groupKey,
+      assistants: assistantGroups[groupKey]
+    })
+  )
 
   const renderGroupItem = ({ item }: { item: GroupItem }) => (
     <YStack gap={16}>

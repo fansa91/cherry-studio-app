@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 
 import { Topic } from '@/types/assistant'
 import { Message } from '@/types/message'
+import { safeJsonParse } from '@/utils/json'
 
 import { db } from '..'
 import { topics } from '../schema'
@@ -11,31 +12,18 @@ import { topics } from '../schema'
  * @param dbRecord - 从数据库检索的记录。
  * @returns 一个 Topic 对象。
  */
-function transformDbToTopic(dbRecord: any): Topic {
-  const safeJsonParse = (jsonString: string | null, defaultValue: any = undefined) => {
-    if (typeof jsonString !== 'string') {
-      return defaultValue
-    }
-
-    try {
-      return JSON.parse(jsonString)
-    } catch (e) {
-      console.error('JSON parse error for string:', jsonString)
-      return defaultValue
-    }
-  }
-
+export function transformDbToTopic(dbRecord: any): Topic {
   return {
     id: dbRecord.id,
-    assistantId: dbRecord.assistantId,
+    assistantId: dbRecord.assistant_id,
     name: dbRecord.name,
-    createdAt: dbRecord.createdAt,
-    updatedAt: dbRecord.updatedAt,
+    createdAt: dbRecord.created_at,
+    updatedAt: dbRecord.updated_at,
     messages: dbRecord.messages ? safeJsonParse(dbRecord.messages) : [],
     // 将数字（0 或 1）转换为布尔值
     pinned: !!dbRecord.pinned,
     prompt: dbRecord.prompt,
-    isNameManuallyEdited: !!dbRecord.isNameManuallyEdited
+    isNameManuallyEdited: !!dbRecord.is_name_manually_edited
   }
 }
 
@@ -47,15 +35,15 @@ function transformDbToTopic(dbRecord: any): Topic {
 function transformTopicToDb(topic: Topic): any {
   return {
     id: topic.id,
-    assistantId: topic.assistantId,
+    assistant_id: topic.assistantId,
     name: topic.name,
-    createdAt: topic.createdAt,
-    updatedAt: topic.updatedAt,
+    created_at: topic.createdAt,
+    updated_at: topic.updatedAt,
     messages: JSON.stringify(topic.messages),
     // 将布尔值转换为数字（1 表示 true，0 表示 false）
     pinned: topic.pinned ? 1 : 0,
     prompt: topic.prompt,
-    isNameManuallyEdited: topic.isNameManuallyEdited ? 1 : 0
+    is_name_manually_edited: topic.isNameManuallyEdited ? 1 : 0
   }
 }
 
@@ -113,19 +101,33 @@ export async function updateTopicMessages(topicId: string, messages: Message[]) 
 }
 
 /**
- * 插入单个主题。
- * @param topics - 要插入或更新的主题数组。
- * @returns 无返回值，但会在数据库中插入或更新主题。
+ * 插入或更新一个或多个主题 (Upsert)。
+ * @param topicsToUpsert - 要插入或更新的主题对象或对象数组。
+ * @returns 包含已更新或插入的主题的数组的 Promise。
  */
-export async function upsertOneTopic(topic: Topic): Promise<void> {
+export async function upsertTopics(topicsToUpsert: Topic | Topic[]): Promise<Topic[]> {
+  const topicsArray = Array.isArray(topicsToUpsert) ? topicsToUpsert : [topicsToUpsert]
+  if (topicsArray.length === 0) return []
+
   try {
-    const dbRecord = transformTopicToDb(topic)
-    await db.insert(topics).values(dbRecord).onConflictDoUpdate({
-      target: topics.id,
-      set: dbRecord
-    })
+    const dbRecords = topicsArray.map(transformTopicToDb)
+
+    const upsertPromises = dbRecords.map(record =>
+      db
+        .insert(topics)
+        .values(record)
+        .onConflictDoUpdate({
+          target: topics.id,
+          set: record
+        })
+        .returning()
+    )
+
+    const results = await Promise.all(upsertPromises)
+    const flattenedResults = results.flat()
+    return flattenedResults.map(transformDbToTopic)
   } catch (error) {
-    console.error(`Error upserting topic with ID ${topic.id}:`, error)
+    console.error('Error upserting topic(s):', error)
     throw error
   }
 }

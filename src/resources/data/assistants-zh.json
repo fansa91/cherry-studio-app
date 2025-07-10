@@ -1,5 +1,29 @@
 [
   {
+    "id": "default",
+    "name": "默认助手",
+    "emoji": "😀",
+    "prompt": "",
+    "topics": [],
+    "type": "assistant"
+  },
+  {
+    "id": "translate",
+    "name": "翻译助手",
+    "emoji": "🌐",
+    "prompt": "您是一位翻译助手。请将以下文本翻译成英文。",
+    "topics": [],
+    "type": "assistant"
+  },
+  {
+    "id": "topic_naming",
+    "name": "话题命名助手",
+    "emoji": "🏷️",
+    "prompt": "您是一位话题命名助手。请为以下话题建议一个名称。",
+    "topics": [],
+    "type": "assistant"
+  },
+  {
     "id": "1",
     "name": "产品经理",
     "emoji": "👨‍💼",

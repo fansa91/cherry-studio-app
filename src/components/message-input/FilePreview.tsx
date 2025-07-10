@@ -1,9 +1,9 @@
-import { CircleX, File } from '@tamagui/lucide-icons'
 import React from 'react'
-import { Button, Text, XStack, YStack } from 'tamagui'
+import { ScrollView } from 'tamagui'
 
 import { FileType } from '@/types/file'
-import { formatFileSize } from '@/utils/file'
+
+import PreviewItem from './PreviewItem'
 
 interface FilePreviewProps {
   files: FileType[]
@@ -12,27 +12,11 @@ interface FilePreviewProps {
 
 const FilePreview: React.FC<FilePreviewProps> = ({ files, setFiles }) => {
   return (
-    <XStack>
-      {files.map(file => {
-        return (
-          <XStack key={file.id} gap={12} alignItems="center" justifyContent="center">
-            <File />
-            <YStack gap={2}>
-              <Text>{file.name}</Text>
-              <Text>{formatFileSize(file.size)}</Text>
-            </YStack>
-            <Button
-              chromeless
-              size={24}
-              icon={<CircleX />}
-              onPress={() => {
-                setFiles(files.filter(f => f.id !== file.id))
-              }}
-            />
-          </XStack>
-        )
-      })}
-    </XStack>
+    <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ flexDirection: 'row' }}>
+      {files.map((file, index) => (
+        <PreviewItem key={index} file={file} files={files} setFiles={setFiles} />
+      ))}
+    </ScrollView>
   )
 }
 

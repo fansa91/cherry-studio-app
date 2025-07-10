@@ -4,7 +4,8 @@ import { Text, YStack } from 'tamagui'
 import { Assistant } from '@/types/assistant'
 
 interface ToolTabContentProps {
-  assistant?: Assistant | null
+  assistant: Assistant
+  updateAssistant: (assistant: Assistant) => void
 }
 
 export function ToolTabContent({ assistant }: ToolTabContentProps) {

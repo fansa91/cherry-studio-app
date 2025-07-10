@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Image, useThemeName } from 'tamagui'
 
 import { Model } from '@/types/assistant'
@@ -12,9 +12,7 @@ export const ModelIcon: React.FC<ModelIconProps> = ({ model }) => {
   const theme = useThemeName()
   const isDark = theme === 'dark'
 
-  const iconSource = useMemo(() => {
-    return getModelOrProviderIcon(model.id, model.provider, isDark)
-  }, [model.id, model.provider, isDark])
+  const iconSource = getModelOrProviderIcon(model.id, model.provider, isDark)
 
   return <Image width={20} height={20} source={iconSource} />
 }

@@ -10,7 +10,34 @@ const MODEL_ICONS_DARK = {
   doubao: require('@/assets/images/llmIcons/dark/doubao.png'),
   qwen: require('@/assets/images/llmIcons/dark/qwen.png'),
   moonshot: require('@/assets/images/llmIcons/dark/moonshot.png'),
-  jina: require('@/assets/images/llmIcons/dark/jina.png')
+  jina: require('@/assets/images/llmIcons/dark/jina.png'),
+
+  voyage : require('@/assets/images/llmIcons/dark/voyage.png'),
+  hunyuan : require('@/assets/images/llmIcons/dark/hunyuan.png'),
+  llama : require('@/assets/images/llmIcons/dark/meta.png'),
+  command : require('@/assets/images/llmIcons/dark/commanda.png'),
+  mistral : require('@/assets/images/llmIcons/dark/mistral.png'),
+  minimax : require('@/assets/images/llmIcons/dark/minimax.png'),
+  yi : require('@/assets/images/llmIcons/dark/yi.png'),
+  ai21 : require('@/assets/images/llmIcons/dark/ai21.png'),
+  baichuan : require('@/assets/images/llmIcons/dark/baichuan.png'),
+  dbrx : require('@/assets/images/llmIcons/dark/dbrx.png'),
+  gemma  : require('@/assets/images/llmIcons/dark/gemma.png'),
+  microsoft : require('@/assets/images/llmIcons/dark/microsoft.png'),
+  nvidia : require('@/assets/images/llmIcons/dark/nvidia.png'),
+  chatglm : require('@/assets/images/llmIcons/dark/chatglm.png'),
+  upstage : require('@/assets/images/llmIcons/dark/upstage.png'),
+  palmyra : require('@/assets/images/llmIcons/dark/palm.png'),
+  step : require('@/assets/images/llmIcons/dark/stepfun.png'),
+  glm : require('@/assets/images/llmIcons/dark/chatglm.png'),
+  cohere : require('@/assets/images/llmIcons/dark/commanda.png'),
+  phi : require('@/assets/images/llmIcons/dark/microsoft.png'),
+  neversleeo  : require('@/assets/images/llmIcons/dark/meta.png'),
+  perplexity : require('@/assets/images/llmIcons/dark/perplexity.png'),
+  sonar : require('@/assets/images/llmIcons/dark/perplexity.png'),
+  stable : require('@/assets/images/llmIcons/dark/stability.png')
+
+
 }
 
 const MODEL_ICONS_LIGHT = {
@@ -25,7 +52,33 @@ const MODEL_ICONS_LIGHT = {
   doubao: require('@/assets/images/llmIcons/light/doubao.png'),
   qwen: require('@/assets/images/llmIcons/light/qwen.png'),
   moonshot: require('@/assets/images/llmIcons/light/moonshot.png'),
-  jina: require('@/assets/images/llmIcons/light/jina.png')
+  jina: require('@/assets/images/llmIcons/light/jina.png'),
+
+  voyage : require('@/assets/images/llmIcons/light/voyage.png'),
+  hunyuan : require('@/assets/images/llmIcons/light/hunyuan.png'),
+  llama : require('@/assets/images/llmIcons/light/meta.png'),
+  command : require('@/assets/images/llmIcons/light/commanda.png'),
+  mistral : require('@/assets/images/llmIcons/light/mistral.png'),
+  minimax : require('@/assets/images/llmIcons/light/minimax.png'),
+  yi : require('@/assets/images/llmIcons/light/yi.png'),
+  ai21 : require('@/assets/images/llmIcons/light/ai21.png'),
+  baichuan : require('@/assets/images/llmIcons/light/baichuan.png'),
+  dbrx : require('@/assets/images/llmIcons/light/dbrx.png'),
+  gemma  : require('@/assets/images/llmIcons/light/gemma.png'),
+  microsoft : require('@/assets/images/llmIcons/light/microsoft.png'),
+  nvidia : require('@/assets/images/llmIcons/light/nvidia.png'),
+  chatglm : require('@/assets/images/llmIcons/light/chatglm.png'),
+  upstage : require('@/assets/images/llmIcons/light/upstage.png'),
+  palmyra : require('@/assets/images/llmIcons/light/palm.png'),
+  step : require('@/assets/images/llmIcons/light/stepfun.png'),
+  glm : require('@/assets/images/llmIcons/light/chatglm.png'),
+  cohere : require('@/assets/images/llmIcons/light/commanda.png'),
+  phi : require('@/assets/images/llmIcons/light/microsoft.png'),
+  neversleeo  : require('@/assets/images/llmIcons/light/meta.png'),
+  perplexity : require('@/assets/images/llmIcons/light/perplexity.png'),
+  sonar : require('@/assets/images/llmIcons/light/perplexity.png'),
+  stable : require('@/assets/images/llmIcons/light/stability.png')
+
 }
 
 const PROVIDER_ICONS_DARK = {

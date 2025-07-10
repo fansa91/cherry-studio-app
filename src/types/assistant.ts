@@ -92,6 +92,14 @@ export type Provider = {
   rateLimit?: number
   isNotSupportArrayContent?: boolean
   notes?: string
+  extra_headers?: Record<string, string>
 }
 
-export type ProviderType = 'openai' | 'openai-response' | 'anthropic' | 'gemini' | 'qwenlm' | 'azure-openai'
+export type ProviderType =
+  | 'openai'
+  | 'openai-response'
+  | 'anthropic'
+  | 'gemini'
+  | 'qwenlm'
+  | 'azure-openai'
+  | 'vertexai'

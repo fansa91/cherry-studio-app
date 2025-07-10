@@ -1,31 +1,60 @@
-import { getSystemAssistants } from '@/mock'
+import { eq } from 'drizzle-orm'
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
 
-export function useAssistant(id?: string) {
-  if (!id) {
+import { Assistant } from '@/types/assistant'
+
+import { db } from '../../db'
+import { transformDbToAssistant, upsertAssistants } from '../../db/queries/assistants.queries'
+import { assistants as assistantsSchema } from '../../db/schema'
+
+export function useAssistant(assistantId: string) {
+  const query = db.select().from(assistantsSchema).where(eq(assistantsSchema.id, assistantId))
+
+  const { data: rawAssistant, updatedAt } = useLiveQuery(query)
+
+  const updateAssistant = async (assistant: Assistant) => {
+    await upsertAssistants([assistant])
+  }
+
+  if (!updatedAt) {
     return {
-      assistant: null
+      assistant: null,
+      isLoading: true,
+      updateAssistant
     }
   }
 
-  const assistant = getSystemAssistants().find(assistant => assistant.id === id)
-
-  if (!assistant) {
-    throw new Error(`Assistant with id ${id} not found`)
-  }
+  const processedAssistant = transformDbToAssistant(rawAssistant[0])
 
   return {
-    assistant
+    assistant: processedAssistant,
+    isLoading: false,
+    updateAssistant
   }
 }
 
-export function useDefaultAssistant() {
-  const assistant = getSystemAssistants()[0]
+export function useAssistants() {
+  const query = db.select().from(assistantsSchema)
 
-  if (!assistant) {
-    throw new Error('Default assistant not found')
+  const { data: rawAssistants, updatedAt } = useLiveQuery(query)
+
+  const updateAssistants = async (assistants: Assistant[]) => {
+    await upsertAssistants(assistants)
   }
 
+  if (!updatedAt) {
+    return {
+      assistants: [],
+      isLoading: true,
+      updateAssistants
+    }
+  }
+
+  const processedAssistants = rawAssistants.map(provider => transformDbToAssistant(provider))
+
   return {
-    assistant
+    assistants: processedAssistants,
+    isLoading: false,
+    updateAssistants
   }
 }

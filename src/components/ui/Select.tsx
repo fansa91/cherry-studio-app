@@ -1,7 +1,7 @@
 import { ChevronRight } from '@tamagui/lucide-icons'
 import React from 'react'
-import { Text, XStack } from 'tamagui' // Removed Select, Sheet, Adapt, Check
-import * as DropdownMenu from 'zeego/dropdown-menu' // Added zeego
+import { Text, XStack } from 'tamagui'
+import * as DropdownMenu from 'zeego/dropdown-menu'
 
 interface SelectOptionItem<T = any> {
   label: string
@@ -101,6 +101,14 @@ export function ISelect<T = any>({
             {group.options.map(item => (
               <DropdownMenu.Item key={item.value} onSelect={() => handleValueChange(item.value)}>
                 <DropdownMenu.ItemTitle>{item.label}</DropdownMenu.ItemTitle>
+                {value === item.value && (
+                  // todo
+                  <DropdownMenu.ItemIcon
+                    ios={{
+                      name: 'checkmark',
+                      pointSize: 16
+                    }}></DropdownMenu.ItemIcon>
+                )}
               </DropdownMenu.Item>
             ))}
           </DropdownMenu.Group>

@@ -45,3 +45,17 @@ export const getDefaultGroupName = (id: string, provider?: string): string => {
 
   return str
 }
+
+/**
+ * 从模型 ID 中提取基础名称。
+ * 例如：
+ * - 'deepseek/deepseek-r1' => 'deepseek-r1'
+ * - 'deepseek-ai/deepseek/deepseek-r1' => 'deepseek-r1'
+ * @param {string} id 模型 ID
+ * @param {string} [delimiter='/'] 分隔符，默认为 '/'
+ * @returns {string} 基础名称
+ */
+export const getBaseModelName = (id: string, delimiter: string = '/'): string => {
+  const parts = id.split(delimiter)
+  return parts[parts.length - 1]
+}

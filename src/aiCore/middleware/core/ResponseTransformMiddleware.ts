@@ -22,7 +22,6 @@ export const ResponseTransformMiddleware: CompletionsMiddleware =
   async (ctx: CompletionsContext, params: CompletionsParams): Promise<CompletionsResult> => {
     // 调用下游中间件
     const result = await next(ctx, params)
-    console.log(`[${MIDDLEWARE_NAME}] Processing result:`, result)
 
     // 响应后处理：转换原始SDK响应块
     if (result.stream) {

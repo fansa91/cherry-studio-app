@@ -9,7 +9,7 @@ module.exports = {
   ],
   ignorePatterns: ['/dist/*'],
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint', 'unused-imports', 'simple-import-sort', 'prettier'],
+  plugins: ['@typescript-eslint', 'unused-imports', 'simple-import-sort', 'prettier', 'react-compiler'],
   rules: {
     'prettier/prettier': [
       'error',
@@ -40,7 +40,8 @@ module.exports = {
     'simple-import-sort/exports': 'error',
     '@typescript-eslint/no-unused-vars': 'warn',
     'react/prop-types': 'off',
-    '@typescript-eslint/no-require-imports': 'off'
+    '@typescript-eslint/no-require-imports': 'off',
+    'react-compiler/react-compiler': 'error'
   },
   settings: {
     react: {

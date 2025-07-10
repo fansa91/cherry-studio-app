@@ -9,11 +9,12 @@ export type RootStackParamList = {
   WebDavScreen: undefined
   WebDavConfigScreen: undefined
   NutstoreLoginScreen: undefined
-  ModelSettingsScreen: undefined
-  DefaultAssistantSettingsScreen: { assistantId?: string }
-  NamingModelSettingsScreen: undefined
-  TranslateModelSettingsScreen: undefined
-  TranslateLanguageChooseScreen: undefined
+  NotionSettingsScreen: undefined
+  YuqueSettingsScreen: undefined
+  JoplinSettingsScreen: undefined
+  ObsidianSettingsScreen: undefined
+  SiyuanSettingsScreen: undefined
+  AssistantSettingsScreen: undefined
   ProvidersScreen: undefined
   AboutScreen: undefined
   GeneralSettingsScreen: undefined
@@ -26,7 +27,7 @@ export type RootStackParamList = {
   ApiServiceScreen: { providerId: string }
   TopicScreen: undefined
   AssistantScreen: undefined
-  AssistantDetailScreen: { assistantId?: string; mode: 'create' | 'edit' }
+  AssistantDetailScreen: { assistantId: string }
   AssistantMarketScreen: undefined
   WebSearchProviderSettingsScreen: { providerId: string }
 }

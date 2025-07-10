@@ -5,9 +5,10 @@ import { View } from 'tamagui'
 
 import { useMessages } from '@/hooks/useMessages'
 import { Assistant, Topic } from '@/types/assistant'
-import { Message } from '@/types/message'
+import { GroupedMessage } from '@/types/message'
+import { getGroupedMessages } from '@/utils/messageUtils/filters'
 
-import MessageItem from './Message'
+import MessageGroup from './MessageGroup'
 
 interface MessagesProps {
   assistant: Assistant
@@ -18,19 +19,20 @@ interface MessagesProps {
 }
 
 const Messages: FC<MessagesProps> = ({ assistant, topic, setActiveTopic, onComponentUpdate, onFirstUpdate }) => {
-  const { processedMessages } = useMessages(topic.id)
+  const { messages } = useMessages(topic.id)
+  const groupedMessages = Object.entries(getGroupedMessages(messages))
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    return <MessageItem assistant={assistant} message={item} />
+  const renderMessageGroup = ({ item }: { item: [string, GroupedMessage[]] }) => {
+    return <MessageGroup assistant={assistant} item={item} />
   }
 
   return (
     <View style={{ flex: 1, minHeight: 200 }}>
       <FlashList
-        data={processedMessages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        estimatedItemSize={60}
+        data={groupedMessages}
+        renderItem={renderMessageGroup}
+        keyExtractor={([key, group]) => `${key}-${group[0]?.id}`}
+        estimatedItemSize={100} // 估算值可能需要根据内容调整
       />
     </View>
   )

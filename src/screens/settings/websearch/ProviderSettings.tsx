@@ -12,18 +12,14 @@ export default function ProviderSettings() {
 
   return (
     <YStack gap={24}>
-      <YStack gap={8}>
-        <SettingGroupTitle>{t('settings.websearch.provider.free.title')}</SettingGroupTitle>
-        <SettingGroup>
-          {freeProviders.map((provider, index) => (
-            <WebsearchProviderRow
-              key={index}
-              provider={provider}
-              need_config={provider.id === 'searxng' ? true : false}
-            />
-          ))}
-        </SettingGroup>
-      </YStack>
+      {/*<YStack gap={8}>*/}
+      {/*  <SettingGroupTitle>{t('settings.websearch.provider.free.title')}</SettingGroupTitle>*/}
+      {/*  <SettingGroup>*/}
+      {/*    {freeProviders.map((provider, index) => (*/}
+      {/*      <WebsearchProviderRow key={index} provider={provider} need_config={provider.id === 'searxng'} />*/}
+      {/*    ))}*/}
+      {/*  </SettingGroup>*/}
+      {/*</YStack>*/}
       <YStack gap={8}>
         <SettingGroupTitle>{t('settings.websearch.provider.api.title')}</SettingGroupTitle>
         <SettingGroup>

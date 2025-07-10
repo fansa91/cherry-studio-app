@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Plus } from '@tamagui/lucide-icons'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ActivityIndicator } from 'react-native'
 import { ScrollView, useTheme, YStack } from 'tamagui'
 
 import { SettingContainer, SettingGroup, SettingGroupTitle } from '@/components/settings'
@@ -19,11 +20,18 @@ export default function ProvidersScreen() {
   const theme = useTheme()
   const navigation = useNavigation<NavigationProps>()
   const [searchQuery, setSearchQuery] = useState('')
-
-  const { providers } = useAllProviders()
+  const { providers, isLoading } = useAllProviders()
 
   const onAddProvider = () => {
     navigation.navigate('ProviderListScreen')
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaContainer>
+        <ActivityIndicator />
+      </SafeAreaContainer>
+    )
   }
 
   return (
@@ -52,7 +60,7 @@ export default function ProvidersScreen() {
               <ScrollView backgroundColor="$colorTransparent">
                 <SettingGroup>
                   {providers
-                    .filter(p => p.checked)
+                    .filter(p => p.enabled)
                     .map(p => (
                       <ProviderItem key={p.id} provider={p} mode="enabled" />
                     ))}

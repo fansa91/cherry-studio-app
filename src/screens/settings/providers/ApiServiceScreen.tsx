@@ -2,9 +2,10 @@ import BottomSheet from '@gorhom/bottom-sheet'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Eye, EyeOff, ShieldCheck } from '@tamagui/lucide-icons'
 import { sortBy } from 'lodash'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Input, Stack, useTheme, XStack, YStack } from 'tamagui'
+import { ActivityIndicator } from 'react-native'
+import { Button, Input, Stack, Text, useTheme, XStack, YStack } from 'tamagui'
 
 import ExternalLink from '@/components/ExternalLink'
 import { SettingContainer, SettingGroupTitle, SettingHelpText } from '@/components/settings'
@@ -12,6 +13,7 @@ import { HeaderBar } from '@/components/settings/HeaderBar'
 import { ApiCheckSheet } from '@/components/settings/providers/ApiCheckSheet'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { isEmbeddingModel } from '@/config/models/embedding'
+import { PROVIDER_CONFIG } from '@/config/providers'
 import { useProvider } from '@/hooks/useProviders'
 import { checkApi } from '@/services/ApiService'
 import { Model } from '@/types/assistant'
@@ -27,83 +29,103 @@ export default function ApiServiceScreen() {
   const route = useRoute<ProviderSettingsRouteProp>()
 
   const { providerId } = route.params
-  const { provider } = useProvider(providerId)
+  const { provider, isLoading, updateProvider } = useProvider(providerId)
 
   const [showApiKey, setShowApiKey] = useState(false)
   const [selectedModel, setSelectedModel] = useState<Model | undefined>()
-  const [apiKey, setApiKey] = useState(provider?.apiKey || '')
-  const [apiHost, setApiHost] = useState(provider?.apiHost || '')
+  const [isCheckingApi, setIsCheckingApi] = useState(false)
 
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
-  const selectOptions = useMemo(() => {
-    if (!provider?.models?.length) return []
+  const webSearchProviderConfig = provider?.id ? PROVIDER_CONFIG[provider.id] : undefined
+  const apiKeyWebsite = webSearchProviderConfig?.websites?.apiKey
 
-    return [
-      {
-        label: provider.isSystem ? t(`provider.${provider.id}`) : provider.name,
-        title: provider.name,
-        options: sortBy(provider.models, 'name')
-          .filter(model => !isEmbeddingModel(model))
-          .map(model => ({
-            label: model.name,
-            value: getModelUniqId(model),
-            model
-          }))
-      }
-    ]
-  }, [provider, t])
+  if (isLoading) {
+    return (
+      <SafeAreaContainer>
+        <ActivityIndicator />
+      </SafeAreaContainer>
+    )
+  }
 
-  const handleOpenBottomSheet = useCallback(() => {
+  if (!provider) {
+    return (
+      <SafeAreaContainer>
+        <HeaderBar title={t('settings.provider.not_found')} onBackPress={() => navigation.goBack()} />
+        <SettingContainer>
+          <Text textAlign="center" color="$gray10" paddingVertical={24}>
+            {t('settings.provider.not_found_message')}
+          </Text>
+        </SettingContainer>
+      </SafeAreaContainer>
+    )
+  }
+
+  const selectOptions = !provider.models?.length
+    ? []
+    : [
+        {
+          label: provider.isSystem ? t(`provider.${provider.id}`) : provider.name,
+          title: provider.name,
+          options: sortBy(provider.models, 'name')
+            .filter(model => !isEmbeddingModel(model))
+            .map(model => ({
+              label: model.name,
+              value: getModelUniqId(model),
+              model
+            }))
+        }
+      ]
+
+  const handleOpenBottomSheet = () => {
     bottomSheetRef.current?.expand()
     setIsBottomSheetOpen(true)
-  }, [])
+  }
 
-  const handleBottomSheetClose = useCallback(() => {
+  const handleBottomSheetClose = () => {
     setIsBottomSheetOpen(false)
-  }, [])
+  }
 
-  const handleModelChange = useCallback(
-    (value: string) => {
-      if (!value) {
-        setSelectedModel(undefined)
-        return
-      }
+  const handleModelChange = (value: string) => {
+    if (!value) {
+      setSelectedModel(undefined)
+      return
+    }
 
-      const allOptions = selectOptions.flatMap(group => group.options)
-      const foundOption = allOptions.find(opt => opt.value === value)
-      setSelectedModel(foundOption?.model)
-    },
-    [selectOptions]
-  )
+    const allOptions = selectOptions.flatMap(group => group.options)
+    const foundOption = allOptions.find(opt => opt.value === value)
+    setSelectedModel(foundOption?.model)
+  }
 
-  const toggleApiKeyVisibility = useCallback(() => {
+  const toggleApiKeyVisibility = () => {
     setShowApiKey(prevShowApiKey => !prevShowApiKey)
-  }, [])
+  }
 
-  const handleApiKeyChange = useCallback((text: string) => {
-    setApiKey(text)
-  }, [])
+  const handleProviderConfigChange = async (key: 'apiKey' | 'apiHost', value: string) => {
+    const updatedProvider = { ...provider, [key]: value }
+    await updateProvider(updatedProvider)
+  }
 
-  const handleApiHostChange = useCallback((text: string) => {
-    setApiHost(text)
-  }, [])
-
-  const handleBackPress = useCallback(() => {
+  const handleBackPress = () => {
     navigation.goBack()
-  }, [navigation])
+  }
 
   // 模型检测处理
-  const handleStartModelCheck = useCallback(async () => {
+  const handleStartModelCheck = async () => {
     if (!selectedModel) return
 
     try {
+      setIsCheckingApi(true)
       await checkApi(provider, selectedModel)
+      await updateProvider({ ...provider, checked: true })
     } catch (error) {
       console.error('Model check failed:', error)
+      await updateProvider({ ...provider, checked: false })
+    } finally {
+      setIsCheckingApi(false)
     }
-  }, [selectedModel, apiKey, apiHost])
+  }
 
   return (
     <SafeAreaContainer
@@ -120,7 +142,7 @@ export default function ApiServiceScreen() {
             <SettingGroupTitle>{t('settings.provider.api_key')}</SettingGroupTitle>
             <Button
               size={16}
-              icon={<ShieldCheck size={16} />}
+              icon={<ShieldCheck size={16} color={provider.checked ? 'green' : 'white'} />}
               backgroundColor="$colorTransparent"
               circular
               onPress={handleOpenBottomSheet}
@@ -133,8 +155,8 @@ export default function ApiServiceScreen() {
               placeholder={t('settings.provider.api_key.placeholder')}
               secureTextEntry={!showApiKey}
               paddingRight={48}
-              value={apiKey}
-              onChangeText={handleApiKeyChange}
+              value={provider?.apiKey || ''}
+              onChangeText={text => handleProviderConfigChange('apiKey', text)}
             />
             <Stack
               position="absolute"
@@ -153,8 +175,7 @@ export default function ApiServiceScreen() {
 
           <XStack justifyContent="space-between">
             <SettingHelpText>{t('settings.provider.api_key.tip')}</SettingHelpText>
-            {/* todo */}
-            <ExternalLink href="" size={12}>
+            <ExternalLink href={apiKeyWebsite} size={12}>
               {t('settings.provider.api_key.get')}
             </ExternalLink>
           </XStack>
@@ -167,8 +188,8 @@ export default function ApiServiceScreen() {
           </XStack>
           <Input
             placeholder={t('settings.provider.api_host.placeholder')}
-            value={apiHost}
-            onChangeText={handleApiHostChange}
+            value={provider?.apiHost || ''}
+            onChangeText={text => handleProviderConfigChange('apiHost', text)}
           />
         </YStack>
       </SettingContainer>
@@ -180,8 +201,9 @@ export default function ApiServiceScreen() {
         selectedModel={selectedModel}
         onModelChange={handleModelChange}
         selectOptions={selectOptions}
-        apiKey={apiKey}
+        apiKey={provider?.apiKey || ''}
         onStartModelCheck={handleStartModelCheck}
+        isCheckingApi={isCheckingApi}
       />
     </SafeAreaContainer>
   )

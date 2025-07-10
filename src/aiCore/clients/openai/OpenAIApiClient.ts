@@ -1,5 +1,3 @@
-import * as FileSystem from 'expo-file-system'
-import { File } from 'expo-file-system/next'
 import OpenAI, { AzureOpenAI } from 'openai'
 import { ChatCompletionContentPart, ChatCompletionContentPartRefusal, ChatCompletionTool } from 'openai/resources'
 
@@ -24,7 +22,6 @@ import { estimateTextTokens } from '@/services/TokenService'
 import { Assistant, Model, Provider } from '@/types/assistant'
 // For Copilot token
 import { ChunkType } from '@/types/chunk'
-import { FileTypes } from '@/types/file'
 import { MCPCallToolResponse, MCPTool, MCPToolResponse, ToolCallResponse } from '@/types/mcp'
 import { Message } from '@/types/message'
 import {
@@ -231,14 +228,14 @@ export class OpenAIAPIClient extends OpenAIBaseClient<
     }
 
     // If the model does not support files, extract the file content
-    if (this.isNotSupportFiles) {
-      const fileContent = await this.extractFileContent(message)
+    // if (this.isNotSupportFiles) {
+    //   const fileContent = await this.extractFileContent(message)
 
-      return {
-        role: message.role === 'system' ? 'user' : message.role,
-        content: content + '\n\n---\n\n' + fileContent
-      } as OpenAISdkMessageParam
-    }
+    //   return {
+    //     role: message.role === 'system' ? 'user' : message.role,
+    //     content: content + '\n\n---\n\n' + fileContent
+    //   } as OpenAISdkMessageParam
+    // }
 
     // If the model supports files, add the file content to the message
     const parts: ChatCompletionContentPart[] = []
@@ -247,37 +244,32 @@ export class OpenAIAPIClient extends OpenAIBaseClient<
       parts.push({ type: 'text', text: content })
     }
 
-    for (const imageBlock of imageBlocks) {
-      if (isVision) {
-        if (imageBlock.file) {
-          const base64 = new File(imageBlock.file.path).base64()
-          parts.push({ type: 'image_url', image_url: { url: `data:image/jpg;base64,${base64}` } })
-        } else if (imageBlock.url && imageBlock.url.startsWith('data:')) {
-          parts.push({ type: 'image_url', image_url: { url: imageBlock.url } })
-        }
-      }
-    }
+    // for (const imageBlock of imageBlocks) {
+    //   if (isVision) {
+    //     if (imageBlock.file) {
+    //       const image = await window.api.file.base64Image(imageBlock.file.id + imageBlock.file.ext)
+    //       parts.push({ type: 'image_url', image_url: { url: image.data } })
+    //     } else if (imageBlock.url && imageBlock.url.startsWith('data:')) {
+    //       parts.push({ type: 'image_url', image_url: { url: imageBlock.url } })
+    //     }
+    //   }
+    // }
 
-    for (const fileBlock of fileBlocks) {
-      const file = fileBlock.file
-      console.log('fileinfo', await FileSystem.getInfoAsync(file.path))
+    // for (const fileBlock of fileBlocks) {
+    //   const file = fileBlock.file
 
-      if (!file) {
-        continue
-      }
+    //   if (!file) {
+    //     continue
+    //   }
 
-      if ([FileTypes.TEXT, FileTypes.DOCUMENT].includes(file.type)) {
-        const fileContent = (
-          await FileSystem.readAsStringAsync(file.path, {
-            encoding: FileSystem.EncodingType.UTF8
-          })
-        ).trim()
-        parts.push({
-          type: 'text',
-          text: file.origin_name + '\n' + fileContent
-        })
-      }
-    }
+    //   if ([FileTypes.TEXT, FileTypes.DOCUMENT].includes(file.type)) {
+    //     const fileContent = await (await window.api.file.read(file.id + file.ext)).trim()
+    //     parts.push({
+    //       type: 'text',
+    //       text: file.origin_name + '\n' + fileContent
+    //     })
+    //   }
+    // }
 
     return {
       role: message.role === 'system' ? 'user' : message.role,

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { KeyboardAvoidingView, Platform } from 'react-native'
 import { ScrollView, useTheme, YStack } from 'tamagui'
@@ -31,22 +31,22 @@ export default function WebSearchSettingsScreen() {
   const [blacklistText, setBlacklistText] = useState<string>('')
 
   // General settings handlers
-  const handleSearchCountChange = useCallback((value: number[]) => {
+  const handleSearchCountChange = (value: number[]) => {
     setSearchCount(value[0])
-  }, [])
+  }
 
   // Blacklist handlers
-  const handleRefreshSubscription = useCallback((subscribe: SubscribeSource) => {
+  const handleRefreshSubscription = (subscribe: SubscribeSource) => {
     console.log('Refreshing subscription for:', subscribe)
-  }, [])
+  }
 
-  const handleRefreshAllSubscriptions = useCallback(() => {
+  const handleRefreshAllSubscriptions = () => {
     console.log('Refreshing all subscriptions')
-  }, [])
+  }
 
-  const handleAddSubscription = useCallback(() => {
+  const handleAddSubscription = () => {
     console.log('Adding new subscription')
-  }, [])
+  }
 
   return (
     <SafeAreaContainer style={{ flex: 1, backgroundColor: theme.background.val }}>

@@ -147,10 +147,9 @@ export function createThinkingBlock(
 export function createTranslationBlock(
   messageId: string,
   content: string,
-  targetLanguage: string,
   overrides: Partial<Omit<TranslationMessageBlock, 'id' | 'messageId' | 'type' | 'content' | 'targetLanguage'>> = {}
 ): TranslationMessageBlock {
-  const { sourceBlockId, sourceLanguage, ...baseOverrides } = overrides
+  const { sourceBlockId, ...baseOverrides } = overrides
   const baseBlock = createBaseMessageBlock(messageId, MessageBlockType.TRANSLATION, {
     status: MessageBlockStatus.SUCCESS,
     ...baseOverrides
@@ -158,9 +157,7 @@ export function createTranslationBlock(
   return {
     ...baseBlock,
     content,
-    targetLanguage,
-    sourceBlockId: sourceBlockId,
-    sourceLanguage: sourceLanguage
+    sourceBlockId: sourceBlockId
   }
 }
 

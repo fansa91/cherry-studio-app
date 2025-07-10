@@ -90,7 +90,14 @@
       "tool": "工具",
       "added": "已添加",
       "visit": "訪問",
-      "see_all": "查看全部"
+      "see_all": "查看全部",
+      "ok": "確定",
+      "error_occurred": "發生錯誤",
+      "loading": "載入中...",
+      "file": "檔案",
+      "photo": "相片",
+      "clear_all": "清除全部",
+      "camera": "相機"
     },
     "history": {
       "topics.empty": "未找到主題",
@@ -118,40 +125,11 @@
       },
       "models": {
         "default_model": "預設模型",
-        "default_assistant_model": "預設助理模型",
-        "default_assistant_model_description": "建立新助理時使用的模型，如果未設定助理，將使用此模型。",
-        "default_assistant_settings": {
-          "hint.name": "名稱",
-          "hint.placeholder": "預設助理",
-          "hint.prompt": "提示詞",
-          "hint.params": "模型參數"
-        },
         "empty": "還沒有模型...",
         "empty.tooltip": "您正在尋找的頁面超出了我們的範圍。對於帶來的不便，我們深感歉意。",
         "empty.add_model": "讓我們添加你的第一個模型",
-        "translate_model": "翻譯模型",
-        "translate_model_description": "用於翻譯服務的模型",
-        "translate_model_setting": {
-          "hint": {
-            "assistant": "翻譯助手",
-            "specify_language": "指定語言",
-            "target_language": "目標語言",
-            "local_language": "本地語言",
-            "prompt": "提示詞"
-          },
-          "language_choose": {
-            "title": "語言選擇"
-          }
-        },
         "search": "搜尋模型...",
         "title": "模型",
-        "topic_naming_model": "主題命名",
-        "topic_naming_settings": {
-          "hint.autonaming": "會話自動命名",
-          "hint.prompt": "提示詞"
-        },
-        "quick_assistant": "快速助理",
-        "quick_assistant_description": "快速助理使用的模型",
         "add.model": "添加模型",
         "add.model.id": "模型 ID",
         "add.model.id.placeholder": "必填 例如 gpt-4o",
@@ -189,7 +167,9 @@
           "balance_recharge": "餘額充值",
           "free_bills": "免費帳單"
         },
-        "api_host.placeholder": "請輸入 API 主機"
+        "api_host.placeholder": "請輸入 API 主機",
+        "not_found": "找不到提供商",
+        "not_found_message": "導航到提供商頁面時發生錯誤"
       },
       "proxy.title": "代理地址",
       "theme.window.style.opaque": "不透明窗口",
@@ -229,7 +209,11 @@
           "api": {
             "title": "API 服務提供商"
           }
-        }
+        },
+        "check_success": "檢查成功",
+        "check_success_message": "API 運作正常",
+        "check_fail": "檢查失敗",
+        "check_error": "檢查錯誤"
       },
       "modelAndService": "AI 模型與服務",
       "dataAndSecurity": "資料與安全性",
@@ -304,6 +288,103 @@
         "backupPath": "備份存儲路徑",
         "logout": "登出",
         "login": "使用堅果雲賬戶登錄"
+      },
+      "assistant": {
+        "title": "預設助理",
+        "default_assistant": {
+          "name": "預設助理",
+          "description": "創建新助理時使用的助理，如果未設置助理，將使用此助理"
+        },
+        "topic_naming_assistant": {
+          "name": "主題命名助理",
+          "description": "自動命名新主題時使用的助理"
+        },
+        "translate_assistant": {
+          "name": "翻譯助理",
+          "description": "用於翻譯服務的助理"
+        },
+        "empty": "還沒有助理..."
+      },
+      "notion": {
+        "api_key": "Notion API 金鑰",
+        "api_key_placeholder": "輸入 Notion API 金鑰",
+        "check": {
+          "button": "檢查",
+          "empty_api_key": "API 金鑰未配置",
+          "empty_database_id": "資料庫 ID 未配置",
+          "error": "連接錯誤，請檢查網路配置和 API 金鑰以及資料庫 ID",
+          "fail": "連接失敗，請檢查網路和 API 金鑰以及資料庫 ID",
+          "success": "連接成功"
+        },
+        "database_id": "Notion 資料庫 ID",
+        "database_id_placeholder": "輸入 Notion 資料庫 ID",
+        "help": "Notion 配置文檔",
+        "page_name_key": "頁面標題欄位名稱",
+        "page_name_key_placeholder": "輸入頁面標題欄位名稱，預設為 Name",
+        "title": "Notion 設定",
+        "export_reasoning.title": "在匯出時包含推理鏈",
+        "export_reasoning.help": "啟用後，匯出的內容將包含助理生成的推理鏈（思考過程）。"
+      },
+      "yuque": {
+        "check": {
+          "button": "檢查",
+          "empty_repo_url": "請先輸入知識庫 URL",
+          "empty_token": "請先輸入語雀 Token",
+          "fail": "語雀連接驗證失敗",
+          "success": "語雀連接驗證成功"
+        },
+        "help": "獲取語雀 Token",
+        "repo_url": "語雀 URL",
+        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
+        "title": "語雀配置",
+        "token": "語雀 Token",
+        "token_placeholder": "請輸入語雀 Token"
+      },
+      "joplin": {
+        "check": {
+          "button": "檢查",
+          "empty_token": "請輸入 Joplin 授權令牌",
+          "empty_url": "請輸入 Joplin 剪藏服務 URL",
+          "fail": "Joplin 連接驗證失敗",
+          "success": "Joplin 連接驗證成功"
+        },
+        "help": "點擊此處獲取 Joplin 授權令牌",
+        "title": "Joplin 配置",
+        "token": "Joplin 授權令牌",
+        "token_placeholder": "Joplin 授權令牌",
+        "url": "Joplin Web 剪藏服務 URL",
+        "url_placeholder": "http://127.0.0.1:41184/",
+        "export_reasoning.title": "在匯出時包含推理鏈",
+        "export_reasoning.help": "啟用後，匯出的內容將包含助理生成的推理鏈（思考過程）。"
+      },
+      "obsidian": {
+        "title": "Obsidian 配置",
+        "default_vault": "預設 Obsidian 儲存庫",
+        "default_vault_placeholder": "請選擇預設的 Obsidian 儲存庫",
+        "default_vault_loading": "正在載入 Obsidian 儲存庫...",
+        "default_vault_no_vaults": "未找到 Obsidian 儲存庫",
+        "default_vault_fetch_error": "獲取 Obsidian 儲存庫失敗",
+        "default_vault_export_failed": "匯出失敗"
+      },
+      "siyuan": {
+        "title": "思源筆記配置",
+        "api_url": "思源筆記 API URL",
+        "api_url_placeholder": "例如：http://127.0.0.1:6806",
+        "token": "思源筆記 Token",
+        "token.help": "獲取思源筆記 Token",
+        "token_placeholder": "請輸入思源筆記 Token",
+        "box_id": "思源筆記筆記本 ID",
+        "box_id_placeholder": "請輸入思源筆記筆記本 ID",
+        "root_path": "思源筆記根路徑",
+        "root_path_placeholder": "例如：/CherryStudio",
+        "check": {
+          "title": "連接檢查",
+          "button": "檢查",
+          "empty_config": "請填寫 API 地址和令牌",
+          "success": "連接成功",
+          "fail": "連接失敗，請檢查 API 地址和令牌",
+          "error": "連接錯誤，請檢查網路連接"
+        }
       }
     },
     "profile": {
@@ -393,6 +474,12 @@
     "topics": {
       "title": "主題",
       "title.recent": "最近的主題"
+    },
+    "errors": {
+      "cannotOpenLink": "無法打開連結: {{error}}",
+      "linkErrorTitle": "打開連結錯誤",
+      "deviceCannotHandleLink": "您的設備無法處理此連結: {{href}}",
+      "cannotOpenLinkTitle": "無法打開連結"
     }
   }
 }

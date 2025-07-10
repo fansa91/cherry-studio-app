@@ -11,15 +11,15 @@ export const assistants = sqliteTable('assistants', {
   emoji: text('emoji'),
   description: text('description'),
   model: text('model'),
-  defaultModel: text('default_model'),
+  default_model: text('default_model'),
   settings: text('settings'),
-  enableWebSearch: integer('enable_web_search', { mode: 'boolean' }),
+  enable_web_search: integer('enable_web_search', { mode: 'boolean' }),
   // websearchProviderId: text('websearch_provider_id'),
   // todo add foreign key
   // .references(() => websearchProviders.id),
-  enableGenerateImage: integer('enable_generate_image', { mode: 'boolean' }),
+  enable_generate_image: integer('enable_generate_image', { mode: 'boolean' }),
   // mcpServers: blob('mcp_servers'),
-  knowledgeRecognition: text('knowledge_recognition'),
+  knowledge_recognition: text('knowledge_recognition'),
   tags: text('tags'),
   group: text('group')
 })

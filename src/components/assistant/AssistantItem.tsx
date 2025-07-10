@@ -57,7 +57,7 @@ const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
   }
 
   const editAssistant = () => {
-    navigation.navigate('AssistantDetailScreen', { assistantId: assistant.id, mode: 'edit' })
+    navigation.navigate('AssistantDetailScreen', { assistantId: assistant.id })
   }
 
   // get the newest update time from assistant's topics

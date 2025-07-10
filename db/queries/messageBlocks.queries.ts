@@ -12,10 +12,10 @@ type KeysOfUnion<T> = T extends T ? keyof T : never
 export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
   const base = {
     id: dbRecord.id,
-    messageId: dbRecord.messageId,
+    messageId: dbRecord.message_id,
     type: dbRecord.type as MessageBlockType,
-    createdAt: dbRecord.createdAt,
-    updatedAt: dbRecord.updatedAt,
+    createdAt: dbRecord.created_at,
+    updatedAt: dbRecord.updated_at,
     status: dbRecord.status as MessageBlockStatus,
     model: dbRecord.model ? JSON.parse(dbRecord.model) : undefined,
     metadata: dbRecord.metadata ? JSON.parse(dbRecord.metadata) : undefined,
@@ -29,8 +29,8 @@ export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
         ...base,
         type: MessageBlockType.MAIN_TEXT,
         content: dbRecord.content || '',
-        knowledgeBaseIds: dbRecord.knowledgeBaseIds ? JSON.parse(dbRecord.knowledgeBaseIds) : undefined,
-        citationReferences: dbRecord.citationReferences ? JSON.parse(dbRecord.citationReferences) : undefined
+        knowledgeBaseIds: dbRecord.knowledge_base_ids ? JSON.parse(dbRecord.knowledge_base_ids) : undefined,
+        citationReferences: dbRecord.citation_references ? JSON.parse(dbRecord.citation_references) : undefined
       }
 
     case MessageBlockType.THINKING:
@@ -38,7 +38,7 @@ export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
         ...base,
         type: MessageBlockType.THINKING,
         content: dbRecord.content || '',
-        thinking_millsec: dbRecord.thinkingMillsec || undefined
+        thinking_millsec: dbRecord.thinking_millsec || undefined
       }
 
     case MessageBlockType.CODE:
@@ -61,8 +61,8 @@ export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
       return {
         ...base,
         type: MessageBlockType.TOOL,
-        toolId: dbRecord.toolId || '',
-        toolName: dbRecord.toolName || undefined,
+        toolId: dbRecord.tool_id || '',
+        toolName: dbRecord.tool_name || undefined,
         arguments: dbRecord.arguments ? JSON.parse(dbRecord.arguments) : undefined,
         content: dbRecord.content
           ? // 尝试解析为对象，如果失败则保持为字符串
@@ -81,9 +81,9 @@ export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
         ...base,
         type: MessageBlockType.TRANSLATION,
         content: dbRecord.content || '',
-        sourceBlockId: dbRecord.sourceBlockId || undefined,
-        sourceLanguage: dbRecord.sourceLanguage || undefined,
-        targetLanguage: dbRecord.targetLanguage || ''
+        sourceBlockId: dbRecord.source_block_id || undefined,
+        sourceLanguage: dbRecord.source_language || undefined,
+        targetLanguage: dbRecord.target_language || ''
       }
 
     case MessageBlockType.CITATION:
@@ -118,12 +118,13 @@ export function transformDbToMessageBlock(dbRecord: any): MessageBlock {
 
 // MessageBlock 转换为数据库记录
 function transformMessageBlockToDb(messageBlock: MessageBlock): any {
+  console.log('Transforming message block to DB record:', messageBlock)
   const base = {
     id: messageBlock.id,
-    messageId: messageBlock.messageId,
+    message_id: messageBlock.messageId,
     type: messageBlock.type,
-    createdAt: messageBlock.createdAt,
-    updatedAt: messageBlock.updatedAt,
+    created_at: messageBlock.createdAt,
+    updated_at: messageBlock.updatedAt,
     status: messageBlock.status,
     model: messageBlock.model ? JSON.stringify(messageBlock.model) : null,
     metadata: messageBlock.metadata ? JSON.stringify(messageBlock.metadata) : null,
@@ -136,15 +137,15 @@ function transformMessageBlockToDb(messageBlock: MessageBlock): any {
       return {
         ...base,
         content: messageBlock.content,
-        knowledgeBaseIds: messageBlock.knowledgeBaseIds ? JSON.stringify(messageBlock.knowledgeBaseIds) : null,
-        citationReferences: messageBlock.citationReferences ? JSON.stringify(messageBlock.citationReferences) : null
+        knowledge_base_ids: messageBlock.knowledgeBaseIds ? JSON.stringify(messageBlock.knowledgeBaseIds) : null,
+        citation_references: messageBlock.citationReferences ? JSON.stringify(messageBlock.citationReferences) : null
       }
 
     case MessageBlockType.THINKING:
       return {
         ...base,
         content: messageBlock.content,
-        thinkingMillsec: messageBlock.thinking_millsec || null
+        thinking_millsec: messageBlock.thinking_millsec || null
       }
 
     case MessageBlockType.CODE:
@@ -164,8 +165,8 @@ function transformMessageBlockToDb(messageBlock: MessageBlock): any {
     case MessageBlockType.TOOL:
       return {
         ...base,
-        toolId: messageBlock.toolId,
-        toolName: messageBlock.toolName || null,
+        tool_id: messageBlock.toolId,
+        tool_name: messageBlock.toolName || null,
         arguments: messageBlock.arguments ? JSON.stringify(messageBlock.arguments) : null,
         content: typeof messageBlock.content === 'object' ? JSON.stringify(messageBlock.content) : messageBlock.content
       }
@@ -174,9 +175,9 @@ function transformMessageBlockToDb(messageBlock: MessageBlock): any {
       return {
         ...base,
         content: messageBlock.content,
-        sourceBlockId: messageBlock.sourceBlockId || null,
-        sourceLanguage: messageBlock.sourceLanguage || null,
-        targetLanguage: messageBlock.targetLanguage
+        source_block_id: messageBlock.sourceBlockId || null,
+        source_language: messageBlock.sourceLanguage || null,
+        target_language: messageBlock.targetLanguage
       }
 
     case MessageBlockType.CITATION:
@@ -198,41 +199,25 @@ function transformMessageBlockToDb(messageBlock: MessageBlock): any {
 }
 
 /**
- * 添加或更新单个块 (Upsert)。
- * @param block - 要更新或插入的 MessageBlock 对象。
+ * 添加或更新一个或多个块 (Upsert)。
+ * @param blocks - 要更新或插入的 MessageBlock 对象或对象数组。
  */
-export async function upsertOneBlock(block: MessageBlock) {
-  try {
-    const dbRecord = transformMessageBlockToDb(block)
-    await db.insert(messageBlocks).values(dbRecord).onConflictDoUpdate({
-      target: messageBlocks.id,
-      set: dbRecord // 更新除主键外的所有字段
-    })
-  } catch (error) {
-    console.error('Error upserting one block:', error)
-    throw error
-  }
-}
-
-/**
- * 添加或更新多个块。
- * @param blocks - 要更新或插入的 MessageBlock 对象数组。
- */
-export async function upsertManyBlocks(blocks: MessageBlock[]) {
-  if (blocks.length === 0) return
+export async function upsertBlocks(blocks: MessageBlock | MessageBlock[]) {
+  const blocksArray = Array.isArray(blocks) ? blocks : [blocks]
+  if (blocksArray.length === 0) return
 
   try {
-    const dbRecords = blocks.map(transformMessageBlockToDb)
+    const dbRecords = blocksArray.map(transformMessageBlockToDb)
 
     const upsertPromises = dbRecords.map(record =>
       db.insert(messageBlocks).values(record).onConflictDoUpdate({
         target: messageBlocks.id,
-        set: record
+        set: record // 更新除主键外的所有字段
       })
     )
     await Promise.all(upsertPromises)
   } catch (error) {
-    console.error('Error upserting many blocks:', error)
+    console.error('Error upserting block(s):', error)
     throw error
   }
 }
@@ -270,7 +255,7 @@ export async function updateOneBlock(update: { id: string; changes: Partial<Mess
       if ((jsonFields as string[]).includes(key)) {
         dbChanges[key] = JSON.stringify(value)
       } else if (key === 'thinking_millsec') {
-        dbChanges.thinkingMillsec = value
+        dbChanges.thinking_millsec = value
       } else if (key === 'content' && typeof value === 'object') {
         dbChanges.content = JSON.stringify(value)
       } else {
@@ -336,7 +321,7 @@ export async function removeAllBlocks() {
  */
 export async function getBlocksByMessageId(messageId: string): Promise<MessageBlock[]> {
   try {
-    const dbRecords = await db.select().from(messageBlocks).where(eq(messageBlocks.messageId, messageId))
+    const dbRecords = await db.select().from(messageBlocks).where(eq(messageBlocks.message_id, messageId))
     return dbRecords.map(transformDbToMessageBlock)
   } catch (error) {
     console.error(`Error getting blocks for message ID ${messageId}:`, error)
@@ -354,7 +339,7 @@ export async function getBlocksIdByMessageId(messageId: string): Promise<string[
     const dbRecords = await db
       .select({ id: messageBlocks.id })
       .from(messageBlocks)
-      .where(eq(messageBlocks.messageId, messageId))
+      .where(eq(messageBlocks.message_id, messageId))
 
     return dbRecords.map(record => record.id)
   } catch (error) {

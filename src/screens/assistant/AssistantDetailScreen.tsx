@@ -2,7 +2,9 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ArrowLeftRight, PenLine } from '@tamagui/lucide-icons'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, ScrollView, styled, Tabs, Text, useTheme, XStack, YStack } from 'tamagui'
+import { ActivityIndicator } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
+import { styled, Tabs, Text, useTheme, View, XStack, YStack } from 'tamagui'
 
 import { ModelTabContent } from '@/components/assistant/ModelTabContent'
 import { PromptTabContent } from '@/components/assistant/PromptTabContent'
@@ -23,23 +25,37 @@ export default function AssistantDetailScreen() {
   const navigation = useNavigation()
   const route = useRoute<AssistantDetailRouteProp>()
 
-  const { assistantId, mode } = route.params
-  const { assistant } = useAssistant(assistantId)
+  const { assistantId } = route.params
   const [activeTab, setActiveTab] = useState('model')
+  const { assistant, isLoading, updateAssistant } = useAssistant(assistantId)
 
-  const onAddTopic = () => {
-    // Navigate to the topic creation page or open a modal
-    console.log('Navigate to add topic page')
+  if (isLoading) {
+    return (
+      <SafeAreaContainer>
+        <ActivityIndicator />
+      </SafeAreaContainer>
+    )
+  }
+
+  if (!assistant) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>{t('assistants.error.notFound')}</Text>
+      </View>
+    )
   }
 
   return (
     <SafeAreaContainer>
       <HeaderBar
-        title={mode === 'create' ? t('assistants.title.create') : t('assistants.title.edit')}
+        title={!assistant?.emoji ? t('assistants.title.create') : t('assistants.title.edit')}
         onBackPress={() => navigation.goBack()}
       />
-      {/* todo KeyboardAvoidingView bug */}
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled">
         <SettingContainer>
           <XStack justifyContent="center" alignItems="center">
             <AvatarEditButton
@@ -75,25 +91,20 @@ export default function AssistantDetailScreen() {
             </Tabs.List>
             <YStack flex={1} paddingTop={30}>
               <Tabs.Content value="prompt" flex={1} gap={30}>
-                <PromptTabContent assistant={assistant} />
+                <PromptTabContent assistant={assistant} updateAssistant={updateAssistant} />
               </Tabs.Content>
 
               <Tabs.Content value="model" flex={1} gap={30}>
-                <ModelTabContent assistant={assistant} />
+                <ModelTabContent assistant={assistant} updateAssistant={updateAssistant} />
               </Tabs.Content>
 
               <Tabs.Content value="tool" flex={1} gap={30}>
-                <ToolTabContent assistant={assistant} />
+                <ToolTabContent assistant={assistant} updateAssistant={updateAssistant} />
               </Tabs.Content>
             </YStack>
           </Tabs>
-          <XStack paddingHorizontal={25} width="100%" justifyContent="center" alignItems="center">
-            <Button backgroundColor="$foregroundGreen" width="100%" borderRadius={48}>
-              {t(`assistants.${mode === 'create' ? 'create' : 'save'}`)}
-            </Button>
-          </XStack>
         </SettingContainer>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaContainer>
   )
 }

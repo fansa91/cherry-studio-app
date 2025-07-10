@@ -3,8 +3,8 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 export const websearch_providers = sqliteTable('websearch_providers', {
   id: text('id').primaryKey(),
   name: text('name'),
-  api_key: text('api_key').notNull(),
-  api_host: text('api_host').notNull(),
+  api_key: text('api_key'),
+  api_host: text('api_host'),
   engines: text('engines'),
   url: text('url'),
   basic_auth_username: text('basic_auth_username'),

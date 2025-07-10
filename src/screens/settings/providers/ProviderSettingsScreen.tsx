@@ -2,8 +2,9 @@ import BottomSheet from '@gorhom/bottom-sheet'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronRight, HeartPulse, Plus, Settings, Settings2 } from '@tamagui/lucide-icons'
 import { debounce, groupBy } from 'lodash'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ActivityIndicator } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { Accordion, Button, Separator, Text, XStack, YStack } from 'tamagui'
 
@@ -16,7 +17,7 @@ import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { CustomSwitch } from '@/components/ui/Switch'
 import { useProvider } from '@/hooks/useProviders'
-import { Model } from '@/types/assistant'
+import { Model, Provider } from '@/types/assistant'
 import { NavigationProps, RootStackParamList } from '@/types/naviagate'
 
 type ProviderSettingsRouteProp = RouteProp<RootStackParamList, 'ProviderSettingsScreen'>
@@ -30,19 +31,21 @@ export default function ProviderSettingsScreen() {
 
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
-  const handleOpenBottomSheet = useCallback(() => {
+
+  const handleOpenBottomSheet = () => {
     bottomSheetRef.current?.expand()
     setIsBottomSheetOpen(true)
-  }, [])
-  const handleBottomSheetClose = useCallback(() => {
+  }
+
+  const handleBottomSheetClose = () => {
     setIsBottomSheetOpen(false)
-  }, [])
+  }
 
   const { providerId } = route.params
-  const { provider } = useProvider(providerId)
+  const { provider, isLoading, updateProvider } = useProvider(providerId)
 
   // Debounce search text
-  const debouncedSetSearchText = useMemo(() => debounce(setDebouncedSearchText, 300), [])
+  const debouncedSetSearchText = debounce(setDebouncedSearchText, 300)
 
   React.useEffect(() => {
     debouncedSetSearchText(searchText)
@@ -53,40 +56,72 @@ export default function ProviderSettingsScreen() {
   }, [searchText, debouncedSetSearchText])
 
   // 根据搜索文本过滤和分组模型
-  const modelGroups = useMemo(() => {
+  const getModelGroups = (debouncedSearchText: string, provider: Provider | null) => {
+    if (!provider) return {}
     const filteredModels = debouncedSearchText // Use debouncedSearchText
       ? provider.models.filter(model => model.name.toLowerCase().includes(debouncedSearchText.toLowerCase()))
       : provider.models
     return groupBy(filteredModels, 'group')
-  }, [debouncedSearchText, provider.models]) // Use debouncedSearchText
+  }
+
+  const modelGroups = getModelGroups(debouncedSearchText, provider)
 
   // 对分组进行排序
-  const sortedModelGroups = useMemo(() => {
-    return Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
-  }, [modelGroups])
+  const sortedModelGroups = Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
 
   // 默认展开前6个分组
-  const defaultOpenGroups = useMemo(() => {
-    return sortedModelGroups.slice(0, 6).map((_, index) => `item-${index}`)
-  }, [sortedModelGroups])
+  const defaultOpenGroups = sortedModelGroups.slice(0, 6).map((_, index) => `item-${index}`)
 
-  const onAddModel = useCallback(() => {
+  const onAddModel = () => {
     // 添加模型逻辑
     handleOpenBottomSheet()
-  }, [])
+  }
 
-  const onManageModel = useCallback(() => {
+  const onManageModel = () => {
     // 管理模型逻辑
     navigation.navigate('ManageModelsScreen', { providerId })
-  }, [navigation, providerId])
+  }
 
-  const onApiService = useCallback(() => {
+  const onApiService = () => {
     navigation.navigate('ApiServiceScreen', { providerId })
-  }, [])
+  }
 
-  const onSettingModel = useCallback((model: Model) => {
+  const onSettingModel = (model: Model) => {
     console.log('[ProviderSettingsPage] onSettingModel', model)
-  }, [])
+  }
+
+  const handleEnabledChange = async (checked: boolean) => {
+    if (provider) {
+      const updatedProvider = { ...provider, enabled: checked }
+
+      try {
+        await updateProvider(updatedProvider)
+      } catch (error) {
+        console.error('Failed to save provider:', error)
+      }
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaContainer>
+        <ActivityIndicator />
+      </SafeAreaContainer>
+    )
+  }
+
+  if (!provider) {
+    return (
+      <SafeAreaContainer>
+        <HeaderBar title={t('settings.provider.not_found')} onBackPress={() => navigation.goBack()} />
+        <SettingContainer>
+          <Text textAlign="center" color="$gray10" paddingVertical={24}>
+            {t('settings.provider.not_found_message')}
+          </Text>
+        </SettingContainer>
+      </SafeAreaContainer>
+    )
+  }
 
   return (
     <SafeAreaContainer>
@@ -122,10 +157,7 @@ export default function ProviderSettingsScreen() {
               <SettingGroup>
                 <SettingRow>
                   <Text>{t('common.enabled')}</Text>
-                  <CustomSwitch
-                    checked={provider.enabled}
-                    // onCheckedChange={checked => updateProvider({ ...provider, enabled: checked })}
-                  />
+                  <CustomSwitch checked={provider.enabled} onCheckedChange={handleEnabledChange} />
                 </SettingRow>
                 <SettingRow onPress={onApiService}>
                   <Text>{t('settings.provider.api_service')}</Text>

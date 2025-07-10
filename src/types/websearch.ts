@@ -27,7 +27,8 @@ export enum WebSearchSource {
   QWEN = 'qwen',
   HUNYUAN = 'hunyuan',
   ZHIPU = 'zhipu',
-  GROK = 'grok'
+  GROK = 'grok',
+  AISDK = 'ai-sdk'
 }
 
 export type WebSearchResponse = {
@@ -53,6 +54,14 @@ export type WebSearchResults =
   | OpenAI.Responses.ResponseOutputText.URLCitation[]
   | WebSearchResultBlock[]
   | any[]
+
+export type WebSearchPhase = 'default' | 'fetch_complete' | 'rag' | 'rag_complete' | 'rag_failed' | 'cutoff'
+
+export type WebSearchStatus = {
+  phase: WebSearchPhase
+  countBefore?: number
+  countAfter?: number
+}
 
 export interface Citation {
   number: number
