@@ -1,11 +1,16 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { AtSign } from '@tamagui/lucide-icons'
+import { ImpactFeedbackStyle } from 'expo-haptics'
 import React, { useRef } from 'react'
+import { Keyboard } from 'react-native'
 import { Button } from 'tamagui'
 
 import { Model } from '@/types/assistant'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
+import { haptic } from '@/utils/haptic'
 
-import MentionSheet from '../sheets/MentionSheet'
+import ModelSheet from '../sheets/ModelSheet'
 
 interface MentionButtonProps {
   mentions: Model[]
@@ -13,23 +18,27 @@ interface MentionButtonProps {
 }
 
 export const MentionButton: React.FC<MentionButtonProps> = ({ mentions, setMentions }) => {
+  const isDark = useIsDark()
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
 
   const handlePress = () => {
+    Keyboard.dismiss()
+    haptic(ImpactFeedbackStyle.Light)
     bottomSheetModalRef.current?.present()
   }
 
   return (
     <>
       <Button
+        circular
         chromeless
-        size={24}
-        icon={<AtSign size={24} />}
-        color={mentions.length > 0 ? 'rgba(0, 185, 107, 1)' : undefined}
+        size={20}
+        icon={<AtSign size={20} />}
+        color={mentions.length > 0 ? getGreenColor(isDark, 100) : undefined}
         onPress={handlePress}
       />
 
-      <MentionSheet ref={bottomSheetModalRef} mentions={mentions} setMentions={setMentions} />
+      <ModelSheet ref={bottomSheetModalRef} mentions={mentions} setMentions={setMentions} multiple={true} />
     </>
   )
 }

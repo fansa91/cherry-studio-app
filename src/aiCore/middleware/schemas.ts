@@ -1,8 +1,8 @@
 import { Assistant } from '@/types/assistant'
 import { Chunk } from '@/types/chunk'
-import { MCPTool } from '@/types/mcp'
 import { Message } from '@/types/message'
 import { SdkRawChunk, SdkRawOutput } from '@/types/sdk'
+import { MCPTool } from '@/types/tool'
 
 import { ProcessingState } from './types'
 
@@ -24,7 +24,7 @@ export interface CompletionsParams {
    * 'generate': 生成
    * 'check': API检查
    */
-  callType?: 'chat' | 'translate' | 'summary' | 'search' | 'generate' | 'check'
+  callType?: 'chat' | 'translate' | 'summary' | 'search' | 'generate' | 'check' | 'test'
 
   // 基础对话数据
   messages: Message[] | string // 联合类型方便判断是否为空
@@ -50,6 +50,7 @@ export interface CompletionsParams {
   // 功能开关
   streamOutput: boolean
   enableWebSearch?: boolean
+  enableUrlContext?: boolean
   enableReasoning?: boolean
   enableGenerateImage?: boolean
 

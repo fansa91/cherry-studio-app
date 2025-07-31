@@ -1,5 +1,6 @@
 import { StreamTextParams } from '@cherrystudio/ai-core'
-import { isEmpty } from 'lodash'
+import { t } from 'i18next'
+import { isEmpty, takeRight } from 'lodash'
 
 import LegacyAiProvider from '@/aiCore'
 import AiProvider from '@/aiCore'
@@ -9,16 +10,25 @@ import { CompletionsParams } from '@/aiCore/middleware/schemas'
 import { buildStreamTextParams, convertMessagesToSdkMessages } from '@/aiCore/transformParameters'
 import { isEmbeddingModel } from '@/config/models/embedding'
 import i18n from '@/i18n'
+import { loggerService } from '@/services/LoggerService'
 import { Assistant, Model, Provider } from '@/types/assistant'
-import { Chunk, ChunkType } from '@/types/chunk'
-import { AssistantMessageStatus, Message, MessageBlock, MessageBlockStatus, MessageBlockType } from '@/types/message'
+import { Chunk } from '@/types/chunk'
+import { Message } from '@/types/message'
 import { SdkModel } from '@/types/sdk'
-import { createBaseMessageBlock, createTranslationBlock } from '@/utils/messageUtils/create'
+import { isEnabledToolUse } from '@/utils/mcpTool'
+import { filterMainTextMessages } from '@/utils/messageUtils/filters'
 
-import { updateOneBlock, upsertBlocks } from '../../db/queries/messageBlocks.queries'
-import { getMessageById, upsertMessages } from '../../db/queries/messages.queries'
 import { createBlankAssistant, getAssistantById, getAssistantProvider, getDefaultModel } from './AssistantService'
+import {
+  cancelThrottledBlockUpdate,
+  saveUpdatedBlockToDB,
+  saveUpdatesToDB,
+  throttledBlockUpdate
+} from './MessagesService'
+import { BlockManager, createCallbacks } from './messageStreaming'
 import { createStreamProcessor, StreamProcessorCallbacks } from './StreamProcessingService'
+import { getTopicById, upsertTopics } from './TopicService'
+const logger = loggerService.withContext('fetchChatCompletion')
 
 export async function fetchChatCompletion({
   messages,
@@ -45,20 +55,28 @@ export async function fetchChatCompletion({
     params: aiSdkParams,
     modelId,
     capabilities
-  } = await buildStreamTextParams(messages, assistant, {
+  } = await buildStreamTextParams(messages, assistant, provider, {
+    // mcpTools: mcpTools,
+    enableTools: isEnabledToolUse(assistant),
+    webSearchProviderId: assistant.webSearchProviderId,
     requestOptions: options
   })
+
+  logger.info('fetchChatCompletion', capabilities)
 
   const middlewareConfig: AiSdkMiddlewareConfig = {
     streamOutput: assistant.settings?.streamOutput ?? true,
     onChunk: onChunkReceived,
     model: assistant.model,
     provider: provider,
-    enableReasoning: capabilities.enableReasoning
+    enableReasoning: capabilities.enableReasoning,
+    // enableTool: assistant.settings?.toolUseMode === 'prompt',
+    enableWebSearch: capabilities.enableWebSearch
+    // mcpTools
   }
 
   // --- Call AI Completions ---
-  onChunkReceived({ type: ChunkType.LLM_RESPONSE_CREATED })
+  // onChunkReceived({ type: ChunkType.LLM_RESPONSE_CREATED })
   await AI.completions(modelId, aiSdkParams, middlewareConfig)
 }
 
@@ -79,76 +97,96 @@ export async function fetchTranslate({
   assistantMessageId: string
   message: Message
 }) {
-  let accumulatedContent = ''
-  let initialPlaceholderBlockId: string | null = null
-  let translationBlockId: string | null = null
+  const accumulatedContent = ''
+  const initialPlaceholderBlockId: string | null = null
+  const translationBlockId: string | null = null
   let callbacks: StreamProcessorCallbacks = {}
-  callbacks = {
-    onLLMResponseCreated: async () => {
-      console.log(`[onLLMResponseCreated] Created initial placeholder block with ID`)
+  // callbacks = {
+  //   onLLMResponseCreated: async () => {
+  //     logger.info(`[onLLMResponseCreated] Created initial placeholder block with ID`)
 
-      const baseBlock = createBaseMessageBlock(assistantMessageId, MessageBlockType.UNKNOWN, {
-        status: MessageBlockStatus.PROCESSING
-      })
-      initialPlaceholderBlockId = baseBlock.id
-      await upsertBlocks(baseBlock)
+  //     const baseBlock = createBaseMessageBlock(assistantMessageId, MessageBlockType.UNKNOWN, {
+  //       status: MessageBlockStatus.PROCESSING
+  //     })
+  //     initialPlaceholderBlockId = baseBlock.id
+  //     await upsertBlocks(baseBlock)
 
-      const toBeUpdatedMessage = await getMessageById(baseBlock.messageId)
+  //     const toBeUpdatedMessage = await getMessageById(baseBlock.messageId)
 
-      if (!toBeUpdatedMessage) {
-        console.error(`[onLLMResponseCreated] Message ${baseBlock.messageId} not found.`)
-        return
-      }
+  //     if (!toBeUpdatedMessage) {
+  //       logger.error(`[onLLMResponseCreated] Message ${baseBlock.messageId} not found.`)
+  //       return
+  //     }
 
-      toBeUpdatedMessage.status = AssistantMessageStatus.PROCESSING
-      await upsertMessages(toBeUpdatedMessage)
-    },
-    onTextChunk: async text => {
-      accumulatedContent += text
+  //     toBeUpdatedMessage.status = AssistantMessageStatus.PROCESSING
+  //     await upsertMessages(toBeUpdatedMessage)
+  //   },
+  //   onTextChunk: async text => {
+  //     accumulatedContent += text
 
-      if (translationBlockId) {
-        const blockChanges: Partial<MessageBlock> = {
-          content: accumulatedContent,
-          status: MessageBlockStatus.STREAMING
-        }
-        await updateOneBlock({ id: translationBlockId, changes: blockChanges })
-      } else if (initialPlaceholderBlockId) {
-        // 将占位块转换为翻译块
-        const initialChanges: Partial<MessageBlock> = {
-          type: MessageBlockType.TRANSLATION,
-          content: accumulatedContent,
-          status: MessageBlockStatus.STREAMING
-        }
-        translationBlockId = initialPlaceholderBlockId
-        initialPlaceholderBlockId = null // 清理占位块ID
-        await updateOneBlock({ id: translationBlockId, changes: initialChanges })
-      } else {
-        // Fallback in case onLLMResponseCreated was not triggered
-        const newBlock = createTranslationBlock(assistantMessageId, accumulatedContent, {
-          status: MessageBlockStatus.STREAMING
-        })
-        translationBlockId = newBlock.id
-        await upsertBlocks(newBlock)
-      }
-    },
-    onTextComplete: async finalText => {
-      if (translationBlockId) {
-        const changes = {
-          content: finalText,
-          status: MessageBlockStatus.SUCCESS
-        }
-        await updateOneBlock({ id: translationBlockId, changes })
-        translationBlockId = null
-      } else {
-        console.warn(
-          `[onTextComplete] Received text.complete but last block was not TRANSLATION  or lastBlockId  is null.`
-        )
-      }
-    }
-  }
-  const streamProcessorCallbacks = createStreamProcessor(callbacks)
-
+  //     if (translationBlockId) {
+  //       const blockChanges: Partial<MessageBlock> = {
+  //         content: accumulatedContent,
+  //         status: MessageBlockStatus.STREAMING
+  //       }
+  //       await updateOneBlock({ id: translationBlockId, changes: blockChanges })
+  //     } else if (initialPlaceholderBlockId) {
+  //       // 将占位块转换为翻译块
+  //       const initialChanges: Partial<MessageBlock> = {
+  //         type: MessageBlockType.TRANSLATION,
+  //         content: accumulatedContent,
+  //         status: MessageBlockStatus.STREAMING
+  //       }
+  //       translationBlockId = initialPlaceholderBlockId
+  //       initialPlaceholderBlockId = null // 清理占位块ID
+  //       await updateOneBlock({ id: translationBlockId, changes: initialChanges })
+  //     } else {
+  //       // Fallback in case onLLMResponseCreated was not triggered
+  //       const newBlock = createTranslationBlock(assistantMessageId, accumulatedContent, {
+  //         status: MessageBlockStatus.STREAMING
+  //       })
+  //       translationBlockId = newBlock.id
+  //       await upsertBlocks(newBlock)
+  //     }
+  //   },
+  //   onTextComplete: async finalText => {
+  //     if (translationBlockId) {
+  //       const changes = {
+  //         content: finalText,
+  //         status: MessageBlockStatus.SUCCESS
+  //       }
+  //       await updateOneBlock({ id: translationBlockId, changes })
+  //       translationBlockId = null
+  //     } else {
+  //       logger.warn(
+  //         `[onTextComplete] Received text.complete but last block was not TRANSLATION  or lastBlockId  is null.`
+  //       )
+  //     }
+  //   }
+  // }
+  //
+  //
   const translateAssistant = await getAssistantById('translate')
+
+  // 创建 BlockManager 实例
+  const blockManager = new BlockManager({
+    saveUpdatedBlockToDB,
+    saveUpdatesToDB,
+    assistantMsgId: assistantMessageId,
+    topicId: message.topicId,
+    throttledBlockUpdate,
+    cancelThrottledBlockUpdate
+  })
+
+  callbacks = createCallbacks({
+    blockManager,
+    topicId: message.topicId,
+    assistantMsgId: assistantMessageId,
+    saveUpdatesToDB,
+    assistant: translateAssistant
+  })
+
+  const streamProcessorCallbacks = createStreamProcessor(callbacks)
 
   if (!translateAssistant.model) {
     throw new Error('Translate assistant model is not defined')
@@ -161,11 +199,9 @@ export async function fetchTranslate({
   }
   const llmMessages = await convertMessagesToSdkMessages([message], translateAssistant.model)
 
-  console.log('llmMessages', llmMessages)
-
   const AI = new ModernAiProvider(translateAssistant.model || getDefaultModel(), provider)
-  const { params: aiSdkParams, modelId } = await buildStreamTextParams(llmMessages, translateAssistant)
-  console.log('modelId', modelId)
+  const { params: aiSdkParams, modelId } = await buildStreamTextParams(llmMessages, translateAssistant, provider)
+
   const middlewareConfig: AiSdkMiddlewareConfig = {
     streamOutput: translateAssistant.settings?.streamOutput ?? true,
     onChunk: streamProcessorCallbacks,
@@ -177,7 +213,7 @@ export async function fetchTranslate({
   try {
     return (await AI.completions(modelId, aiSdkParams, middlewareConfig)).getText() || ''
   } catch (error: any) {
-    console.error('Error during translation:', error)
+    logger.error('Error during translation:', error)
     return ''
   }
 }
@@ -247,5 +283,66 @@ export async function checkApi(provider: Provider, model: Model): Promise<void> 
     } else {
       throw error
     }
+  }
+}
+
+export async function fetchTopicNaming(topicId: string) {
+  logger.info('Fetching topic naming...')
+  const topic = await getTopicById(topicId)
+
+  if (!topic) {
+    logger.error(`[fetchTopicNaming] Topic with ID ${topicId} not found.`)
+    return
+  }
+
+  if (topic.name !== t('topics.new_topic')) {
+    return
+  }
+
+  let callbacks: StreamProcessorCallbacks = {}
+
+  callbacks = {
+    onTextComplete: async finalText => {
+      await upsertTopics([
+        {
+          ...topic,
+          name: finalText
+        }
+      ])
+    }
+  }
+  const streamProcessorCallbacks = createStreamProcessor(callbacks)
+  const topicNamingAssistant = await getAssistantById('topic_naming')
+
+  if (!topicNamingAssistant.model) {
+    throw new Error('Translate assistant model is not defined')
+  }
+
+  const provider = await getAssistantProvider(topicNamingAssistant)
+
+  // 总结上下文总是取最后5条消息
+  const contextMessages = takeRight(topic.messages, 5)
+
+  // LLM对多条消息的总结有问题，用单条结构化的消息表示会话内容会更好
+  const mainTextMessages = await filterMainTextMessages(contextMessages)
+
+  const llmMessages = await convertMessagesToSdkMessages(mainTextMessages, topicNamingAssistant.model)
+
+  const AI = new ModernAiProvider(topicNamingAssistant.model || getDefaultModel(), provider)
+  const { params: aiSdkParams, modelId } = await buildStreamTextParams(llmMessages, topicNamingAssistant, provider)
+
+  const middlewareConfig: AiSdkMiddlewareConfig = {
+    streamOutput: topicNamingAssistant.settings?.streamOutput ?? true,
+    onChunk: streamProcessorCallbacks,
+    model: topicNamingAssistant.model,
+    provider: provider,
+    enableReasoning: topicNamingAssistant.settings?.reasoning_effort !== undefined
+  }
+
+  try {
+    return (await AI.completions(modelId, aiSdkParams, middlewareConfig)).getText() || ''
+  } catch (error: any) {
+    logger.error('Error during translation:', error)
+    return ''
   }
 }

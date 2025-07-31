@@ -1,11 +1,13 @@
 import { eq } from 'drizzle-orm'
 
+import { loggerService } from '@/services/LoggerService'
 import { Topic } from '@/types/assistant'
 import { Message } from '@/types/message'
 import { safeJsonParse } from '@/utils/json'
 
 import { db } from '..'
 import { topics } from '../schema'
+const logger = loggerService.withContext('DataBase Topics')
 
 /**
  * 将数据库记录转换为 Topic 类型。
@@ -13,6 +15,7 @@ import { topics } from '../schema'
  * @returns 一个 Topic 对象。
  */
 export function transformDbToTopic(dbRecord: any): Topic {
+  logger.info('transformDbToTopic', dbRecord)
   return {
     id: dbRecord.id,
     assistantId: dbRecord.assistant_id,
@@ -63,7 +66,7 @@ export async function getTopicById(topicId: string): Promise<Topic | undefined> 
     const topic = transformDbToTopic(result[0])
     return topic
   } catch (error) {
-    console.error(`Error getting topic by ID ${topicId}:`, error)
+    logger.error(`Error getting topic by ID ${topicId}:`, error)
     throw error
   }
 }
@@ -95,7 +98,7 @@ export async function updateTopicMessages(topicId: string, messages: Message[]) 
     // 更新数据库中的主题记录
     await db.update(topics).set(dbRecord).where(eq(topics.id, topicId))
   } catch (error) {
-    console.error(`Error updating topic messages for topic ID ${topicId}:`, error)
+    logger.error(`Error updating topic messages for topic ID ${topicId}:`, error)
     throw error
   }
 }
@@ -127,7 +130,7 @@ export async function upsertTopics(topicsToUpsert: Topic | Topic[]): Promise<Top
     const flattenedResults = results.flat()
     return flattenedResults.map(transformDbToTopic)
   } catch (error) {
-    console.error('Error upserting topic(s):', error)
+    logger.error('Error upserting topic(s):', error)
     throw error
   }
 }
@@ -152,7 +155,7 @@ export async function getTopics(): Promise<Topic[]> {
     // 按 updatedAt 排序，最新的在前面
     return topicsWithMessages.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   } catch (error) {
-    console.error('Error getting topics:', error)
+    logger.error('Error getting topics:', error)
     throw error
   }
 }
@@ -161,7 +164,59 @@ export async function deleteTopicById(topicId: string): Promise<void> {
   try {
     await db.delete(topics).where(eq(topics.id, topicId))
   } catch (error) {
-    console.error(`Error deleting topic with ID ${topicId}:`, error)
+    logger.error(`Error deleting topic with ID ${topicId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * 根据助手 ID 获取所有主题。
+ * @param assistantId - 助手的 ID。
+ * @returns 一个 Topic 对象数组。
+ */
+export async function getTopicsByAssistantId(assistantId: string): Promise<Topic[]> {
+  try {
+    const results = await db.select().from(topics).where(eq(topics.assistant_id, assistantId))
+
+    if (results.length === 0) {
+      return []
+    }
+
+    const topicsWithMessages = results.map(dbRecord => transformDbToTopic(dbRecord))
+
+    // 按 updatedAt 排序，最新的在前面
+    return topicsWithMessages.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  } catch (error) {
+    logger.error(`Error getting topics by assistant ID ${assistantId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * 根据助手 ID 删除所有相关主题。
+ * @param assistantId - 助手的 ID。
+ * @returns 无返回值，但会在数据库中删除所有相关主题。
+ */
+export async function deleteTopicsByAssistantId(assistantId: string): Promise<void> {
+  try {
+    await db.delete(topics).where(eq(topics.assistant_id, assistantId))
+  } catch (error) {
+    logger.error(`Error deleting topics by assistant ID ${assistantId}:`, error)
+    throw error
+  }
+}
+
+export async function isTopicOwnedByAssistant(assistantId: string, topicId: string): Promise<boolean> {
+  try {
+    const result = await db.select().from(topics).where(eq(topics.id, topicId)).limit(1)
+
+    if (result.length === 0) {
+      return false
+    }
+
+    return result[0].assistant_id === assistantId
+  } catch (error) {
+    logger.error(`Error checking if topic ${topicId} belongs to assistant ${assistantId}:`, error)
     throw error
   }
 }

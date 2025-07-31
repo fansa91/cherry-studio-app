@@ -14,6 +14,7 @@ import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { WEB_SEARCH_PROVIDER_CONFIG } from '@/config/websearchProviders'
 import { useWebSearchProvider } from '@/hooks/useWebsearchProviders'
 import WebSearchService from '@/services/WebSearchService'
+import { ApiStatus } from '@/types/assistant'
 import { RootStackParamList } from '@/types/naviagate'
 
 type WebsearchProviderSettingsRouteProp = RouteProp<RootStackParamList, 'WebSearchProviderSettingsScreen'>
@@ -25,7 +26,8 @@ export default function WebSearchProviderSettingsScreen() {
   const route = useRoute<WebsearchProviderSettingsRouteProp>()
 
   const [showApiKey, setShowApiKey] = useState(false)
-  const [checkLoading, setCheckLoading] = useState(false)
+  const [checkApiStatus, setCheckApiStatus] = useState<ApiStatus>('idle')
+
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
@@ -36,7 +38,7 @@ export default function WebSearchProviderSettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaContainer>
+      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
       </SafeAreaContainer>
     )
@@ -65,6 +67,7 @@ export default function WebSearchProviderSettingsScreen() {
   }
 
   const handleBottomSheetClose = () => {
+    bottomSheetRef.current?.close()
     setIsBottomSheetOpen(false)
   }
 
@@ -80,7 +83,7 @@ export default function WebSearchProviderSettingsScreen() {
   async function checkSearch() {
     // TODO : 支持多个 API Key 检测
     if (!provider) return
-    setCheckLoading(true)
+    setCheckApiStatus('processing')
 
     try {
       const { valid, error } = await WebSearchService.checkSearch(provider)
@@ -90,13 +93,7 @@ export default function WebSearchProviderSettingsScreen() {
           : ''
 
       if (valid) {
-        Alert.alert(t('settings.websearch.check_success'), t('settings.websearch.check_success_message'), [
-          {
-            text: t('common.ok'),
-            style: 'cancel',
-            onPress: () => setIsBottomSheetOpen(false)
-          }
-        ])
+        setCheckApiStatus('success')
       } else {
         Alert.alert(t('settings.websearch.check_fail'), errorMessage, [
           {
@@ -116,7 +113,10 @@ export default function WebSearchProviderSettingsScreen() {
       ])
       throw error
     } finally {
-      setCheckLoading(false)
+      setTimeout(() => {
+        setCheckApiStatus('idle')
+        handleBottomSheetClose()
+      }, 500)
     }
   }
 
@@ -131,7 +131,7 @@ export default function WebSearchProviderSettingsScreen() {
               <SettingGroupTitle>{t('settings.websearch.api_key')}</SettingGroupTitle>
               <Button
                 size={16}
-                icon={<ShieldCheck size={16} />}
+                icon={<ShieldCheck size={16} color="$textLink" />}
                 backgroundColor="$colorTransparent"
                 circular
                 onPress={handleOpenBottomSheet}
@@ -189,7 +189,7 @@ export default function WebSearchProviderSettingsScreen() {
         onClose={handleBottomSheetClose}
         apiKey={provider?.apiKey || ''}
         onStartModelCheck={checkSearch}
-        loading={checkLoading}
+        checkApiStatus={checkApiStatus}
       />
     </SafeAreaContainer>
   )

@@ -1,10 +1,14 @@
 import { eq } from 'drizzle-orm'
 
+import { loggerService } from '@/services/LoggerService'
 import { Assistant } from '@/types/assistant'
 import { safeJsonParse } from '@/utils/json'
 
 import { db } from '..'
 import { assistants } from '../schema'
+import { transformDbToTopic } from './topics.queries'
+
+const logger = loggerService.withContext('DataBase Assistants')
 
 /**
  * 将数据库记录转换为 Assistant 类型。
@@ -12,6 +16,7 @@ import { assistants } from '../schema'
  * @returns 一个 Assistant 对象。
  */
 export function transformDbToAssistant(dbRecord: any): Assistant {
+  const topics = Array.isArray(dbRecord.topics) ? dbRecord.topics.map(transformDbToTopic) : []
   return {
     id: dbRecord.id,
     name: dbRecord.name,
@@ -24,13 +29,13 @@ export function transformDbToAssistant(dbRecord: any): Assistant {
     defaultModel: safeJsonParse(dbRecord.default_model),
     settings: safeJsonParse(dbRecord.settings),
     enableWebSearch: !!dbRecord.enable_web_search,
-    // websearchProviderId: dbRecord.websearch_provider_id,
+    webSearchProviderId: dbRecord.websearch_provider_id,
     enableGenerateImage: !!dbRecord.enable_generate_image,
     // mcpServers: safeJsonParse(dbRecord.mcp_servers),
     knowledgeRecognition: dbRecord.knowledge_recognition,
     tags: safeJsonParse(dbRecord.tags, []),
     group: safeJsonParse(dbRecord.group, []),
-    topics: [] // 初始化 topics 为一个空数组
+    topics: topics
   }
 }
 
@@ -52,7 +57,7 @@ function transformAssistantToDb(assistant: Assistant): any {
     default_model: assistant.defaultModel ? JSON.stringify(assistant.defaultModel) : null,
     settings: assistant.settings ? JSON.stringify(assistant.settings) : null,
     enable_web_search: assistant.enableWebSearch ? 1 : 0,
-    // websearch_provider_id: assistant.websearchProviderId,
+    websearch_provider_id: assistant.webSearchProviderId === undefined ? null : assistant.webSearchProviderId,
     enable_generate_image: assistant.enableGenerateImage ? 1 : 0,
     // mcp_servers: assistant.mcpServers ? JSON.stringify(assistant.mcpServers) : null,
     knowledge_recognition: assistant.knowledgeRecognition,
@@ -70,7 +75,22 @@ export async function getAllAssistants(): Promise<Assistant[]> {
     const result = await db.select().from(assistants)
     return result.map(transformDbToAssistant)
   } catch (error) {
-    console.error('Error getting all assistants:', error)
+    logger.error('Error getting all assistants:', error)
+    throw error
+  }
+}
+
+export async function getExternalAssistants(): Promise<Assistant[]> {
+  try {
+    const results = await db.query.assistants.findMany({
+      where: eq(assistants.type, 'external'),
+      with: {
+        topics: true
+      }
+    })
+    return results.map(transformDbToAssistant)
+  } catch (error) {
+    logger.error('Error getting star assistants:', error)
     throw error
   }
 }
@@ -85,7 +105,7 @@ export async function getAssistantById(id: string): Promise<Assistant | null> {
 
     return transformDbToAssistant(result[0])
   } catch (error) {
-    console.error('Error getting assistant by ID:', error)
+    logger.error('Error getting assistant by ID:', error)
     throw error
   }
 }
@@ -110,7 +130,16 @@ export async function upsertAssistants(assistantsToUpsert: Assistant[]) {
     )
     await Promise.all(upsertPromises)
   } catch (error) {
-    console.error('Error upserting assistants:', error)
+    logger.error('Error upserting assistants:', error)
+    throw error
+  }
+}
+
+export async function deleteAssistantById(id: string) {
+  try {
+    await db.delete(assistants).where(eq(assistants.id, id))
+  } catch (error) {
+    logger.error(`Error deleting assistant with ID ${id}:`, error)
     throw error
   }
 }

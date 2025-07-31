@@ -2,10 +2,12 @@ import BottomSheet from '@gorhom/bottom-sheet'
 import { ChevronsRight } from '@tamagui/lucide-icons'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
-import { Button, Text, useTheme, XStack, YStack } from 'tamagui'
+import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui'
 
 import { ISheet } from '@/components/ui/Sheet'
+import { ApiStatus } from '@/types/assistant'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 
 interface ApiCheckSheetProps {
   bottomSheetRef: React.RefObject<BottomSheet | null>
@@ -13,7 +15,7 @@ interface ApiCheckSheetProps {
   onClose: () => void
   apiKey: string
   onStartModelCheck: () => void
-  loading?: boolean
+  checkApiStatus: ApiStatus
 }
 
 export function ApiCheckSheet({
@@ -22,12 +24,11 @@ export function ApiCheckSheet({
   onClose,
   apiKey,
   onStartModelCheck,
-  loading = false
+  checkApiStatus
 }: ApiCheckSheetProps) {
   const { t } = useTranslation()
-  const theme = useTheme()
+  const isDark = useIsDark()
   const sheetSnapPoints = ['40%']
-  const indicatorColor = theme.background.val.includes('dark') ? 'white' : 'black'
 
   return (
     <ISheet bottomSheetRef={bottomSheetRef} isOpen={isOpen} onClose={onClose} snapPoints={sheetSnapPoints}>
@@ -41,17 +42,38 @@ export function ApiCheckSheet({
             width={224}
             borderRadius={70}
             backgroundColor="$color1"
-            disabled={!apiKey || loading}
+            disabled={!apiKey || checkApiStatus !== 'idle'}
             onPress={onStartModelCheck}>
-            {loading ? (
-              <ActivityIndicator color={indicatorColor} />
-            ) : (
-              <XStack width="100%" alignItems="center" justifyContent="space-between">
-                <Text fontSize={18} fontWeight="bold">
-                  {t('button.start_check_model')}
-                </Text>
-                <ChevronsRight />
-              </XStack>
+            {checkApiStatus === 'processing' && (
+              <View>
+                <XStack gap={10} width="100%" alignItems="center" justifyContent="center">
+                  <Spinner size="small" color={getGreenColor(isDark, 100)} />
+                  <Text fontSize={18} fontWeight="bold" color={getGreenColor(isDark, 100)}>
+                    {t('button.checking')}
+                  </Text>
+                </XStack>
+              </View>
+            )}
+
+            {checkApiStatus === 'idle' && (
+              <View>
+                <XStack width="100%" alignItems="center" justifyContent="space-between">
+                  <Text fontSize={18} fontWeight="bold" color={getGreenColor(isDark, 100)}>
+                    {t('button.start_check_model')}
+                  </Text>
+                  <ChevronsRight color={getGreenColor(isDark, 100)} />
+                </XStack>
+              </View>
+            )}
+
+            {checkApiStatus === 'success' && (
+              <View>
+                <XStack width="100%" alignItems="center" justifyContent="space-between">
+                  <Text fontSize={18} fontWeight="bold" color={getGreenColor(isDark, 100)}>
+                    {t('button.success')}
+                  </Text>
+                </XStack>
+              </View>
             )}
           </Button>
         </XStack>

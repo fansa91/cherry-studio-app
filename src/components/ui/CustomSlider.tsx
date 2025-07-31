@@ -2,6 +2,8 @@ import React from 'react'
 import { Slider, XStack, YStack } from 'tamagui'
 
 import { SettingRowTitle } from '@/components/settings'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 
 interface CustomSliderProps {
   label: string
@@ -24,6 +26,7 @@ export function CustomSlider({
   displayValue,
   multiplier = 1
 }: CustomSliderProps) {
+  const isDark = useIsDark()
   const sliderValue = value * multiplier
   const displayText = displayValue !== undefined ? displayValue : value
 
@@ -34,10 +37,10 @@ export function CustomSlider({
         <SettingRowTitle>{displayText}</SettingRowTitle>
       </XStack>
       <Slider defaultValue={[sliderValue]} min={min} max={max} step={step} onValueChange={onValueChange}>
-        <Slider.Track backgroundColor="rgba(0, 185, 107, 0.2)">
-          <Slider.TrackActive backgroundColor="rgba(0, 185, 107, 1)" />
+        <Slider.Track backgroundColor={getGreenColor(isDark, 20)}>
+          <Slider.TrackActive backgroundColor={getGreenColor(isDark, 100)} />
         </Slider.Track>
-        <Slider.Thumb backgroundColor="rgba(0, 185, 107, 1)" borderWidth={0} size={16} index={0} circular />
+        <Slider.Thumb backgroundColor={getGreenColor(isDark, 100)} borderWidth={0} size={16} index={0} circular />
       </Slider>
     </YStack>
   )

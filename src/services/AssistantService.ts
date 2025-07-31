@@ -1,11 +1,18 @@
 import { getSystemProviders } from '@/config/providers'
 import { DEFAULT_CONTEXTCOUNT, DEFAULT_MAX_TOKENS, DEFAULT_TEMPERATURE } from '@/constants'
 import i18n from '@/i18n'
+import { loggerService } from '@/services/LoggerService'
 import { Assistant, AssistantSettings, Model, Provider, Topic } from '@/types/assistant'
 import { uuid } from '@/utils'
 
-import { getAssistantById as _getAssistantById, upsertAssistants } from '../../db/queries/assistants.queries'
+import {
+  deleteAssistantById as _deleteAssistantById,
+  getAssistantById as _getAssistantById,
+  getExternalAssistants as _getExternalAssistants,
+  upsertAssistants
+} from '../../db/queries/assistants.queries'
 import { getProviderById } from '../../db/queries/providers.queries'
+const logger = loggerService.withContext('Assistant Service')
 
 export async function getDefaultAssistant(): Promise<Assistant> {
   return await getAssistantById('default')
@@ -15,7 +22,7 @@ export async function getAssistantById(assistantId: string): Promise<Assistant> 
   const assistant = await _getAssistantById(assistantId)
 
   if (!assistant) {
-    console.error(`Assistant with ID ${assistantId} not found`)
+    logger.error(`Assistant with ID ${assistantId} not found`)
     throw new Error(`Assistant with ID ${assistantId} not found`)
   }
 
@@ -90,7 +97,7 @@ export async function saveAssistant(assistant: Assistant): Promise<void> {
   try {
     await upsertAssistants([assistant])
   } catch (error) {
-    console.error('Error saving assistant:', error)
+    logger.error('Error saving assistant:', error)
     throw new Error('Failed to save assistant')
   }
 }
@@ -98,10 +105,11 @@ export async function saveAssistant(assistant: Assistant): Promise<void> {
 export async function createAssistant() {
   const newAssistant: Assistant = {
     id: uuid(),
-    name: i18n.t('assistant.default.name'),
-    prompt: i18n.t('assistant.default.prompt'),
+    emoji: '⭐',
+    name: i18n.t('settings.assistant.title'),
+    prompt: '',
     topics: [],
-    type: 'assistant'
+    type: 'external'
   }
 
   await saveAssistant(newAssistant)
@@ -114,7 +122,34 @@ export function createBlankAssistant() {
     name: 'Blank Assistant',
     prompt: '',
     topics: [],
-    type: 'assistant'
+    type: 'external'
   }
   return blankAssistant
+}
+
+export async function getExternalAssistants(): Promise<Assistant[]> {
+  try {
+    return await _getExternalAssistants()
+  } catch (error) {
+    logger.error('Failed to get starred assistants:', error)
+    return []
+  }
+}
+
+export async function deleteAssistantById(assistantId: string) {
+  try {
+    await _deleteAssistantById(assistantId)
+  } catch (error) {
+    logger.error('Failed to delete Assistant', error)
+  }
+}
+
+export async function getRecentAssistants(): Promise<Assistant[]> {
+  try {
+    const starredAssistants = await getExternalAssistants()
+    return starredAssistants.filter(assistant => assistant.topics.length > 0)
+  } catch (error) {
+    logger.error('Failed to get starred assistants:', error)
+    return []
+  }
 }

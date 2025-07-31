@@ -1,17 +1,19 @@
 import '@/i18n'
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { createStackNavigator } from '@react-navigation/stack'
 import React from 'react'
 
 import AssistantDetailScreen from '@/screens/assistant/AssistantDetailScreen'
 import AssistantMarketScreen from '@/screens/assistant/AssistantMarketScreen'
 import AssistantScreen from '@/screens/assistant/AssistantScreen'
+import ChatScreen from '@/screens/home/ChatScreen'
 import HomeScreen from '@/screens/home/HomeScreen'
 import AboutScreen from '@/screens/settings/about/AboutScreen'
 import AssistantSettingsScreen from '@/screens/settings/assistant/AssistantSettingsScreen'
 import BasicDataSettingsScreen from '@/screens/settings/data/BasicDataSettingsScreen'
 import DataSettingsScreen from '@/screens/settings/data/DataSettingsScreen'
 import JoplinSettingsScreen from '@/screens/settings/data/JoplinSettingsScreen'
+import LandropSettingsScreen from '@/screens/settings/data/Landrop/LandropSettingsScreen'
 import NotionSettingsScreen from '@/screens/settings/data/NotionSettingsScreen'
 import NutstoreLoginScreen from '@/screens/settings/data/NutstoreLoginScreen'
 import ObsidianSettingsScreen from '@/screens/settings/data/ObsidianSettingsScreen'
@@ -30,12 +32,13 @@ import ProvidersScreen from '@/screens/settings/providers/ProvidersScreen'
 import SettingsScreen from '@/screens/settings/SettingsScreen'
 import WebSearchProviderSettingsScreen from '@/screens/settings/websearch/WebSearchProviderSettingsScreen'
 import WebSearchSettingsScreen from '@/screens/settings/websearch/WebSearchSettingsScreen'
+import TestScreen from '@/screens/test/TestScreen'
 import TopicScreen from '@/screens/topic/TopicScreen'
 import WelcomeScreen from '@/screens/WelcomeScreen'
 import { useAppSelector } from '@/store'
 import { RootStackParamList } from '@/types/naviagate'
 
-const Stack = createNativeStackNavigator<RootStackParamList>()
+const Stack = createStackNavigator<RootStackParamList>()
 
 export default function MainStackNavigator() {
   const welcomeShown = useAppSelector(state => state.app.welcomeShown)
@@ -45,6 +48,7 @@ export default function MainStackNavigator() {
       {/* index */}
       {!welcomeShown && <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />}
       <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ gestureEnabled: false }} />
       {/* assistant screen */}
       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
       <Stack.Screen name="AssistantDetailScreen" component={AssistantDetailScreen} />
@@ -73,6 +77,7 @@ export default function MainStackNavigator() {
       <Stack.Screen name="LanguageChangeScreen" component={LanguageChangeScreen} />
       <Stack.Screen name="DataSettingsScreen" component={DataSettingsScreen} />
       <Stack.Screen name="BasicDataSettingsScreen" component={BasicDataSettingsScreen} />
+      <Stack.Screen name="LandropSettingsScreen" component={LandropSettingsScreen} />
       <Stack.Screen name="NutstoreLoginScreen" component={NutstoreLoginScreen} />
       <Stack.Screen name="NotionSettingsScreen" component={NotionSettingsScreen} />
       <Stack.Screen name="YuqueSettingsScreen" component={YuqueSettingsScreen} />
@@ -89,6 +94,8 @@ export default function MainStackNavigator() {
 
       {/* topic screen */}
       <Stack.Screen name="TopicScreen" component={TopicScreen} />
+
+      <Stack.Screen name="TestScreen" component={TestScreen} />
     </Stack.Navigator>
   )
 }

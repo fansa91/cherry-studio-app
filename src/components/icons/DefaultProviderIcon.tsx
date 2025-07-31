@@ -18,7 +18,7 @@ import { IconProps } from '.'
 
 export function DefaultProviderIcon(props: IconProps) {
   return (
-    <Svg width={props.size} height={props.size} viewBox="0 0 102 109" fill="none" rotation="-10deg" {...props}>
+    <Svg width={props.size} height={props.size} viewBox="0 0 102 109" fill="none" rotation={-10} {...props}>
       <G clipPath="url(#clip0_4303_2223)" filter="url(#filter0_i_4303_2223)">
         <Path
           d="M30.1107 129.373C40.8358 135.589 54.4507 131.924 81.6871 124.6C108.923 117.284 122.538 113.619 128.732 102.848C134.925 92.0836 131.274 78.4191 123.977 51.0835C116.687 23.7478 113.035 10.0833 102.303 3.86739C91.5781 -2.34855 77.9632 1.30983 50.7268 8.63976C23.4904 15.9565 9.87545 19.6215 3.68208 30.3922C-2.5113 41.1564 1.1338 54.821 8.43712 82.1566C15.7273 109.492 19.379 123.157 30.1107 129.373Z"

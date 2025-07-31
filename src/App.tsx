@@ -2,22 +2,26 @@ import 'react-native-reanimated'
 import '@/i18n'
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
-import { DefaultTheme, NavigationContainer, ThemeProvider } from '@react-navigation/native'
+import { NavigationContainer, ThemeProvider } from '@react-navigation/native'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
+import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { SQLiteProvider } from 'expo-sqlite'
 import { StatusBar } from 'expo-status-bar'
 import { Suspense, useEffect } from 'react'
 import React from 'react'
-import { ActivityIndicator, useColorScheme } from 'react-native'
+import { ActivityIndicator } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { Provider, useSelector } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { PortalProvider, TamaguiProvider } from 'tamagui'
 
 import { getDataBackupProviders } from '@/config/backup'
 import { getWebSearchProviders } from '@/config/websearchProviders'
+import { useTheme } from '@/hooks/useTheme'
+import { loggerService } from '@/services/LoggerService'
 import store, { persistor, RootState, useAppDispatch } from '@/store'
 import { setInitialized } from '@/store/app'
 
@@ -28,18 +32,22 @@ import { upsertProviders } from '../db/queries/providers.queries'
 import { upsertWebSearchProviders } from '../db/queries/websearchProviders.queries'
 import migrations from '../drizzle/migrations'
 import tamaguiConfig from '../tamagui.config'
-import { getSystemAssistants } from './config/assistants'
+import { getBuiltInAssistants, getSystemAssistants } from './config/assistants'
 import { getSystemProviders } from './config/providers'
 import AppNavigator from './navigators/AppNavigator'
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
+const logger = loggerService.withContext('DataBase Assistants')
 
 // 数据库初始化组件
 function DatabaseInitializer() {
   const { success, error } = useMigrations(db, migrations)
   const initialized = useSelector((state: RootState) => state.app.initialized)
   const dispatch = useAppDispatch()
+  const [loaded] = useFonts({
+    JetbrainMono: require('./assets/fonts/JetBrainsMono-Regular.ttf')
+  })
 
   useDrizzleStudio(expoDb)
 
@@ -48,9 +56,10 @@ function DatabaseInitializer() {
       if (initialized) return
 
       try {
-        console.log('First launch, initializing app data...')
-        const assistants = getSystemAssistants()
-        await upsertAssistants(assistants)
+        logger.info('First launch, initializing app data...')
+        const systemAssistants = getSystemAssistants()
+        const builtInAssistants = getBuiltInAssistants()
+        await upsertAssistants([...systemAssistants, ...builtInAssistants])
         const providers = getSystemProviders()
         await upsertProviders(providers)
         const websearchProviders = getWebSearchProviders()
@@ -58,47 +67,49 @@ function DatabaseInitializer() {
         const dataBackupProviders = getDataBackupProviders()
         await upsertDataBackupProviders(dataBackupProviders)
         dispatch(setInitialized(true))
-        console.log('App data initialized successfully.')
+        logger.info('App data initialized successfully.')
       } catch (e) {
-        console.error('Failed to initialize app data', e)
+        logger.error('Failed to initialize app data', e)
       }
     }
 
     const handleMigrations = async () => {
-      if (success) {
-        console.log('Migrations completed successfully', expoDb.databasePath)
+      if (success && loaded) {
+        logger.info('Migrations completed successfully', expoDb.databasePath)
         await initializeApp()
       } else if (error) {
-        console.error('Migrations failed', error)
+        logger.error('Migrations failed', error)
       }
     }
 
     handleMigrations()
-  }, [success, error, initialized, dispatch])
+  })
 
   useEffect(() => {
     SplashScreen.hideAsync()
-  }, [])
+  })
 
   return null
 }
 
 // 主题和导航组件
 function ThemedApp() {
-  const colorScheme = useColorScheme()
+  const { activeTheme, reactNavigationTheme } = useTheme()
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme ?? 'light'}>
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={activeTheme}>
       <PortalProvider>
-        <NavigationContainer theme={DefaultTheme}>
-          <ThemeProvider value={DefaultTheme}>
-            <BottomSheetModalProvider>
-              <DatabaseInitializer />
-              <AppNavigator />
-              <StatusBar style="auto" />
-            </BottomSheetModalProvider>
-          </ThemeProvider>
-        </NavigationContainer>
+        <KeyboardProvider>
+          <NavigationContainer theme={reactNavigationTheme}>
+            <ThemeProvider value={reactNavigationTheme}>
+              <BottomSheetModalProvider>
+                <DatabaseInitializer />
+                <AppNavigator />
+                <StatusBar style="auto" />
+              </BottomSheetModalProvider>
+            </ThemeProvider>
+          </NavigationContainer>
+        </KeyboardProvider>
       </PortalProvider>
     </TamaguiProvider>
   )

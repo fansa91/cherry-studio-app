@@ -1,81 +1,39 @@
-import { sortBy } from 'lodash'
-import React, { useEffect, useState } from 'react'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
+import { ChevronRight } from '@tamagui/lucide-icons'
+import { MotiView } from 'moti'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, Text, YStack } from 'tamagui'
+import { Button, Input, Text, XStack } from 'tamagui'
 
 import { SettingGroup, SettingRow } from '@/components/settings'
-import { ModelSelect } from '@/components/settings/providers/ModelSelect'
-import { isEmbeddingModel } from '@/config/models/embedding'
 import { isReasoningModel } from '@/config/models/reasoning'
-import { getAllProviders } from '@/services/ProviderService'
-import { Assistant, AssistantSettings, Model, Provider } from '@/types/assistant'
-import { runAsyncFunction } from '@/utils'
-import { getModelUniqId } from '@/utils/model'
+import { Assistant, AssistantSettings, Model } from '@/types/assistant'
+import { useIsDark } from '@/utils'
 
+import ModelSheet from '../sheets/ModelSheet'
 import { CustomSlider } from '../ui/CustomSlider'
 import { CustomSwitch } from '../ui/Switch'
 import { ReasoningSelect } from './ReasoningSelect'
 
 interface ModelTabContentProps {
   assistant: Assistant
-  updateAssistant: (assistant: Assistant) => void
+  updateAssistant: (assistant: Assistant) => Promise<void>
 }
 
 export function ModelTabContent({ assistant, updateAssistant }: ModelTabContentProps) {
   const { t } = useTranslation()
+  const isDark = useIsDark()
 
-  const [providers, setProviders] = useState<Provider[]>([])
-
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null)
+  const [model, setModel] = useState<Model[]>(assistant?.model ? [assistant.model] : [])
   const isReasoning = isReasoningModel(assistant?.model)
 
   useEffect(() => {
-    runAsyncFunction(async () => {
-      try {
-        const allProviders = await getAllProviders()
-        setProviders(allProviders)
-      } catch (error) {
-        console.error('Failed to fetch providers:', error)
-      }
+    updateAssistant({
+      ...assistant,
+      model: model[0]
     })
-  }, [])
-
-  const selectOptions = providers
-    .filter(p => p.models && p.models.length > 0)
-    .map(p => ({
-      label: p.isSystem ? t(`provider.${p.id}`) : p.name,
-      title: p.name,
-      options: sortBy(p.models, 'name')
-        .filter(m => !isEmbeddingModel(m))
-        .map(m => ({
-          label: `${m.name}`,
-          value: getModelUniqId(m),
-          model: m
-        }))
-    }))
-
-  const handleModelChange = (value: string) => {
-    if (!value) {
-      return
-    }
-
-    let modelToSet: Model | undefined
-
-    for (const group of selectOptions) {
-      const foundOption = group.options.find(opt => opt.value === value)
-
-      if (foundOption) {
-        modelToSet = foundOption.model
-        break
-      }
-    }
-
-    if (modelToSet) {
-      updateAssistant({
-        ...assistant,
-        model: modelToSet
-      })
-    }
-  }
+  })
 
   const handleSettingsChange = (key: keyof AssistantSettings, value: any) => {
     updateAssistant({
@@ -100,18 +58,53 @@ export function ModelTabContent({ assistant, updateAssistant }: ModelTabContentP
     }
   }
 
+  const handlePress = () => {
+    bottomSheetModalRef.current?.present()
+  }
+
   const settings = assistant.settings || {}
 
   return (
-    <YStack flex={1} gap={30}>
-      <ModelSelect
-        value={assistant.model ? getModelUniqId(assistant.model) : undefined}
-        onValueChange={handleModelChange}
-        selectOptions={selectOptions}
-        placeholder={t('settings.models.empty')}
-      />
-
+    <MotiView
+      style={{ flex: 1, gap: 30 }}
+      from={{ opacity: 0, translateY: 10 }}
+      animate={{
+        translateY: 0,
+        opacity: 1
+      }}
+      exit={{ opacity: 1, translateY: -10 }}
+      transition={{
+        type: 'timing'
+      }}>
       <SettingGroup>
+        <SettingRow>
+          <Button
+            chromeless
+            width="100%"
+            height="100%"
+            paddingHorizontal={16}
+            paddingVertical={15}
+            iconAfter={<ChevronRight size={16} />}
+            backgroundColor={isDark ? '$uiCardDark' : '$uiCardLight'}
+            onPress={handlePress}>
+            <XStack flex={1} alignItems="center" overflow="hidden" justifyContent="space-between">
+              {model.length > 0 ? (
+                <>
+                  <Text flexShrink={1} numberOfLines={1} ellipsizeMode="tail">
+                    {t(`provider.${model[0].provider}`)}
+                  </Text>
+                  <Text flexShrink={0} numberOfLines={1} maxWidth="60%" ellipsizeMode="tail">
+                    {model[0].name}
+                  </Text>
+                </>
+              ) : (
+                <Text flex={1} numberOfLines={1} ellipsizeMode="tail">
+                  {t('settings.models.empty')}
+                </Text>
+              )}
+            </XStack>
+          </Button>
+        </SettingRow>
         <SettingRow>
           <CustomSlider
             label={t('assistants.settings.temperature')}
@@ -171,13 +164,11 @@ export function ModelTabContent({ assistant, updateAssistant }: ModelTabContentP
         {isReasoning && (
           <SettingRow>
             <Text>{t('assistants.settings.reasoning')}</Text>
-            <ReasoningSelect
-              assistant={assistant}
-              onValueChange={value => handleSettingsChange('reasoning_effort', value)}
-            />
+            <ReasoningSelect assistant={assistant} updateAssistant={updateAssistant} />
           </SettingRow>
         )}
       </SettingGroup>
-    </YStack>
+      <ModelSheet ref={bottomSheetModalRef} mentions={model} setMentions={setModel} multiple={false} />
+    </MotiView>
   )
 }

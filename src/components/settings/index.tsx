@@ -1,14 +1,44 @@
+import { MotiView } from 'moti'
 import { Keyboard } from 'react-native'
 import { Separator, styled, XStack, YStack } from 'tamagui'
 import { Text, View } from 'tamagui'
 
-export const SettingContainer = styled(YStack, {
+// export const SettingContainer = styled(YStack, {
+//   flex: 1,
+//   padding: '$4',
+//   gap: '20',
+//   backgroundColor: '$background',
+//   onPress: Keyboard.dismiss,
+//   overflow: 'hidden'
+// })
+
+export const SettingContainer = styled(MotiView, {
   flex: 1,
   padding: '$4',
-  gap: '24',
+  gap: 20,
   backgroundColor: '$background',
-  onPress: Keyboard.dismiss,
-  overflow: 'hidden'
+  overflow: 'hidden',
+
+  from: {
+    opacity: 0,
+    translateY: 10
+  },
+  animate: {
+    translateY: 0,
+    opacity: 1
+  },
+  exit: {
+    opacity: 0,
+    translateY: -10
+  },
+  // transition: {
+  //   type: 'timing'
+  // },
+
+  onStartShouldSetResponder: () => true,
+  onResponderRelease: Keyboard.dismiss,
+
+  name: 'SettingContainer'
 })
 
 export const SettingTitle = styled(Text, {

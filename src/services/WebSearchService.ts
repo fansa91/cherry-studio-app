@@ -1,14 +1,37 @@
 import dayjs from 'dayjs'
 
 import WebSearchEngineProvider from '@/providers/WebSearchProvider'
+import { loggerService } from '@/services/LoggerService'
 import { setWebSearchStatus } from '@/store/runtime'
 import { WebSearchState } from '@/store/websearch'
-import { WebSearchProvider, WebSearchProviderResponse, WebSearchStatus } from '@/types/websearch'
+import { ExtractResults } from '@/types/extract'
+import {
+  WebSearchProvider,
+  WebSearchProviderResponse,
+  WebSearchProviderResult,
+  WebSearchStatus
+} from '@/types/websearch'
 import { hasObjectKey } from '@/utils'
 
-import { getAllWebSearchProviders } from '../../db/queries/websearchProviders.queries'
+import { getAllWebSearchProviders, getWebSearchProviderById } from '../../db/queries/websearchProviders.queries'
+const logger = loggerService.withContext('WebSearch Service')
 
-class WebSearchService {
+export default class WebSearchService {
+  private static instance: WebSearchService
+  private webSearchProviderId: WebSearchProvider['id']
+
+  private constructor(webSearchProviderId: WebSearchProvider['id']) {
+    this.webSearchProviderId = webSearchProviderId
+  }
+
+  public static getInstance(webSearchProviderId: WebSearchProvider['id']): WebSearchService {
+    if (!WebSearchService.instance) {
+      WebSearchService.instance = new WebSearchService(webSearchProviderId)
+    }
+
+    return WebSearchService.instance
+  }
+
   /**
    * 是否暂停
    */
@@ -21,7 +44,7 @@ class WebSearchService {
    * @private
    * @returns 网络搜索状态
    */
-  private getWebSearchState(): WebSearchState {
+  private static getWebSearchState(): WebSearchState {
     return store.getState().websearch
   }
 
@@ -54,6 +77,17 @@ class WebSearchService {
   }
 
   /**
+   * 获取当前默认的网络搜索提供商
+   * @public
+   * @returns 网络搜索提供商
+   */
+  public async getWebSearchProvider(providerId?: string): Promise<WebSearchProvider | undefined> {
+    const provider = await getWebSearchProviderById(providerId || this.webSearchProviderId)
+
+    return provider
+  }
+
+  /**
    * 使用指定的提供商执行网络搜索
    * @public
    * @param provider 搜索提供商
@@ -61,13 +95,15 @@ class WebSearchService {
    * @param httpOptions
    * @returns 搜索响应
    */
-  public async search(
-    provider: WebSearchProvider,
-    query: string,
-    httpOptions?: RequestInit
-  ): Promise<WebSearchProviderResponse> {
-    const websearch = this.getWebSearchState()
-    const webSearchEngine = new WebSearchEngineProvider(provider)
+  public async search(query: string, httpOptions?: RequestInit): Promise<WebSearchProviderResponse> {
+    const websearch = WebSearchService.getWebSearchState()
+    const webSearchProvider = await this.getWebSearchProvider(this.webSearchProviderId)
+
+    if (!webSearchProvider) {
+      throw new Error(`WebSearchProvider ${this.webSearchProviderId} not found`)
+    }
+
+    const webSearchEngine = new WebSearchEngineProvider(webSearchProvider)
 
     let formattedQuery = query
 
@@ -76,12 +112,7 @@ class WebSearchService {
       formattedQuery = `today is ${dayjs().format('YYYY-MM-DD')} \r\n ${query}`
     }
 
-    // try {
     return await webSearchEngine.search(formattedQuery, websearch, httpOptions)
-    // } catch (error) {
-    //   console.error('Search failed:', error)
-    //   throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    // }
   }
 
   /**
@@ -90,10 +121,10 @@ class WebSearchService {
    * @param provider 要检查的搜索提供商
    * @returns 如果提供商可用返回true，否则返回false
    */
-  public async checkSearch(provider: WebSearchProvider): Promise<{ valid: boolean; error?: any }> {
+  public async checkSearch(): Promise<{ valid: boolean; error?: any }> {
     try {
-      const response = await this.search(provider, 'test query')
-      console.log('[checkSearch] Search response:', response)
+      const response = await this.search('test query')
+      logger.info('[checkSearch] Search response:', response)
       // 优化的判断条件：检查结果是否有效且没有错误
       return { valid: response.results !== undefined, error: undefined }
     } catch (error) {
@@ -111,6 +142,75 @@ class WebSearchService {
       await new Promise(resolve => setTimeout(resolve, delayMs))
     }
   }
-}
 
-export default new WebSearchService()
+  /**
+   * 处理网络搜索请求的核心方法，处理过程中会设置运行时状态供 UI 使用。
+   *
+   * 该方法执行以下步骤：
+   * - 验证输入参数并处理边界情况
+   * - 处理特殊的summarize请求
+   * - 并行执行多个搜索查询
+   * - 聚合搜索结果并处理失败情况
+   * - 根据配置应用结果压缩（RAG或截断）
+   * - 返回最终的搜索响应
+   *
+   * @param webSearchProvider - 要使用的网络搜索提供商
+   * @param extractResults - 包含搜索问题和链接的提取结果对象
+   * @param requestId - 唯一的请求标识符，用于状态跟踪和资源管理
+   *
+   * @returns 包含搜索结果的响应对象
+   */
+  public async processWebsearch(extractResults: ExtractResults, requestId: string): Promise<WebSearchProviderResponse> {
+    // 检查 websearch 和 question 是否有效
+    if (!extractResults.websearch?.question || extractResults.websearch.question.length === 0) {
+      logger.info('[processWebsearch] No valid question found in extractResults.websearch')
+      return { results: [] }
+    }
+
+    const questions = extractResults.websearch.question
+
+    const searchPromises = questions.map(q => this.search(q, { signal: this.signal }))
+    const searchResults = await Promise.allSettled(searchPromises)
+
+    // 统计成功完成的搜索数量
+    const successfulSearchCount = searchResults.filter(result => result.status === 'fulfilled').length
+
+    if (successfulSearchCount > 1) {
+      await this.setWebSearchStatus(
+        requestId,
+        {
+          phase: 'fetch_complete',
+          countAfter: successfulSearchCount
+        },
+        1000
+      )
+    }
+
+    const finalResults: WebSearchProviderResult[] = []
+    searchResults.forEach(result => {
+      if (result.status === 'fulfilled') {
+        if (result.value.results) {
+          finalResults.push(...result.value.results)
+        }
+      }
+
+      if (result.status === 'rejected') {
+        throw result.reason
+      }
+    })
+
+    // 如果没有搜索结果，直接返回空结果
+    if (finalResults.length === 0) {
+      await this.setWebSearchStatus(requestId, { phase: 'default' })
+      return {
+        query: questions.join(' | '),
+        results: []
+      }
+    }
+
+    return {
+      query: questions.join(' | '),
+      results: finalResults
+    }
+  }
+}

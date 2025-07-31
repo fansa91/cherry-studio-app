@@ -23,7 +23,12 @@ const PreviewItem: FC<PreviewItemProps> = ({ file, files, setFiles }) => {
   return (
     <View style={{ marginRight: 8, marginTop: 8 }}>
       {isImage ? (
-        <ImageItem file={file} allImages={files.filter(f => f.type === FileTypes.IMAGE)} onRemove={handleRemove} />
+        <ImageItem
+          file={file}
+          allImages={files.filter(f => f.type === FileTypes.IMAGE)}
+          onRemove={handleRemove}
+          size={56}
+        />
       ) : (
         <FileItem file={file} onRemove={handleRemove} />
       )}

@@ -7,6 +7,8 @@ import { Text, XStack } from 'tamagui'
 import { WebsearchProviderIcon } from '@/components/ui/WebsearchIcon'
 import { NavigationProps } from '@/types/naviagate'
 import { WebSearchProvider } from '@/types/websearch'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 
 import { SettingRow } from '..'
 interface WebsearchProviderRowProps {
@@ -17,6 +19,7 @@ interface WebsearchProviderRowProps {
 
 export const WebsearchProviderRow = ({ provider, need_config }: WebsearchProviderRowProps) => {
   const { t } = useTranslation()
+  const isDark = useIsDark()
   const navigation = useNavigation<NavigationProps>()
 
   const onPress = () => {
@@ -30,16 +33,19 @@ export const WebsearchProviderRow = ({ provider, need_config }: WebsearchProvide
         <WebsearchProviderIcon provider={provider} />
         <Text>{provider.name}</Text>
       </XStack>
-      <XStack gap={10}>
+      <XStack gap={10} justifyContent="center" alignItems="center">
         {provider.apiKey && (
           <Text
             borderRadius={8}
-            backgroundColor="$backgroundGreen"
-            color="$foregroundGreen"
+            borderWidth={0.5}
+            backgroundColor={getGreenColor(isDark, 10)}
+            borderColor={getGreenColor(isDark, 20)}
+            color={getGreenColor(isDark, 100)}
             paddingVertical={2}
             paddingHorizontal={8}
             justifyContent="center"
-            alignItems="center">
+            alignItems="center"
+            fontSize={12}>
             {t('common.added')}
           </Text>
         )}

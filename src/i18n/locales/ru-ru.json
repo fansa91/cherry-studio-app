@@ -1,402 +1,149 @@
 {
   "translation": {
     "assistants": {
-      "edit": {
-        "title": "Редактировать помощника"
-      },
       "create": {
         "title": "Создать помощника"
       },
-      "sort": {
-        "title": "Сортировка помощников",
-        "alphabetical": "Алфавитный",
-        "recent_use": "Недавно использованные",
-        "recent_add": "Недавно добавлено"
+      "edit": {
+        "title": "Редактировать помощника"
       },
-      "search.no_results": "Ассистенты не найдены",
-      "title": "Ассистенты",
-      "title.recent": "Последние ассистенты",
-      "title.create": "Создать ассистента",
-      "title.edit": "Редактор Помощник",
+      "market": {
+        "add.success": "{{assistant_name}} успешно добавлен",
+        "button.chat": "Чат сейчас",
+        "groups": {
+          "all": "Все",
+          "business": "бизнес",
+          "career": "Карьера",
+          "language": "Язык",
+          "tools": "Инструменты"
+        },
+        "my_assistant": "Мои ассистенты",
+        "popular": "Популярные помощники",
+        "search_placeholder": "Поисковые помощники...",
+        "title": "Ассистент Маркет"
+      },
       "name": "Имя помощника",
       "save": "Сохранить помощника",
-      "settings.temperature": "Температура",
-      "settings.top_p": "Top P",
+      "search.no_results": "Ассистенты не найдены",
       "settings.context": "Контекст",
-      "settings.stream_output": "Потоковый вывод",
       "settings.max_tokens": "Включить ограничение максимального количества токенов",
       "settings.max_tokens_value": "Максимальные ограничения токенов",
       "settings.reasoning": "Усилия, направленные на рассуждение",
       "settings.reasoning.auto": "Автомобиль",
+      "settings.reasoning.high": "Высокий",
       "settings.reasoning.low": "Низкий",
       "settings.reasoning.medium": "Средний (необходимо уточнить контекст для более точного перевода)  \n\nПримечание: \n1. Слово \"medium\" имеет несколько значений в зависимости от контекста (например, \"средний\" в размере, \"носитель\" в искусстве, \"способ\" передачи информации). Для точного перевода желательно уточнить сферу использования.",
-      "settings.reasoning.high": "Высокий",
-      "market": {
-        "title": "Ассистент Маркет",
-        "search_placeholder": "Поисковые помощники...",
-        "groups": {
-          "all": "Все",
-          "career": "Карьера",
-          "business": "бизнес",
-          "tools": "Инструменты",
-          "language": "Язык"
-        },
-        "button.chat": "Чат сейчас",
-        "popular": "Популярные помощники"
-      }
+      "settings.reasoning.off": "Выключено",
+      "settings.stream_output": "Потоковый вывод",
+      "settings.temperature": "Температура",
+      "settings.top_p": "Top P",
+      "sort": {
+        "alphabetical": "Алфавитный",
+        "recent_add": "Недавно добавлено",
+        "recent_use": "Недавно использованные",
+        "title": "Сортировка помощников"
+      },
+      "title": "Ассистенты",
+      "title.create": "Создать ассистента",
+      "title.edit": "Редактор Помощник",
+      "title.recent": "Последние ассистенты"
     },
     "button": {
       "add": "Добавить",
-      "manage": "Управлять",
-      "select_model": "Выберите модель",
-      "web_search": "Поиск в интернете",
+      "checking": "Проверка...",
       "image_generate": "Генерация изображений",
+      "manage": "Управлять",
       "placeholder": "Спроси что-нибудь небрежно",
-      "start_check_model": "Начать",
+      "recents": "Недавние",
       "save": "Сохранить",
-      "recents": "Недавние"
+      "select_model": "Выберите модель",
+      "sort": "Сортировать",
+      "start_check_model": "Начать",
+      "success": "Успешно!",
+      "tag": "Тег",
+      "web_search": "Поиск в интернете"
     },
     "chat": {
-      "topics": {
-        "title": "Темы",
-        "list": "Список",
-        "search": {
-          "results": "Результаты"
-        }
-      },
       "assistant": {
         "search": {
           "placeholder": "Поисковые помощники"
         }
       },
+      "citation": "+ {{count}} Источников",
       "default.name": "По умолчанию",
+      "think": "Думаю {{seconds}} секунд",
+      "think_expand": "Нажмите, чтобы прочитать мои мысли",
       "title": "Добро пожаловать в Cherry Studio!",
+      "topics": {
+        "list": "Список",
+        "search": {
+          "results": "Результаты"
+        },
+        "title": "Темы"
+      },
       "welcome": "Я ваш ИИ-ассистент для продюсеров. Вы можете создавать ассистентов, управлять моделями и многое другое."
     },
     "common": {
+      "added": "Добавлено",
+      "camera": "Камера",
       "cancel": "Отмена",
-      "description": "Описание",
-      "language": "Язык",
-      "model": "Модель",
-      "name": "Имя",
-      "save": "Сохранить",
       "cherry_studio": "Cherry Studio",
       "cherry_studio_description": "Мощный ИИ-ассистент для продюсеров",
-      "manage": "Управление",
-      "enabled": "Включено",
-      "search_placeholder": "Поиск...",
-      "prompt": "Промпт",
-      "preset": "Пресет",
-      "tool": "Инструмент",
-      "added": "Добавлено",
-      "visit": "Посетить",
-      "see_all": "Показать все",
-      "ok": "ОК",
-      "error_occurred": "Произошла ошибка",
-      "loading": "Загрузка...",
-      "file": "Файл",
-      "photo": "Фото",
       "clear_all": "Очистить всё",
-      "camera": "Камера"
+      "close": "Закрыть",
+      "description": "Описание",
+      "enabled": "Включено",
+      "error_occurred": "Произошла ошибка",
+      "file": "Файл",
+      "language": "Язык",
+      "last_month": "Прошлый месяц",
+      "last_week": "На прошлой неделе",
+      "loading": "Загрузка...",
+      "manage": "Управление",
+      "model": "Модель",
+      "name": "Имя",
+      "ok": "ОК",
+      "older": "Старше",
+      "others": "Другие",
+      "photo": "Фото",
+      "preset": "Пресет",
+      "prompt": "Промпт",
+      "save": "Сохранить",
+      "search_placeholder": "Поиск...",
+      "see_all": "Показать все",
+      "source": "Источник",
+      "this_week": "На этой неделе",
+      "today": "Сегодня",
+      "tool": "Инструмент",
+      "visit": "Посетить",
+      "yesterday": "Вчера"
+    },
+    "errors": {
+      "cannotOpenLink": "Не удается открыть ссылку: {{error}}",
+      "cannotOpenLinkTitle": "Не удается открыть ссылку",
+      "deviceCannotHandleLink": "Ваше устройство не может обработать эту ссылку: {{href}}",
+      "error_title": "Ошибка",
+      "linkErrorTitle": "Ошибка открытия ссылки"
     },
     "history": {
-      "topics.empty": "Темы не найдены",
       "search.placeholder": "Поиск тем или сообщений...",
-      "search.topics.empty": "Темы не найдены, нажмите Enter для поиска всех сообщений"
+      "search.topics.empty": "Темы не найдены, нажмите Enter для поиска всех сообщений",
+      "topics.empty": "Темы не найдены"
     },
-    "settings": {
-      "data": {
-        "app_data": "Данные приложения",
-        "app_logs": "Журналы приложений",
-        "app_knowledge": "Файлы базы знаний",
-        "app_knowledge.remove_all": "Удалить файлы",
-        "clear_cache": {
-          "button": "Очистить кэш",
-          "title": "Очистить кэш"
-        },
-        "data.title": "Каталог данных",
-        "title": "Настройки данных",
-        "basic_title": "Основные настройки данных",
-        "backup": "Резервное копирование данных",
-        "recovery": "Восстановление данных",
-        "reset": "Сброс данных",
-        "cloud_backup": "Настройки облачного резервного копирования",
-        "third_party": "Подключения к сторонним сервисам"
-      },
-      "models": {
-        "default_model": "Модель по умолчанию",
-        "empty": "Модели пока нет...",
-        "empty.tooltip": "Страница, которую вы искали, недоступна. Приносим извинения за неудобства.",
-        "empty.add_model": "Давайте добавим вашу первую модель.",
-        "search": "Поиск моделей...",
-        "title": "Модели",
-        "add.model": "Добавить модель",
-        "add.model.id": "ID модели",
-        "add.model.id.placeholder": "Обязательно, например gpt-4o",
-        "add.model.name": "Имя модели",
-        "add.model.name.placeholder": "Необязательно, например GPT-4o",
-        "add.model.group": "Группа моделей",
-        "add.model.group.placeholder": "Необязательно, например OpenAI"
-      },
-      "provider": {
-        "add.name": "Имя провайдера",
-        "add.name.placeholder": "Пример: OpenAI",
-        "add.title": "Добавить поставщика",
-        "add.type": "Тип провайдера",
-        "api.url.preview": "Предпросмотр: {{url}}",
-        "api.url.reset": "Сбросить",
-        "api.url.tip": "Завершается на / игнорирует v1, завершается на # принудительно использует введённый адрес",
-        "api_host": "Хост API",
-        "api_key": "Ключ API",
-        "api_key.tip": "Несколько ключей, разделённых запятыми",
-        "delete.content": "Вы уверены, что хотите удалить этого поставщика?",
-        "delete.title": "Удалить поставщика",
-        "title": "Поставщик моделей",
-        "search": "Поисковые системы...",
-        "api_service": "API Сервис",
-        "list.title": "Список поставщиков",
-        "api_key.placeholder": "Пожалуйста, введите API ключ",
-        "api_key.get": "Получить API ключ",
-        "api_check.title": "Обнаружение",
-        "api_check.tooltip": "Выберите модель для обнаружения",
-        "enabled": "Вкл",
-        "checked": "Проверено",
-        "auth": {
-          "title": "Сервис {{provider}}",
-          "login": "Войти",
-          "balance_recharge": "Пополнение баланса",
-          "free_bills": "Бесплатные счета"
-        },
-        "api_host.placeholder": "Пожалуйста, введите API хост",
-        "not_found": "Поставщик не найден",
-        "not_found_message": "Произошла ошибка при переходе на страницу провайдера."
-      },
-      "proxy.title": "Адрес прокси",
-      "theme.window.style.opaque": "Непрозрачное окно",
-      "theme.window.style.title": "Стиль окна",
-      "theme.window.style.transparent": "Прозрачное окно",
-      "title": "Настройки",
-      "topic.position": "Позиция темы",
-      "topic.position.left": "Левый",
-      "topic.position.right": "Правильно",
-      "topic.show.time": "Показать время темы",
-      "assistant.show.icon": "Показать иконку модели",
-      "tray.title": "Включить значок в системном лотке",
-      "websearch": {
-        "tavily": {
-          "api_key.placeholder": "Введите ключ API Tavily"
-        },
-        "title": "Веб-поиск",
-        "selectPlaceholder": "Выберите поставщика веб-поиска...",
-        "searchWithDates": "Поиск с включением дат",
-        "overrideSearchService": "Переопределить поисковую службу",
-        "searchCount": "Количество поисков",
-        "contentLengthLimit": "Ограничение длины контента",
-        "blacklist.title": "Чёрный список",
-        "blacklist_placeholder": "Используйте следующий формат (разделение новой строкой)\nСопоставление шаблонов: *://*.example.com/*\nРегулярное выражение: /example\\.(net|org)/",
-        "blacklist_description": "Результаты со следующих сайтов не будут отображаться в результатах поиска",
-        "subscribe.title": "Подписка на чёрный список",
-        "api_service": "API Сервис",
-        "api_host": "API Хост",
-        "api_host.placeholder": "Пожалуйста, введите API хост",
-        "api_key": "API Ключ",
-        "api_key.placeholder": "Пожалуйста, введите API ключ",
-        "api_key.get": "Получить API ключ",
-        "provider": {
-          "free": {
-            "title": "Бесплатные поставщики услуг"
-          },
-          "api": {
-            "title": "Поставщики API услуг"
-          }
-        },
-        "check_success": "Проверка успешна",
-        "check_success_message": "API работает правильно",
-        "check_fail": "Ошибка проверки",
-        "check_error": "Ошибка проверки"
-      },
-      "modelAndService": "Модели и сервисы ИИ",
-      "dataAndSecurity": "Данные и безопасность",
-      "about": {
-        "title": "О нас",
-        "header": "О программе и обратная связь",
-        "contact": {
-          "title": "Контакты",
-          "button": "Почта"
-        },
-        "feedback": {
-          "title": "Обратная связь",
-          "button": "Отзыв"
-        },
-        "license": {
-          "title": "Лицензия",
-          "button": "Лицензия"
-        },
-        "releases": {
-          "title": "Примечания к выпуску",
-          "button": "Релизы"
-        },
-        "website": {
-          "title": "Официальный сайт",
-          "button": "Сайт"
-        }
-      },
-      "general": {
-        "title": "Общие настройки",
-        "display.title": "Настройки отображения",
-        "theme.auto": "Авто",
-        "theme.dark": "Тёмная",
-        "theme.light": "Светлая",
-        "theme.title": "Тема",
-        "privacy.title": "Настройки конфиденциальности",
-        "privacy.anonymous": "Анонимно сообщать об ошибках и статистике",
-        "language.title": "Язык"
-      },
-      "webdav": {
-        "title": "WebDAV",
-        "config": {
-          "title": "Конфигурация WebDAV",
-          "host": "Хост WebDAV",
-          "host_placeholder": "http://localhost:8080",
-          "user": "Пользователь WebDAV",
-          "user_placeholder": "Пользователь WebDAV",
-          "password": "Пароль WebDAV",
-          "password_placeholder": "Пароль WebDAV",
-          "password_hint": "Должен быть не менее 8 символов",
-          "path": "Путь WebDAV",
-          "path_placeholder": "Путь WebDAV",
-          "apply": "Применить"
-        },
-        "backup": {
-          "title": "Настройки резервного копирования",
-          "to_webdav": "Резервное копирование в WebDAV",
-          "from_webdav": "Восстановление из WebDAV",
-          "auto_backup": "Автоматическое резервное копирование",
-          "slim_backup": "Компактное резервное копирование",
-          "max_backups": "Максимальное количество резервных копий",
-          "unlimited": "Без ограничений"
-        }
-      },
-      "nutstore": {
-        "nutstore": "Nutstore",
-        "config": "Настройка Nutstore",
-        "title": "Синхронизация Nutstore",
-        "username": "Имя пользователя Nutstore",
-        "to_nutstore": "Резервное копирование в Nutstore",
-        "from_nutstore": "Восстановление из Nutstore",
-        "backupStatus": "Статус резервного копирования",
-        "backupPath": "Путь хранения резервных копий",
-        "logout": "Выйти",
-        "login": "Войти с учетной записью Nutstore"
-      },
-      "assistant": {
-        "title": "Помощник по умолчанию",
-        "default_assistant": {
-          "name": "Помощник по умолчанию",
-          "description": "Помощник, используемый при создании нового помощника, если помощник не установлен, будет использоваться этот помощник"
-        },
-        "topic_naming_assistant": {
-          "name": "Помощник по именованию тем",
-          "description": "Помощник, используемый при автоматическом именовании новой темы"
-        },
-        "translate_assistant": {
-          "name": "Помощник по переводу",
-          "description": "Помощник, используемый для службы перевода"
-        },
-        "empty": "Пока нет помощников..."
-      },
-      "notion": {
-        "api_key": "Ключ API Notion",
-        "api_key_placeholder": "Введите ключ API Notion",
-        "check": {
-          "button": "Проверить",
-          "empty_api_key": "API ключ не настроен",
-          "empty_database_id": "ID базы данных не настроен",
-          "error": "Ошибка подключения, проверьте настройки сети, API ключ и ID базы данных",
-          "fail": "Не удалось подключиться, проверьте сеть, API ключ и ID базы данных",
-          "success": "Подключение успешно"
-        },
-        "database_id": "ID базы данных Notion",
-        "database_id_placeholder": "Введите ID базы данных Notion",
-        "help": "Документация по настройке Notion",
-        "page_name_key": "Название поля заголовка страницы",
-        "page_name_key_placeholder": "Введите название поля заголовка страницы, по умолчанию Name",
-        "title": "Настройки Notion",
-        "export_reasoning.title": "Включить цепочку рассуждений в экспорт",
-        "export_reasoning.help": "При включении экспортируемый контент будет включать цепочку рассуждений (процесс мышления)."
-      },
-      "yuque": {
-        "check": {
-          "button": "Проверить",
-          "empty_repo_url": "Пожалуйста, сначала введите URL базы знаний",
-          "empty_token": "Пожалуйста, сначала введите токен Yuque",
-          "fail": "Проверка подключения Yuque не удалась",
-          "success": "Подключение Yuque успешно проверено"
-        },
-        "help": "Получить токен Yuque",
-        "repo_url": "URL Yuque",
-        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
-        "title": "Конфигурация Yuque",
-        "token": "Токен Yuque",
-        "token_placeholder": "Пожалуйста, введите токен Yuque"
-      },
-      "joplin": {
-        "check": {
-          "button": "Проверить",
-          "empty_token": "Пожалуйста, введите токен авторизации Joplin",
-          "empty_url": "Пожалуйста, введите URL сервиса Joplin Clipper",
-          "fail": "Проверка подключения Joplin не удалась",
-          "success": "Проверка подключения Joplin успешна"
-        },
-        "help": "Нажмите здесь, чтобы получить токен авторизации Joplin",
-        "title": "Конфигурация Joplin",
-        "token": "Токен авторизации Joplin",
-        "token_placeholder": "Токен авторизации Joplin",
-        "url": "URL сервиса Joplin Web Clipper",
-        "url_placeholder": "http://127.0.0.1:41184/",
-        "export_reasoning.title": "Включить цепочку рассуждений в экспорт",
-        "export_reasoning.help": "При включении экспортируемый контент будет включать цепочку рассуждений (процесс мышления), созданную ассистентом."
-      },
-      "obsidian": {
-        "title": "Конфигурация Obsidian",
-        "default_vault": "Хранилище Obsidian по умолчанию",
-        "default_vault_placeholder": "Пожалуйста, выберите хранилище Obsidian по умолчанию",
-        "default_vault_loading": "Загрузка хранил��ща Obsidian...",
-        "default_vault_no_vaults": "Хранилища Obsidian не найдены",
-        "default_vault_fetch_error": "Не удалось получить хранилище Obsidian",
-        "default_vault_export_failed": "Экспорт не удался"
-      },
-      "siyuan": {
-        "title": "Конфигурация Siyuan Note",
-        "api_url": "URL API Siyuan Note",
-        "api_url_placeholder": "например: http://127.0.0.1:6806",
-        "token": "Токен Siyuan Note",
-        "token.help": "Получить токен Siyuan Note",
-        "token_placeholder": "Пожалуйста, введите токен Siyuan Note",
-        "box_id": "ID блока Siyuan Note",
-        "box_id_placeholder": "Пожалуйста, введите ID блока Siyuan Note",
-        "root_path": "Корневой путь Siyuan Note",
-        "root_path_placeholder": "например: /CherryStudio",
-        "check": {
-          "title": "Проверка подключения",
-          "button": "Проверить",
-          "empty_config": "Пожалуйста, заполните API адрес и токен",
-          "success": "Подключение успешно",
-          "fail": "Подключение не удалось, проверьте API адрес и токен",
-          "error": "Ошибка подключения, проверьте сетевое соединение"
-        }
-      }
-    },
-    "profile": {
-      "editProfile": "Редактировать профиль",
-      "avatar": "Аватар пользователя",
-      "create": "Перейти к созданию",
-      "createFirstAgent": "Нажмите, чтобы создать первое интеллектуальное тело ИИ",
-      "noContent": "Пока нет контента типа {{type}}"
-    },
-    "home": {},
     "inputs": {
       "placeholder": "Отправить сообщение..."
+    },
+    "menu": {
+      "assistant": {
+        "recent": "Недавний помощник",
+        "title": "Ассистент"
+      },
+      "search_placeholder": "Поиск...",
+      "see_all": "Показать все",
+      "topic": {
+        "recent": "Недавние темы",
+        "title": "Тема"
+      }
     },
     "models": {
       "no_models": "Нет доступных моделей",
@@ -413,14 +160,21 @@
         "websearch": "Веб-поиск"
       }
     },
+    "profile": {
+      "avatar": "Аватар пользователя",
+      "create": "Перейти к созданию",
+      "createFirstAgent": "Нажмите, чтобы создать первое интеллектуальное тело ИИ",
+      "editProfile": "Редактировать профиль",
+      "noContent": "Пока нет контента типа {{type}}"
+    },
     "provider": {
       "aihubmix": "AiHubMix",
-      "burncloud": "BurnCloud",
       "alayanew": "Alaya NeW",
       "anthropic": "Anthropic",
       "azure-openai": "Azure OpenAI",
       "baichuan": "Baichuan",
       "baidu-cloud": "Baidu Cloud",
+      "burncloud": "BurnCloud",
       "copilot": "GitHub Copilot",
       "dashscope": "Alibaba Cloud",
       "deepseek": "DeepSeek",
@@ -450,36 +204,345 @@
       "openrouter": "OpenRouter",
       "perplexity": "Perplexity",
       "ppio": "PPIO",
+      "qiniu": "Qiniu",
       "qwenlm": "QwenLM",
       "silicon": "SiliconFlow",
       "stepfun": "StepFun",
       "tencent-cloud-ti": "Tencent Cloud TI",
       "together": "Together",
+      "tokenflux": "TokenFlux",
+      "voyageai": "Voyage AI",
       "xirang": "State Cloud Xirang",
       "yi": "Yi",
       "zhinao": "360AI",
-      "zhipu": "ZHIPU AI",
-      "voyageai": "Voyage AI",
-      "qiniu": "Qiniu",
-      "tokenflux": "TokenFlux"
+      "zhipu": "ZHIPU AI"
     },
-    "menu": {
-      "search_placeholder": "Поиск...",
-      "see_all": "Показать все",
-      "topic": {
-        "title": "Тема",
-        "recent": "Недавние темы"
+    "settings": {
+      "about": {
+        "contact": {
+          "button": "Почта",
+          "title": "Контакты"
+        },
+        "feedback": {
+          "button": "Отзыв",
+          "title": "Обратная связь"
+        },
+        "header": "О программе и обратная связь",
+        "license": {
+          "button": "Лицензия",
+          "title": "Лицензия"
+        },
+        "releases": {
+          "button": "Релизы",
+          "title": "Примечания к выпуску"
+        },
+        "title": "О нас",
+        "website": {
+          "button": "Сайт",
+          "title": "Официальный сайт"
+        }
+      },
+      "assistant": {
+        "default_assistant": {
+          "description": "Помощник, используемый при создании нового помощника, если помощник не установлен, будет использоваться этот помощник",
+          "name": "Помощник по умолчанию"
+        },
+        "empty": "Пока нет помощников...",
+        "title": "Помощник по умолчанию",
+        "topic_naming_assistant": {
+          "description": "Помощник, используемый при автоматическом именовании новой темы",
+          "name": "Помощник по именованию тем"
+        },
+        "translate_assistant": {
+          "description": "Помощник, используемый для службы перевода",
+          "name": "Помощник по переводу"
+        }
+      },
+      "assistant.show.icon": "Показать иконку модели",
+      "data": {
+        "app_data": "Данные приложения",
+        "app_knowledge": "Файлы базы знаний",
+        "app_knowledge.remove_all": "Удалить файлы",
+        "app_logs": "Журналы приложений",
+        "backup": "Резервное копирование данных",
+        "basic_title": "Основные настройки данных",
+        "clear_cache": {
+          "button": "Очистить кэш",
+          "title": "Очистить кэш"
+        },
+        "cloud_backup": "Настройки облачного резервного копирования",
+        "data.title": "Каталог данных",
+        "landrop": {
+          "filename": "Имя файла",
+          "scan_qr_code": {
+            "description": "Отсканируйте QR-код в Cherry Studio",
+            "success": "Подключение успешно 🎉",
+            "success_description": "Теперь вы можете нажать кнопку \"Отправить\" для восстановления данных!",
+            "title": "Отсканируйте QR-код"
+          },
+          "status": {
+            "connected": "Подключено",
+            "connecting": "Подключение...",
+            "disconnected": "Отключено",
+            "error": "Ошибка подключения",
+            "idle": "Праздный",
+            "title": "Состояние подключения",
+            "zip_file_end": "Передача файла завершена",
+            "zip_file_start": "Начата передача файла"
+          },
+          "title": "Ландроп"
+        },
+        "recovery": "Восстановление данных",
+        "reset": "Сброс данных",
+        "restore": {
+          "error": "Ошибка восстановления",
+          "error_message": "В процессе восстановления произошла ошибка. Проверьте файл и попробуйте снова.",
+          "progress": {
+            "error": "Ошибка восстановления",
+            "error_description": "Во время процесса восстановления произошла ошибка. Пожалуйста, проверьте файл и попробуйте снова.",
+            "pending": "Восстановление...",
+            "pending_description": "Восстановление данных, пожалуйста, подождите...",
+            "success": "Восстановление завершено успешно",
+            "success_description": "Восстановление завершено, приятного времяпровождения!"
+          },
+          "steps": {
+            "restore_assistants": "Восстановить помощников",
+            "restore_llm_providers": "Восстановить поставщиков LLM",
+            "restore_messages_blocks": "Восстановить сообщения и блоки",
+            "restore_topics": "Восстановить темы",
+            "restore_websearch": "Восстановить веб-поиск"
+          }
+        },
+        "third_party": "Подключения к сторонним сервисам",
+        "title": "Настройки данных"
+      },
+      "dataAndSecurity": "Данные и безопасность",
+      "general": {
+        "display.title": "Настройки отображения",
+        "language.title": "Язык",
+        "privacy.anonymous": "Анонимно сообщать об ошибках и статистике",
+        "privacy.title": "Настройки конфиденциальности",
+        "theme.auto": "Авто",
+        "theme.dark": "Тёмная",
+        "theme.light": "Светлая",
+        "theme.title": "Тема",
+        "title": "Общие настройки"
+      },
+      "joplin": {
+        "check": {
+          "button": "Проверить",
+          "empty_token": "Пожалуйста, введите токен авторизации Joplin",
+          "empty_url": "Пожалуйста, введите URL сервиса Joplin Clipper",
+          "fail": "Проверка подключения Joplin не удалась",
+          "success": "Проверка подключения Joplin успешна"
+        },
+        "export_reasoning.help": "При включении экспортируемый контент будет включать цепочку рассуждений (процесс мышления), созданную ассистентом.",
+        "export_reasoning.title": "Включить цепочку рассуждений в экспорт",
+        "help": "Нажмите здесь, чтобы получить токен авторизации Joplin",
+        "title": "Конфигурация Joplin",
+        "token": "Токен авторизации Joplin",
+        "token_placeholder": "Токен авторизации Joplin",
+        "url": "URL сервиса Joplin Web Clipper",
+        "url_placeholder": "http://127.0.0.1:41184/"
+      },
+      "modelAndService": "Модели и сервисы ИИ",
+      "models": {
+        "add.model": "Добавить модель",
+        "add.model.group": "Группа моделей",
+        "add.model.group.placeholder": "Необязательно, например OpenAI",
+        "add.model.id": "ID модели",
+        "add.model.id.placeholder": "Обязательно, например gpt-4o",
+        "add.model.name": "Имя модели",
+        "add.model.name.placeholder": "Необязательно, например GPT-4o",
+        "default_model": "Модель по умолчанию",
+        "empty": "Модели пока нет...",
+        "empty.add_model": "Давайте добавим вашу первую модель.",
+        "empty.tooltip": "Страница, которую вы искали, недоступна. Приносим извинения за неудобства.",
+        "search": "Поиск моделей...",
+        "title": "Модели"
+      },
+      "notion": {
+        "api_key": "Ключ API Notion",
+        "api_key_placeholder": "Введите ключ API Notion",
+        "check": {
+          "button": "Проверить",
+          "empty_api_key": "API ключ не настроен",
+          "empty_database_id": "ID базы данных не настроен",
+          "error": "Ошибка подключения, проверьте настройки сети, API ключ и ID базы данных",
+          "fail": "Не удалось подключиться, проверьте сеть, API ключ и ID базы данных",
+          "success": "Подключение успешно"
+        },
+        "database_id": "ID базы данных Notion",
+        "database_id_placeholder": "Введите ID базы данных Notion",
+        "export_reasoning.help": "При включении экспортируемый контент будет включать цепочку рассуждений (процесс мышления).",
+        "export_reasoning.title": "Включить цепочку рассуждений в экспорт",
+        "help": "Документация по настройке Notion",
+        "page_name_key": "Название поля заголовка страницы",
+        "page_name_key_placeholder": "Введите название поля заголовка страницы, по умолчанию Name",
+        "title": "Настройки Notion"
+      },
+      "nutstore": {
+        "backupPath": "Путь хранения резервных копий",
+        "backupStatus": "Статус резервного копирования",
+        "config": "Настройка Nutstore",
+        "from_nutstore": "Восстановление из Nutstore",
+        "login": "Войти с учетной записью Nutstore",
+        "logout": "Выйти",
+        "nutstore": "Nutstore",
+        "title": "Синхронизация Nutstore",
+        "to_nutstore": "Резервное копирование в Nutstore",
+        "username": "Имя пользователя Nutstore"
+      },
+      "obsidian": {
+        "default_vault": "Хранилище Obsidian по умолчанию",
+        "default_vault_export_failed": "Экспорт не удался",
+        "default_vault_fetch_error": "Не удалось получить хранилище Obsidian",
+        "default_vault_loading": "Загрузка хранил��ща Obsidian...",
+        "default_vault_no_vaults": "Хранилища Obsidian не найдены",
+        "default_vault_placeholder": "Пожалуйста, выберите хранилище Obsidian по умолчанию",
+        "title": "Конфигурация Obsidian"
+      },
+      "provider": {
+        "add.name": "Имя провайдера",
+        "add.name.placeholder": "Пример: OpenAI",
+        "add.title": "Добавить поставщика",
+        "add.type": "Тип провайдера",
+        "added": "Добавлено",
+        "api.url.preview": "Предпросмотр: {{url}}",
+        "api.url.reset": "Сбросить",
+        "api.url.tip": "Завершается на / игнорирует v1, завершается на # принудительно использует введённый адрес",
+        "api_check.title": "Обнаружение",
+        "api_check.tooltip": "Выберите модель для обнаружения",
+        "api_host": "Хост API",
+        "api_host.placeholder": "Пожалуйста, введите API хост",
+        "api_key": "Ключ API",
+        "api_key.get": "Получить API ключ",
+        "api_key.placeholder": "Пожалуйста, введите API ключ",
+        "api_key.tip": "Несколько ключей, разделённых запятыми",
+        "api_service": "API Сервис",
+        "auth": {
+          "balance_recharge": "Пополнение баланса",
+          "free_bills": "Бесплатные счета",
+          "login": "Войти",
+          "title": "Сервис {{provider}}"
+        },
+        "delete.content": "Вы уверены, что хотите удалить этого поставщика?",
+        "delete.title": "Удалить поставщика",
+        "enabled": "Вкл",
+        "list.title": "Список поставщиков",
+        "not_found": "Поставщик не найден",
+        "not_found_message": "Произошла ошибка при переходе на страницу провайдера.",
+        "search": "Поисковые системы...",
+        "title": "Поставщик моделей"
+      },
+      "proxy.title": "Адрес прокси",
+      "siyuan": {
+        "api_url": "URL API Siyuan Note",
+        "api_url_placeholder": "например: http://127.0.0.1:6806",
+        "box_id": "ID блока Siyuan Note",
+        "box_id_placeholder": "Пожалуйста, введите ID блока Siyuan Note",
+        "check": {
+          "button": "Проверить",
+          "empty_config": "Пожалуйста, заполните API адрес и токен",
+          "error": "Ошибка подключения, проверьте сетевое соединение",
+          "fail": "Подключение не удалось, проверьте API адрес и токен",
+          "success": "Подключение успешно",
+          "title": "Проверка подключения"
+        },
+        "root_path": "Корневой путь Siyuan Note",
+        "root_path_placeholder": "например: /CherryStudio",
+        "title": "Конфигурация Siyuan Note",
+        "token": "Токен Siyuan Note",
+        "token.help": "Получить токен Siyuan Note",
+        "token_placeholder": "Пожалуйста, введите токен Siyuan Note"
+      },
+      "theme.window.style.opaque": "Непрозрачное окно",
+      "theme.window.style.title": "Стиль окна",
+      "theme.window.style.transparent": "Прозрачное окно",
+      "title": "Настройки",
+      "topic.position": "Позиция темы",
+      "topic.position.left": "Левый",
+      "topic.position.right": "Правильно",
+      "topic.show.time": "Показать время темы",
+      "tray.title": "Включить значок в системном лотке",
+      "webdav": {
+        "backup": {
+          "auto_backup": "Автоматическое резервное копирование",
+          "from_webdav": "Восстановление из WebDAV",
+          "max_backups": "Максимальное количество резервных копий",
+          "slim_backup": "Компактное резервное копирование",
+          "title": "Настройки резервного копирования",
+          "to_webdav": "Резервное копирование в WebDAV",
+          "unlimited": "Без ограничений"
+        },
+        "config": {
+          "apply": "Применить",
+          "host": "Хост WebDAV",
+          "host_placeholder": "http://localhost:8080",
+          "password": "Пароль WebDAV",
+          "password_hint": "Должен быть не менее 8 символов",
+          "password_placeholder": "Пароль WebDAV",
+          "path": "Путь WebDAV",
+          "path_placeholder": "Путь WebDAV",
+          "title": "Конфигурация WebDAV",
+          "user": "Пользователь WebDAV",
+          "user_placeholder": "Пользователь WebDAV"
+        },
+        "title": "WebDAV"
+      },
+      "websearch": {
+        "api_host": "API Хост",
+        "api_host.placeholder": "Пожалуйста, введите API хост",
+        "api_key": "API Ключ",
+        "api_key.get": "Получить API ключ",
+        "api_key.placeholder": "Пожалуйста, введите API ключ",
+        "api_service": "API Сервис",
+        "blacklist.title": "Чёрный список",
+        "blacklist_description": "Результаты со следующих сайтов не будут отображаться в результатах поиска",
+        "blacklist_placeholder": "Используйте следующий формат (разделение новой строкой)\nСопоставление шаблонов: *://*.example.com/*\nРегулярное выражение: /example\\.(net|org)/",
+        "check_error": "Ошибка проверки",
+        "check_fail": "Ошибка проверки",
+        "check_success": "Проверка успешна",
+        "check_success_message": "API работает правильно",
+        "contentLengthLimit": "Ограничение длины контента",
+        "empty": "Поставщиков пока нет...",
+        "empty.description": "Нажмите кнопку, чтобы добавить поставщика",
+        "overrideSearchService": "Переопределить поисковую службу",
+        "provider": {
+          "api": {
+            "title": "Поставщики API услуг"
+          },
+          "free": {
+            "title": "Бесплатные поставщики услуг"
+          },
+          "title": "Поставщик веб-поиска"
+        },
+        "searchCount": "Количество поисков",
+        "searchWithDates": "Поиск с включением дат",
+        "selectPlaceholder": "Выберите поставщика веб-поиска...",
+        "subscribe.title": "Подписка на чёрный список",
+        "title": "Веб-поиск"
+      },
+      "yuque": {
+        "check": {
+          "button": "Проверить",
+          "empty_repo_url": "Пожалуйста, сначала введите URL базы знаний",
+          "empty_token": "Пожалуйста, сначала введите токен Yuque",
+          "fail": "Проверка подключения Yuque не удалась",
+          "success": "Подключение Yuque успешно проверено"
+        },
+        "help": "Получить токен Yuque",
+        "repo_url": "URL Yuque",
+        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
+        "title": "Конфигурация Yuque",
+        "token": "Токен Yuque",
+        "token_placeholder": "Пожалуйста, введите токен Yuque"
       }
     },
     "topics": {
+      "new_topic": "Новая тема",
       "title": "Тема",
       "title.recent": "Недавние темы"
-    },
-    "errors": {
-      "cannotOpenLink": "Не удается открыть ссылку: {{error}}",
-      "linkErrorTitle": "Ошибка открытия ссылки",
-      "deviceCannotHandleLink": "Ваше устройство не может обработать эту ссылку: {{href}}",
-      "cannotOpenLinkTitle": "Не удается открыть ссылку"
     }
   }
 }

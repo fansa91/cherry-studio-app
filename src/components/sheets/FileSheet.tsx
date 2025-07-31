@@ -1,15 +1,21 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
-import { FileText, Image } from '@tamagui/lucide-icons'
+import { Camera as CameraIcon, FolderClosed, Image, X } from '@tamagui/lucide-icons'
+import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as DocumentPicker from 'expo-document-picker'
 import * as ImagePicker from 'expo-image-picker'
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Text, useTheme, XStack, YStack } from 'tamagui'
+// Import Modal and StyleSheet from react-native
+import { Modal, StyleSheet, TouchableOpacity } from 'react-native'
+import { Button, Text, useTheme, View, XStack, YStack } from 'tamagui'
 
 import { uploadFiles } from '@/services/FileService'
-import { FileType } from '@/types/file'
-import { uuid } from '@/utils'
+import { loggerService } from '@/services/LoggerService'
+import { FileType, FileTypes } from '@/types/file'
+import { useIsDark, uuid } from '@/utils'
+import { getTextPrimaryColor } from '@/utils/color'
 import { getFileType } from '@/utils/file'
+const logger = loggerService.withContext('File Sheet')
 
 interface FileSheetProps {
   files: FileType[]
@@ -19,6 +25,62 @@ interface FileSheetProps {
 const FileSheet = forwardRef<BottomSheetModal, FileSheetProps>(({ files, setFiles }, ref) => {
   const { t } = useTranslation()
   const theme = useTheme()
+  const isDark = useIsDark()
+  const [_permission, requestPermission] = useCameraPermissions()
+
+  // 1. State to control the full-screen camera modal
+  const [isCameraVisible, setCameraVisible] = useState(false)
+  const cameraRef = useRef<CameraView>(null)
+
+  const handleAddCamera = async () => {
+    const cameraPermission = await requestPermission()
+
+    if (!cameraPermission.granted) {
+      logger.info('Camera permission denied')
+      return
+    }
+
+    ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
+    setCameraVisible(true)
+  }
+
+  const handleCloseCamera = () => {
+    setCameraVisible(false)
+  }
+
+  const handleTakePicture = async () => {
+    if (!cameraRef.current) {
+      return
+    }
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync()
+
+      if (photo) {
+        const id = uuid()
+        const fileName = photo.uri.split('/').pop() || `${id}.jpg`
+        const _file: Omit<FileType, 'md5'> = {
+          id: id,
+          name: fileName,
+          origin_name: fileName,
+          path: photo.uri,
+          size: 0,
+          ext: 'jpg',
+          type: FileTypes.IMAGE,
+          mime_type: 'image/jpeg',
+          created_at: new Date().toISOString(),
+          count: 1
+        }
+
+        const uploadedFiles = await uploadFiles([_file])
+        setFiles([...files, ...uploadedFiles])
+      }
+    } catch (error) {
+      logger.error('Error taking picture:', error)
+    } finally {
+      setCameraVisible(false)
+    }
+  }
 
   const handleAddImage = async () => {
     try {
@@ -28,7 +90,6 @@ const FileSheet = forwardRef<BottomSheetModal, FileSheetProps>(({ files, setFile
       })
 
       if (result.canceled) {
-        console.log('Image selection was canceled')
         return
       }
 
@@ -50,9 +111,9 @@ const FileSheet = forwardRef<BottomSheetModal, FileSheetProps>(({ files, setFile
       const uploadedFiles = await uploadFiles(_files)
       setFiles([...files, ...uploadedFiles])
     } catch (error) {
-      console.error('Error selecting image:', error)
+      logger.error('Error selecting image:', error)
     } finally {
-      ;(ref as React.MutableRefObject<BottomSheetModal>)?.current?.dismiss()
+      ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
     }
   }
 
@@ -61,7 +122,6 @@ const FileSheet = forwardRef<BottomSheetModal, FileSheetProps>(({ files, setFile
       const result = await DocumentPicker.getDocumentAsync({ multiple: true })
 
       if (result.canceled) {
-        console.log('File selection was canceled')
         return
       }
 
@@ -82,13 +142,19 @@ const FileSheet = forwardRef<BottomSheetModal, FileSheetProps>(({ files, setFile
       const uploadedFiles = await uploadFiles(_files)
       setFiles([...files, ...uploadedFiles])
     } catch (error) {
-      console.error('Error selecting file:', error)
+      logger.error('Error selecting file:', error)
     } finally {
-      ;(ref as React.MutableRefObject<BottomSheetModal>)?.current?.dismiss()
+      ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
     }
   }
 
   const options = [
+    {
+      key: 'camera',
+      label: t('common.camera'),
+      icon: <CameraIcon size={24} />,
+      onPress: handleAddCamera
+    },
     {
       key: 'photo',
       label: t('common.photo'),
@@ -98,52 +164,96 @@ const FileSheet = forwardRef<BottomSheetModal, FileSheetProps>(({ files, setFile
     {
       key: 'file',
       label: t('common.file'),
-      icon: <FileText size={24} />,
+      icon: <FolderClosed size={24} />,
       onPress: handleAddFile
     }
   ]
 
-  // 添加背景组件渲染函数
   const renderBackdrop = (props: any) => (
     <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.5} pressBehavior="close" />
   )
 
   return (
-    <BottomSheetModal
-      snapPoints={['25%']}
-      enableDynamicSizing={true}
-      ref={ref}
-      backgroundStyle={{
-        borderRadius: 30,
-        backgroundColor: theme.gray2.val
-      }}
-      handleIndicatorStyle={{
-        backgroundColor: theme.color.val
-      }}
-      backdropComponent={renderBackdrop}>
-      <BottomSheetView>
-        <YStack gap={12} padding="20">
-          {options.map(option => (
-            <Button
-              key={option.key}
-              size="$4"
-              color="white"
-              onPress={option.onPress}
-              justifyContent="flex-start"
-              paddingHorizontal={20}
-              chromeless>
-              <XStack gap={12} alignItems="center">
-                {option.icon}
-                <Text color="white" fontSize={16}>
-                  {option.label}
-                </Text>
-              </XStack>
-            </Button>
-          ))}
-        </YStack>
-      </BottomSheetView>
-    </BottomSheetModal>
+    <>
+      <BottomSheetModal
+        snapPoints={['25%']}
+        enableDynamicSizing={false}
+        ref={ref}
+        backgroundStyle={{
+          borderRadius: 30,
+          backgroundColor: isDark ? '#121213ff' : '#f7f7f7ff'
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: theme.color.val
+        }}
+        backdropComponent={renderBackdrop}>
+        <BottomSheetView>
+          <XStack gap={12} padding={20} justifyContent="space-between">
+            {options.map(option => (
+              <Button
+                key={option.key}
+                backgroundColor="$gray20"
+                aspectRatio={1.618}
+                onPress={option.onPress}
+                justifyContent="center"
+                alignItems="center"
+                flex={1}>
+                <YStack gap={8} alignItems="center">
+                  {option.icon}
+                  <Text color={getTextPrimaryColor(isDark)} fontSize={14} textAlign="center">
+                    {option.label}
+                  </Text>
+                </YStack>
+              </Button>
+            ))}
+          </XStack>
+        </BottomSheetView>
+      </BottomSheetModal>
+
+      <Modal backdropColor="black" visible={isCameraVisible} animationType="slide" onRequestClose={handleCloseCamera}>
+        <CameraView style={styles.camera} facing="back" ref={cameraRef} autofocus="on" />
+
+        <TouchableOpacity style={styles.closeButton} onPress={handleCloseCamera}>
+          <X size={32} color="white" />
+        </TouchableOpacity>
+
+        <View style={styles.captureButtonContainer}>
+          <TouchableOpacity style={styles.captureButton} onPress={handleTakePicture} />
+        </View>
+      </Modal>
+    </>
   )
+})
+
+const styles = StyleSheet.create({
+  camera: {
+    flex: 1
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 4
+  },
+  captureButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'white',
+    borderWidth: 5,
+    borderColor: 'rgba(0,0,0,0.3)'
+  }
 })
 
 FileSheet.displayName = 'FileSheet'

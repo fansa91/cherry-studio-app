@@ -1,6 +1,7 @@
 import BottomSheet from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
 import { Plus } from '@tamagui/lucide-icons'
+import debounce from 'lodash/debounce'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
@@ -14,6 +15,8 @@ import CustomRadialGradientBackground from '@/components/ui/CustomRadialGradient
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { useAllProviders } from '@/hooks/useProviders'
+import { loggerService } from '@/services/LoggerService'
+const logger = loggerService.withContext('ProviderListScreen')
 
 export default function ProviderListScreen() {
   const { t } = useTranslation()
@@ -22,9 +25,25 @@ export default function ProviderListScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const { providers, isLoading } = useAllProviders()
-  const [searchQuery, setSearchQuery] = useState('')
+
+  const [inputValue, setInputValue] = useState('')
+
+  const [filterQuery, setFilterQuery] = useState('')
+
   const [selectedProviderType, setSelectedProviderType] = useState<string | undefined>(undefined)
   const [providerName, setProviderName] = useState('')
+
+  const debouncedSetQuery = debounce((query: string) => {
+    setFilterQuery(query)
+  }, 500)
+
+  const handleInputChange = (text: string) => {
+    setInputValue(text)
+
+    debouncedSetQuery(text)
+  }
+
+  const filteredProviders = providers.filter(p => p.name && p.name.toLowerCase().includes(filterQuery.toLowerCase()))
 
   const handleProviderTypeChange = (value: string) => {
     setSelectedProviderType(value)
@@ -48,16 +67,8 @@ export default function ProviderListScreen() {
   }
 
   const handleAddProvider = () => {
-    console.log('Provider Name:', providerName)
-    console.log('Provider Type:', selectedProviderType)
-  }
-
-  if (isLoading) {
-    return (
-      <SafeAreaContainer>
-        <ActivityIndicator />
-      </SafeAreaContainer>
-    )
+    logger.info('Provider Name:', providerName)
+    logger.info('Provider Type:', selectedProviderType)
   }
 
   return (
@@ -70,22 +81,32 @@ export default function ProviderListScreen() {
           onPress: onAddProvider
         }}
       />
-      <SettingContainer>
-        <SearchInput placeholder={t('settings.provider.search')} value={searchQuery} onChangeText={setSearchQuery} />
+      {isLoading ? (
+        <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator />
+        </SafeAreaContainer>
+      ) : (
+        <SettingContainer>
+          <SearchInput
+            placeholder={t('settings.provider.search')}
+            value={inputValue}
+            onChangeText={handleInputChange}
+          />
 
-        <YStack flex={1} gap={8}>
-          <Text>{t('settings.provider.title')}</Text>
-          <CustomRadialGradientBackground style={{ radius: 2 }}>
-            <ScrollView backgroundColor="$colorTransparent">
-              <SettingGroup>
-                {providers.map(p => (
-                  <ProviderItem key={p.id} provider={p} mode="checked" />
-                ))}
-              </SettingGroup>
-            </ScrollView>
-          </CustomRadialGradientBackground>
-        </YStack>
-      </SettingContainer>
+          <YStack flex={1} gap={8}>
+            <Text>{t('settings.provider.title')}</Text>
+            <CustomRadialGradientBackground style={{ radius: 2 }}>
+              <ScrollView backgroundColor="$colorTransparent">
+                <SettingGroup>
+                  {filteredProviders.map(p => (
+                    <ProviderItem key={p.id} provider={p} mode="checked" />
+                  ))}
+                </SettingGroup>
+              </ScrollView>
+            </CustomRadialGradientBackground>
+          </YStack>
+        </SettingContainer>
+      )}
 
       <AddProviderSheet
         bottomSheetRef={bottomSheetRef}

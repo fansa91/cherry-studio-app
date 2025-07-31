@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: 'cherry-studio-app',
+    name: 'Cherry Studio',
     slug: 'cherry-studio',
     version: '1.0.0',
     orientation: 'portrait',
@@ -38,7 +38,12 @@ export default {
       ],
       'expo-localization',
       'expo-asset',
-      'expo-font',
+      [
+        'expo-font',
+        {
+          fonts: ['./src/assets/fonts/JetBrainsMono-Regular.ttf']
+        }
+      ],
       'expo-web-browser',
       'expo-sqlite',
       [
@@ -56,8 +61,8 @@ export default {
       [
         'expo-camera',
         {
-          cameraPermission: 'Allow $(PRODUCT_NAME) to access your camera',
-          microphonePermission: 'Allow $(PRODUCT_NAME) to access your microphone',
+          cameraPermission: 'Allow Cherry Studio App to access your camera',
+          // microphonePermission: 'Allow Cherry Studio App to access your microphone',
           recordAudioAndroid: true
         }
       ]

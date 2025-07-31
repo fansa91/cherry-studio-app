@@ -1,7 +1,7 @@
 import { FlashList } from '@shopify/flash-list'
 import { FC } from 'react'
 import React from 'react'
-import { View } from 'tamagui'
+import { View, YStack } from 'tamagui'
 
 import { useMessages } from '@/hooks/useMessages'
 import { Assistant, Topic } from '@/types/assistant'
@@ -13,12 +13,9 @@ import MessageGroup from './MessageGroup'
 interface MessagesProps {
   assistant: Assistant
   topic: Topic
-  setActiveTopic?: (topic: Topic) => void
-  onComponentUpdate?(): void
-  onFirstUpdate?(): void
 }
 
-const Messages: FC<MessagesProps> = ({ assistant, topic, setActiveTopic, onComponentUpdate, onFirstUpdate }) => {
+const Messages: FC<MessagesProps> = ({ assistant, topic }) => {
   const { messages } = useMessages(topic.id)
   const groupedMessages = Object.entries(getGroupedMessages(messages))
 
@@ -29,10 +26,12 @@ const Messages: FC<MessagesProps> = ({ assistant, topic, setActiveTopic, onCompo
   return (
     <View style={{ flex: 1, minHeight: 200 }}>
       <FlashList
+        showsVerticalScrollIndicator={false}
         data={groupedMessages}
         renderItem={renderMessageGroup}
         keyExtractor={([key, group]) => `${key}-${group[0]?.id}`}
         estimatedItemSize={100} // 估算值可能需要根据内容调整
+        ItemSeparatorComponent={() => <YStack height={20} />}
       />
     </View>
   )

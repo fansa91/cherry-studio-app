@@ -1,4 +1,4 @@
-import { X } from '@tamagui/lucide-icons'
+import { CircleX } from '@tamagui/lucide-icons'
 import { FC } from 'react'
 import React from 'react'
 import { TouchableOpacity } from 'react-native'
@@ -6,8 +6,12 @@ import FileViewer from 'react-native-file-viewer'
 import { Stack, Text, View, XStack, YStack } from 'tamagui'
 
 import { FileIcon } from '@/components/icons/FileIcon'
+import { loggerService } from '@/services/LoggerService'
 import { FileType } from '@/types/file'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 import { formatFileSize } from '@/utils/file'
+const logger = loggerService.withContext('File Item')
 
 interface FileItemProps {
   file: FileType
@@ -17,9 +21,11 @@ interface FileItemProps {
 }
 
 const FileItem: FC<FileItemProps> = ({ file, onRemove }) => {
+  const isDark = useIsDark()
+
   const handlePreview = () => {
     FileViewer.open(file.path, { displayName: file.name }).catch(error => {
-      console.error('打开文件时出错:', error)
+      logger.error('Handle Preview Error', error)
     })
   }
 
@@ -37,7 +43,7 @@ const FileItem: FC<FileItemProps> = ({ file, onRemove }) => {
             width="auto"
             // height={height}
             borderRadius={8}
-            backgroundColor="rgba(0, 185, 107, 0.15)"
+            backgroundColor={getGreenColor(isDark, 20)}
             justifyContent="center"
             alignItems="flex-start"
             paddingVertical={8}
@@ -47,7 +53,7 @@ const FileItem: FC<FileItemProps> = ({ file, onRemove }) => {
               height={40}
               gap={10}
               borderRadius={99}
-              backgroundColor="rgba(0, 185, 107, 1)"
+              backgroundColor={getGreenColor(isDark, 100)}
               alignItems="center"
               justifyContent="center">
               <FileIcon size={24} />
@@ -60,20 +66,24 @@ const FileItem: FC<FileItemProps> = ({ file, onRemove }) => {
                 {formatFileSize(file.size)}
               </Text>
             </YStack>
-            {onRemove && (
-              <TouchableOpacity onPress={handleRemove}>
-                <Stack
-                  width={16}
-                  height={16}
-                  backgroundColor="rgba(255, 0, 0, 0.2)"
-                  borderRadius={99}
-                  alignItems="center"
-                  justifyContent="center">
-                  <X size={10} color="rgba(255, 0, 0, 1)" />
-                </Stack>
-              </TouchableOpacity>
-            )}
           </XStack>
+          {onRemove && (
+            <TouchableOpacity
+              onPress={handleRemove}
+              style={{
+                position: 'absolute',
+                top: -6,
+                right: -6,
+                borderRadius: 99
+              }}>
+              <CircleX
+                size={20}
+                color={isDark ? '$backgroundPrimaryDark' : '$backgroundPrimaryLight'}
+                borderRadius={99}
+                backgroundColor="$gray60"
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </View>

@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
 import { Plus } from '@tamagui/lucide-icons'
+import debounce from 'lodash/debounce'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
@@ -19,8 +20,26 @@ export default function ProvidersScreen() {
   const { t } = useTranslation()
   const theme = useTheme()
   const navigation = useNavigation<NavigationProps>()
-  const [searchQuery, setSearchQuery] = useState('')
+
+  const [inputValue, setInputValue] = useState('')
+
+  const [filterQuery, setFilterQuery] = useState('')
+
   const { providers, isLoading } = useAllProviders()
+
+  const debouncedSetQuery = debounce((query: string) => {
+    setFilterQuery(query)
+  }, 500)
+
+  const handleInputChange = (text: string) => {
+    setInputValue(text)
+
+    debouncedSetQuery(text)
+  }
+
+  const displayedProviders = providers
+    .filter(p => p.enabled)
+    .filter(p => p.name && p.name.toLowerCase().includes(filterQuery.toLowerCase()))
 
   const onAddProvider = () => {
     navigation.navigate('ProviderListScreen')
@@ -28,7 +47,7 @@ export default function ProvidersScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaContainer>
+      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
       </SafeAreaContainer>
     )
@@ -48,8 +67,9 @@ export default function ProvidersScreen() {
           onPress: onAddProvider
         }}
       />
+
       <SettingContainer>
-        <SearchInput placeholder={t('settings.provider.search')} value={searchQuery} onChangeText={setSearchQuery} />
+        <SearchInput placeholder={t('settings.provider.search')} value={inputValue} onChangeText={handleInputChange} />
 
         {providers.length === 0 ? (
           <EmptyModelView onAddModel={onAddProvider} />
@@ -57,13 +77,11 @@ export default function ProvidersScreen() {
           <YStack flex={1} gap={8} paddingVertical={8}>
             <SettingGroupTitle>{t('settings.provider.title')}</SettingGroupTitle>
             <CustomRadialGradientBackground style={{ radius: 2 }}>
-              <ScrollView backgroundColor="$colorTransparent">
+              <ScrollView backgroundColor="$colorTransparent" showsVerticalScrollIndicator={false}>
                 <SettingGroup>
-                  {providers
-                    .filter(p => p.enabled)
-                    .map(p => (
-                      <ProviderItem key={p.id} provider={p} mode="enabled" />
-                    ))}
+                  {displayedProviders.map(p => (
+                    <ProviderItem key={p.id} provider={p} mode="enabled" />
+                  ))}
                 </SettingGroup>
               </ScrollView>
             </CustomRadialGradientBackground>

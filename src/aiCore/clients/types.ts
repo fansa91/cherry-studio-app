@@ -2,9 +2,11 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 
 import { Assistant, Model, Provider } from '@/types/assistant'
-import { MCPTool, MCPToolResponse, ToolCallResponse } from '@/types/mcp'
+import { MCPToolResponse, ToolCallResponse } from '@/types/mcp'
 import {
   AnthropicSdkRawChunk,
+  OpenAIResponseSdkRawChunk,
+  OpenAIResponseSdkRawOutput,
   OpenAISdkRawChunk,
   SdkMessageParam,
   SdkParams,
@@ -13,8 +15,10 @@ import {
   SdkTool,
   SdkToolCall
 } from '@/types/sdk'
+import { MCPTool } from '@/types/tool'
 
 import { CompletionsParams, GenericChunk } from '../middleware/schemas'
+import { CompletionsContext } from '../middleware/types'
 
 /**
  * 原始流监听器接口
@@ -32,6 +36,14 @@ export interface RawStreamListener<TRawChunk = SdkRawChunk> {
 export interface OpenAIStreamListener extends RawStreamListener<OpenAISdkRawChunk> {
   onChoice?: (choice: OpenAI.Chat.Completions.ChatCompletionChunk.Choice) => void
   onFinishReason?: (reason: string) => void
+}
+
+/**
+ * OpenAI Response 专用的流监听器
+ */
+export interface OpenAIResponseStreamListener<TChunk extends OpenAIResponseSdkRawChunk = OpenAIResponseSdkRawChunk>
+  extends RawStreamListener<TChunk> {
+  onMessage?: (response: OpenAIResponseSdkRawOutput) => void
 }
 
 /**
@@ -74,6 +86,7 @@ export interface ResponseChunkTransformerContext {
   isStreaming: boolean
   isEnabledToolCalling: boolean
   isEnabledWebSearch: boolean
+  isEnabledUrlContext: boolean
   isEnabledReasoning: boolean
   mcpTools: MCPTool[]
   provider: Provider
@@ -102,7 +115,7 @@ export interface ApiClient<
   // SDK相关方法
   getSdkInstance(): Promise<TSdkInstance> | TSdkInstance
   getRequestTransformer(): RequestTransformer<TSdkParams, TMessageParam>
-  getResponseChunkTransformer(): ResponseChunkTransformer<TRawChunk>
+  getResponseChunkTransformer(ctx: CompletionsContext): ResponseChunkTransformer<TRawChunk>
 
   // 原始流监听方法
   attachRawStreamListener?(rawOutput: TRawOutput, listener: RawStreamListener<TRawChunk>): TRawOutput

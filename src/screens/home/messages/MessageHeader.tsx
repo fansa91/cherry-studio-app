@@ -12,8 +12,8 @@ interface MessageHeaderProps {
 const MessageHeader: React.FC<MessageHeaderProps> = ({ message, assistant }) => {
   return (
     <View>
-      <XStack gap={10} alignItems="center" marginBottom={10}>
-        <Text height={24} width={24}>
+      <XStack gap={10} alignItems="center">
+        <Text height={24} width={24} textAlign="center" lineHeight={24}>
           {assistant.emoji}
         </Text>
         <Text fontSize={14} fontWeight="bold">

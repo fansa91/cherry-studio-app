@@ -6,11 +6,10 @@ import { transformDbToDataBackupProvider, upsertDataBackupProviders } from '../.
 import { backup_providers } from '../../db/schema'
 
 export function useDataBackupProvider(providerId: string) {
-  console.log('useDataBackupProvider', providerId)
   const query = db.select().from(backup_providers).where(eq(backup_providers.id, providerId))
   const { data: rawProviders, updatedAt } = useLiveQuery(query)
 
-  if (!updatedAt) {
+  if (!updatedAt || !rawProviders || rawProviders.length === 0) {
     return {
       provider: null,
       isLoading: true,

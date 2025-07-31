@@ -1,4 +1,5 @@
-import React from 'react'
+import { MotiView } from 'moti'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, TextArea, YStack } from 'tamagui'
 
@@ -9,18 +10,53 @@ interface PromptTabContentProps {
   assistant: Assistant
   updateAssistant: (assistant: Assistant) => void
 }
+
 export function PromptTabContent({ assistant, updateAssistant }: PromptTabContentProps) {
   const { t } = useTranslation()
 
+  const [formData, setFormData] = useState({
+    name: assistant?.name || '',
+    prompt: assistant?.prompt || ''
+  })
+
+  useEffect(() => {
+    setFormData({
+      name: assistant?.name || '',
+      prompt: assistant?.prompt || ''
+    })
+  }, [assistant.name, assistant.prompt])
+
+  const handleBlur = () => {
+    if (formData.name !== assistant.name || formData.prompt !== assistant.prompt) {
+      updateAssistant({
+        ...assistant,
+        name: formData.name,
+        prompt: formData.prompt
+      })
+    }
+  }
+
   return (
-    <YStack flex={1} gap={30}>
+    <MotiView
+      style={{ flex: 1, gap: 30 }}
+      from={{ opacity: 0, translateY: 10 }}
+      animate={{
+        translateY: 0,
+        opacity: 1
+      }}
+      exit={{ opacity: 1, translateY: -10 }}
+      transition={{
+        type: 'timing'
+      }}>
       <YStack width="100%" gap={8}>
         <SettingRowTitle paddingHorizontal={10}>{t('common.name')}</SettingRowTitle>
         <Input
-          padding={15}
+          height={49}
+          padding={16}
           placeholder={t('assistants.name')}
-          value={assistant?.name}
-          onChangeText={name => updateAssistant({ ...assistant, name })}
+          value={formData.name}
+          onChangeText={name => setFormData(prev => ({ ...prev, name }))}
+          onBlur={handleBlur}
         />
       </YStack>
       <YStack width="100%" gap={8} flex={1}>
@@ -29,11 +65,13 @@ export function PromptTabContent({ assistant, updateAssistant }: PromptTabConten
           flex={1}
           padding={15}
           placeholder={t('common.prompt')}
-          value={assistant?.prompt}
           multiline
-          onChangeText={prompt => updateAssistant({ ...assistant, prompt })}
+          verticalAlign="top"
+          value={formData.prompt}
+          onChangeText={prompt => setFormData(prev => ({ ...prev, prompt }))}
+          onBlur={handleBlur}
         />
       </YStack>
-    </YStack>
+    </MotiView>
   )
 }

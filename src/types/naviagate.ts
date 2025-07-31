@@ -2,10 +2,12 @@ import { StackNavigationProp } from '@react-navigation/stack'
 
 export type RootStackParamList = {
   WelcomeScreen: undefined
-  HomeScreen: { topicId?: string }
+  HomeScreen: undefined
+  ChatScreen: { topicId: string }
   SettingsScreen: undefined
   DataSettingsScreen: undefined
   BasicDataSettingsScreen: undefined
+  LandropSettingsScreen: undefined
   WebDavScreen: undefined
   WebDavConfigScreen: undefined
   NutstoreLoginScreen: undefined
@@ -27,8 +29,9 @@ export type RootStackParamList = {
   ApiServiceScreen: { providerId: string }
   TopicScreen: undefined
   AssistantScreen: undefined
-  AssistantDetailScreen: { assistantId: string }
+  AssistantDetailScreen: { assistantId: string; tab?: string }
   AssistantMarketScreen: undefined
   WebSearchProviderSettingsScreen: { providerId: string }
+  TestScreen: undefined
 }
 export type NavigationProps = StackNavigationProp<RootStackParamList>

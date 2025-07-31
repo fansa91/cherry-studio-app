@@ -21,13 +21,15 @@ import { isVisionModel } from '@/config/models/vision'
 import { isWebSearchModel } from '@/config/models/webSearch'
 import { useProvider } from '@/hooks/useProviders'
 import { fetchModels } from '@/services/ApiService'
+import { loggerService } from '@/services/LoggerService'
 import { Model, Provider } from '@/types/assistant'
 import { RootStackParamList } from '@/types/naviagate'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 import { getDefaultGroupName } from '@/utils/naming'
+const logger = loggerService.withContext('ManageModelsScreen')
 
 type ProviderSettingsRouteProp = RouteProp<RootStackParamList, 'ManageModelsScreen'>
-
-// --- Helper Functions (Extracted Logic) ---
 
 const getIsModelInProvider = (providerModels: Model[]) => {
   const providerModelIds = new Set(providerModels.map(m => m.id))
@@ -105,6 +107,7 @@ const TAB_CONFIGS = [
 
 export default function ManageModelsScreen() {
   const { t } = useTranslation()
+  const isDark = useIsDark()
   const theme = useTheme()
   const navigation = useNavigation()
   const route = useRoute<ProviderSettingsRouteProp>()
@@ -121,14 +124,11 @@ export default function ManageModelsScreen() {
   const isModelInCurrentProvider = getIsModelInProvider(provider?.models || [])
   const isAllModelsInCurrentProvider = getIsAllInProvider(isModelInCurrentProvider)
 
-  // Debounce search text
-  const debouncedSetSearchText = debounce(setDebouncedSearchText, 300)
-
   useEffect(() => {
     const handler = debounce(() => setDebouncedSearchText(searchText), 300)
     handler()
     return () => handler.cancel()
-  }, [searchText])
+  })
 
   const filteredModels = filterModels(allModels, debouncedSearchText, activeFilterType)
   const sortedModelGroups = groupAndSortModels(filteredModels, provider?.id || '')
@@ -166,7 +166,7 @@ export default function ManageModelsScreen() {
         const transformedModels = transformApiModels(modelsFromApi, provider)
         setAllModels(uniqBy(transformedModels, 'id'))
       } catch (error) {
-        console.error('Failed to fetch models', error)
+        logger.error('Failed to fetch models', error)
         setAllModels([])
       } finally {
         setIsLoading(false)
@@ -174,7 +174,7 @@ export default function ManageModelsScreen() {
     }
 
     fetchAndSetModels()
-  }, [provider?.id])
+  })
 
   const renderModelGroupItem = ({ item: [groupName, currentModels], index }: ListRenderItemInfo<[string, Model[]]>) => (
     <ModelGroup
@@ -188,9 +188,14 @@ export default function ManageModelsScreen() {
           chromeless
           icon={
             isAllModelsInCurrentProvider(groupButtonModels) ? (
-              <Minus size={14} borderRadius={99} backgroundColor="$backgroundRed" color="$foregroundRed" />
+              <Minus size={14} borderRadius={99} backgroundColor="$red20" color="$red100" />
             ) : (
-              <Plus size={14} borderRadius={99} backgroundColor="$backgroundGreen" color="$foregroundGreen" />
+              <Plus
+                size={14}
+                borderRadius={99}
+                backgroundColor={getGreenColor(isDark, 20)}
+                color={getGreenColor(isDark, 100)}
+              />
             )
           }
           onPress={
@@ -206,9 +211,14 @@ export default function ManageModelsScreen() {
           chromeless
           icon={
             isModelInCurrentProvider(model.id) ? (
-              <Minus size={14} borderRadius={99} backgroundColor="$backgroundRed" color="$foregroundRed" />
+              <Minus size={14} borderRadius={99} backgroundColor="$red20" color="$red100" />
             ) : (
-              <Plus size={14} borderRadius={99} backgroundColor="$backgroundGreen" color="$foregroundGreen" />
+              <Plus
+                size={14}
+                borderRadius={99}
+                backgroundColor={getGreenColor(isDark, 20)}
+                color={getGreenColor(isDark, 100)}
+              />
             )
           }
           onPress={isModelInCurrentProvider(model.id) ? () => onRemoveModel(model) : () => onAddModel(model)}
@@ -265,6 +275,7 @@ export default function ManageModelsScreen() {
                 {sortedModelGroups.length > 0 ? (
                   <Accordion overflow="hidden" type="multiple">
                     <FlashList
+                      showsVerticalScrollIndicator={false}
                       data={sortedModelGroups}
                       renderItem={renderModelGroupItem}
                       keyExtractor={([groupName]) => groupName}
@@ -274,7 +285,7 @@ export default function ManageModelsScreen() {
                   </Accordion>
                 ) : (
                   <Text textAlign="center" color="$gray10" paddingVertical={24}>
-                    {searchText ? t('settings.models.no_results') : t('models.no_models')}
+                    {t('models.no_models')}
                   </Text>
                 )}
               </YStack>

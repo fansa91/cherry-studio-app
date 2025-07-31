@@ -1,106 +1,116 @@
-import { DrawerContentComponentProps, DrawerItemList, useDrawerStatus } from '@react-navigation/drawer'
-import { FlashList } from '@shopify/flash-list'
-import { Settings } from '@tamagui/lucide-icons'
-import React, { useEffect, useState } from 'react'
+import { DrawerContentComponentProps, DrawerItemList } from '@react-navigation/drawer'
+import { useNavigation } from '@react-navigation/native'
+import { ArrowUpRight, Settings } from '@tamagui/lucide-icons'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Avatar, Button, Text, View, XStack, YStack } from 'tamagui'
+import { ActivityIndicator } from 'react-native'
+import { Avatar, Button, Stack, Text, useTheme, View, XStack, YStack } from 'tamagui'
 
 import { MenuTabContent } from '@/components/menu/MenuTabContent'
-import { deleteTopicById } from '@/services/TopicService'
-import { Topic } from '@/types/assistant'
-import { runAsyncFunction } from '@/utils'
+import { GroupedTopicList } from '@/components/topic/GroupTopicList'
+import { BlurView } from '@/components/ui/BlurView'
+import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
+import { useExternalAssistants } from '@/hooks/useAssistant'
+import { useSettings } from '@/hooks/useSettings'
+import { useTopics } from '@/hooks/useTopic'
+import { NavigationProps } from '@/types/naviagate'
+import { useIsDark } from '@/utils'
 
-import { getTopics } from '../../../db/queries/topics.queries'
-import TopicItem from '../topic/TopicItem'
+import { MarketIcon } from '../icons/MarketIcon'
+import { UnionIcon } from '../icons/UnionIcon'
+import { SettingDivider } from '../settings'
 
 export default function CustomDrawerContent(props: DrawerContentComponentProps) {
   const { t } = useTranslation()
-  const [topics, setTopics] = useState<Topic[]>([])
-  const isDrawerOpen = useDrawerStatus() === 'open'
+  const isDark = useIsDark()
+  const theme = useTheme()
+  const { theme: appTheme } = useSettings()
+  const navigation = useNavigation<NavigationProps>()
 
-  const refreshTopics = async () => {
-    try {
-      const topicsData = await getTopics()
-      setTopics(topicsData)
-    } catch (error) {
-      console.error('Failed to fetch topics:', error)
-    }
-  }
+  const { topics, isLoading: isLoadingTopics } = useTopics()
+  const { isLoading: isLoadingAssistants } = useExternalAssistants()
 
   const handleTopicSeeAll = () => {
     props.navigation.navigate('Main', { screen: 'TopicScreen' })
-    console.log('Navigate to all topics')
   }
 
-  const handleDeleteTopic = async (topicId: string) => {
-    // 1. 乐观更新UI：立即从状态中移除该项
-    setTopics(prevTopics => prevTopics.filter(topic => topic.id !== topicId))
-
-    // 2. 在后台执行实际的删除操作
-    try {
-      await deleteTopicById(topicId)
-    } catch (error) {
-      console.error('Failed to delete topic in background:', error)
-      await refreshTopics()
-    }
+  if (isLoadingTopics || isLoadingAssistants) {
+    return (
+      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </SafeAreaContainer>
+    )
   }
-
-  const renderItem = ({ item }: { item: Topic }) => <TopicItem topic={item} onDelete={handleDeleteTopic} />
-
-  useEffect(() => {
-    if (isDrawerOpen) {
-      runAsyncFunction(async () => {
-        try {
-          const topicsData = await getTopics()
-          setTopics(topicsData)
-        } catch (error) {
-          console.error('Failed to fetch topics:', error)
-        }
-      })
-    }
-  }, [isDrawerOpen])
 
   return (
-    <YStack flex={1} backgroundColor="transparent">
-      <YStack gap={10} flex={1}>
-        <YStack paddingHorizontal={20} paddingTop={50} paddingBottom={10}>
-          <DrawerItemList {...props} />
+    <YStack flex={1}>
+      <BlurView
+        style={{
+          flex: 1,
+          backgroundColor:
+            appTheme === 'dark' ? '#000000bb' : appTheme === 'light' ? '#ffffffbb' : isDark ? '#000000bb' : '#ffffffbb'
+        }}
+        intensity={60}
+        tint="default">
+        <YStack gap={10} flex={1} padding={20}>
+          <YStack>
+            <DrawerItemList {...props} />
+          </YStack>
+
+          <YStack backgroundColor="transparent" paddingTop={40} flex={1} gap={10}>
+            <XStack
+              justifyContent="space-between"
+              alignItems="center"
+              paddingVertical={10}
+              onPress={() => navigation.navigate('AssistantMarketScreen')}>
+              <XStack gap={10} alignItems="center" justifyContent="center">
+                <MarketIcon size={20} />
+                <Text color={theme.color}>{t('assistants.market.title')}</Text>
+              </XStack>
+              <ArrowUpRight size={20} color={theme.color} />
+            </XStack>
+
+            <XStack
+              justifyContent="space-between"
+              paddingVertical={10}
+              onPress={() => navigation.navigate('AssistantScreen')}>
+              <XStack gap={10} alignItems="center" justifyContent="center">
+                <UnionIcon size={20} />
+                <Text color={theme.color}>{t('assistants.market.my_assistant')}</Text>
+              </XStack>
+              <ArrowUpRight size={20} color={theme.color} />
+            </XStack>
+            <Stack paddingVertical={20}>
+              <SettingDivider />
+            </Stack>
+            <MenuTabContent title={t('menu.topic.recent')} onSeeAllPress={handleTopicSeeAll}>
+              <View flex={1} minHeight={200}>
+                {/* 只显示7条 */}
+                <GroupedTopicList topics={topics.slice(0, 7)} />
+              </View>
+            </MenuTabContent>
+          </YStack>
         </YStack>
 
-        <YStack backgroundColor="$background" padding="$2" flex={1}>
-          <MenuTabContent
-            searchPlaceholder={t('common.search_placeholder')}
-            title={t('menu.topic.recent')}
-            onSeeAllPress={handleTopicSeeAll}>
-            <View style={{ flex: 1, minHeight: 200 }}>
-              <FlashList
-                ItemSeparatorComponent={() => <YStack height={20} />}
-                data={topics}
-                renderItem={renderItem}
-                estimatedItemSize={50}
-              />
-            </View>
-          </MenuTabContent>
-        </YStack>
-      </YStack>
-
-      <XStack paddingHorizontal={20} paddingBottom={40} justifyContent="space-between" alignItems="center">
-        <XStack gap={10} alignItems="center">
-          <Avatar circular size={48}>
-            <Avatar.Image accessibilityLabel="Cam" src={require('@/assets/images/favicon.png')} />
-            <Avatar.Fallback delayMs={600} backgroundColor="$blue10" />
-          </Avatar>
-          <Text>{t('common.cherry_studio')}</Text>
+        <XStack paddingHorizontal={20} paddingBottom={40} justifyContent="space-between" alignItems="center">
+          <XStack gap={10} alignItems="center">
+            <Avatar circular size={48}>
+              {/* todo: set user avatar */}
+              <Avatar.Image accessibilityLabel="Cam" src={require('@/assets/images/favicon.png')} />
+              <Avatar.Fallback delayMs={600} backgroundColor={theme.blue10} />
+            </Avatar>
+            <Text color={theme.color}>{t('common.cherry_studio')}</Text>
+          </XStack>
+          <Button
+            icon={<Settings size={24} color={theme.color} />}
+            chromeless
+            onPress={() => {
+              props.navigation.navigate('Main', { screen: 'SettingsScreen' })
+              props.navigation.closeDrawer()
+            }}
+          />
         </XStack>
-        <Button
-          icon={<Settings size={24} />}
-          chromeless
-          onPress={() => {
-            props.navigation.navigate('Main', { screen: 'SettingsScreen' })
-            props.navigation.closeDrawer()
-          }}
-        />
-      </XStack>
+      </BlurView>
     </YStack>
   )
 }

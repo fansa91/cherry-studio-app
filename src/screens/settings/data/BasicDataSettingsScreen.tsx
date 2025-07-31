@@ -6,13 +6,13 @@ import { useTranslation } from 'react-i18next'
 import { ScrollView, Text, useTheme, XStack, YStack } from 'tamagui'
 
 import { SettingContainer, SettingGroup, SettingGroupTitle, SettingRow } from '@/components/settings'
+import { RestoreProgressModal } from '@/components/settings/data/RestoreProgressModal'
 import { HeaderBar } from '@/components/settings/HeaderBar'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { restore } from '@/services/BackupService'
-import { FileType } from '@/types/file'
+import { LOCAL_RESTORE_STEPS, useRestore } from '@/hooks/useRestore'
+import { loggerService } from '@/services/LoggerService'
 import { NavigationProps } from '@/types/naviagate'
-import { uuid } from '@/utils'
-import { getFileType } from '@/utils/file'
+const logger = loggerService.withContext('BasicDataSettingsScreen')
 
 interface SettingItemConfig {
   title: string
@@ -32,37 +32,21 @@ export default function BasicDataSettingsScreen() {
   const theme = useTheme()
   const navigation = useNavigation<NavigationProps>()
   const { t } = useTranslation()
+  const { isModalOpen, restoreSteps, overallStatus, startRestore, closeModal } = useRestore({
+    stepConfigs: LOCAL_RESTORE_STEPS
+  })
 
   const handleRestore = async () => {
-    // 处理恢复数据逻辑
-    try {
-      const result = await DocumentPicker.getDocumentAsync()
+    const result = await DocumentPicker.getDocumentAsync({ type: 'application/zip' })
+    if (result.canceled) return
 
-      if (result.canceled) return console.log('File selection was canceled')
-
-      const asset = result.assets[0]
-
-      if (!['.zip', '.bak'].some(ext => asset.name.endsWith(ext))) throw new TypeError('Invalid file type')
-
-      const file: Omit<FileType, 'md5'> = {
-        id: uuid(),
-        name: asset.name,
-        origin_name: asset.name,
-        path: asset.uri,
-        size: asset.size || 0,
-        ext: asset.name.split('.').pop() || '',
-        type: getFileType(asset.name.split('.').pop() || ''),
-        mime_type: asset.mimeType || '',
-        created_at: new Date().toISOString(),
-        count: 1
-      }
-
-      console.log('Selected file:', file)
-
-      await restore(file)
-    } catch (err) {
-      console.log('Error selecting file:', err)
-    }
+    const asset = result.assets[0]
+    await startRestore({
+      name: asset.name,
+      uri: asset.uri,
+      size: asset.size,
+      mimeType: asset.mimeType
+    })
   }
 
   const settingsItems: SettingGroupConfig[] = [
@@ -83,10 +67,7 @@ export default function BasicDataSettingsScreen() {
           title: t('settings.data.reset'),
           icon: <RotateCcw size={24} color="red" />,
           danger: true,
-          onPress: () => {
-            // 处理数据重置逻辑
-            console.log('Data reset pressed')
-          }
+          onPress: () => logger.info('Data reset pressed')
         }
       ]
     },
@@ -107,10 +88,7 @@ export default function BasicDataSettingsScreen() {
           title: t('settings.data.clear_cache.button'),
           icon: <Trash2 size={24} color="red" />,
           danger: true,
-          onPress: () => {
-            // 处理清除缓存逻辑
-            console.log('Clear cache pressed')
-          }
+          onPress: () => logger.info('Clear cache pressed')
         }
       ]
     }
@@ -126,21 +104,20 @@ export default function BasicDataSettingsScreen() {
             {settingsItems.map(group => (
               <Group key={group.title} title={group.title}>
                 {group.items.map(item => (
-                  <SettingItem
-                    key={item.title}
-                    title={item.title}
-                    screen={item.screen}
-                    icon={item.icon}
-                    subtitle={item.subtitle}
-                    danger={item.danger}
-                    onPress={item.onPress}
-                  />
+                  <SettingItem key={item.title} {...item} />
                 ))}
               </Group>
             ))}
           </YStack>
         </SettingContainer>
       </ScrollView>
+
+      <RestoreProgressModal
+        isOpen={isModalOpen}
+        steps={restoreSteps}
+        overallStatus={overallStatus}
+        onClose={closeModal}
+      />
     </SafeAreaContainer>
   )
 }
@@ -154,7 +131,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   )
 }
 
-function SettingItem({ title, screen, icon, subtitle, danger, onPress }: SettingItemProps) {
+function SettingItem({ title, screen, icon, subtitle, danger, onPress }: SettingItemConfig) {
   const navigation = useNavigation<NavigationProps>()
 
   const handlePress = () => {
@@ -183,13 +160,4 @@ function SettingItem({ title, screen, icon, subtitle, danger, onPress }: Setting
       {screen && <ChevronRight size={24} color="$colorFocus" />}
     </SettingRow>
   )
-}
-
-interface SettingItemProps {
-  title: string
-  screen?: string
-  icon: React.ReactElement
-  subtitle?: string
-  danger?: boolean
-  onPress?: () => void
 }

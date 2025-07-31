@@ -1,11 +1,12 @@
-import { X } from '@tamagui/lucide-icons'
+import { CircleX } from '@tamagui/lucide-icons'
 import { FC, useState } from 'react'
 import React from 'react'
 import { TouchableOpacity } from 'react-native'
 import ImageView from 'react-native-image-viewing'
-import { Image, Stack, useWindowDimensions, View } from 'tamagui'
+import { Image, useWindowDimensions, View } from 'tamagui'
 
 import { FileType } from '@/types/file'
+import { useIsDark } from '@/utils'
 
 interface ImageItemProps {
   file: FileType
@@ -15,6 +16,7 @@ interface ImageItemProps {
 }
 
 const ImageItem: FC<ImageItemProps> = ({ file, allImages = [], onRemove, size }) => {
+  const isDark = useIsDark()
   const [visible, setIsVisible] = useState(false)
   const imagesForViewer = allImages.length > 0 ? allImages : [file]
   const imageIndex = imagesForViewer.findIndex(img => img.path === file.path)
@@ -45,19 +47,16 @@ const ImageItem: FC<ImageItemProps> = ({ file, allImages = [], onRemove, size })
           onPress={handleRemove}
           style={{
             position: 'absolute',
-            top: -4,
-            right: -4,
+            top: -6,
+            right: -6,
             borderRadius: 99
           }}>
-          <Stack
-            width={16}
-            height={16}
-            backgroundColor="rgba(255, 0, 0, 0.2)"
+          <CircleX
+            size={20}
+            color={isDark ? '$backgroundPrimaryDark' : '$backgroundPrimaryLight'}
             borderRadius={99}
-            alignItems="center"
-            justifyContent="center">
-            <X size={10} color="rgba(255, 0, 0, 1)" />
-          </Stack>
+            backgroundColor="$gray60"
+          />
         </TouchableOpacity>
       )}
     </View>

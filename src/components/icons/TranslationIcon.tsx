@@ -1,11 +1,11 @@
 import React from 'react'
+import { useColorScheme } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
-import { useThemeName } from 'tamagui'
 
 import { IconProps } from '.'
 
 export function TranslationIcon(props: IconProps) {
-  const theme = useThemeName()
+  const theme = useColorScheme()
   const isDark = theme === 'dark'
   const fillColor = isDark ? 'white' : 'black'
   return (
@@ -50,7 +50,7 @@ export function TranslationIcon(props: IconProps) {
 }
 
 export function TranslatedIcon(props: IconProps) {
-  const theme = useThemeName()
+  const theme = useColorScheme()
   const isDark = theme === 'dark'
   const fillColor = isDark ? 'white' : 'black'
   return (

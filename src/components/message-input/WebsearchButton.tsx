@@ -1,11 +1,39 @@
 import { Globe } from '@tamagui/lucide-icons'
+import { ImpactFeedbackStyle } from 'expo-haptics'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import { Keyboard } from 'react-native'
 import { Button } from 'tamagui'
 
-export const WebsearchButton: React.FC = () => {
-  const { t } = useTranslation()
-  const globeIcon = <Globe size={24} />
+import { Assistant } from '@/types/assistant'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
+import { haptic } from '@/utils/haptic'
 
-  return <Button chromeless size={24} icon={globeIcon} />
+interface WebsearchButtonProps {
+  assistant: Assistant
+  updateAssistant: (assistant: Assistant) => Promise<void>
+}
+
+export const WebsearchButton: React.FC<WebsearchButtonProps> = ({ assistant, updateAssistant }) => {
+  const isDark = useIsDark()
+
+  const handlePress = () => {
+    Keyboard.dismiss()
+    haptic(ImpactFeedbackStyle.Light)
+    updateAssistant({
+      ...assistant,
+      enableWebSearch: !assistant.enableWebSearch
+    })
+  }
+
+  return (
+    <Button
+      chromeless
+      circular
+      size={20}
+      icon={<Globe size={20} />}
+      onPress={handlePress}
+      color={assistant.enableWebSearch ? getGreenColor(isDark, 100) : undefined}
+    />
+  )
 }

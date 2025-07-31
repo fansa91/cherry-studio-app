@@ -1,6 +1,7 @@
-import { ChevronRight } from '@tamagui/lucide-icons'
+import { ChevronsRight } from '@tamagui/lucide-icons'
 import { AnimatePresence, MotiView } from 'moti'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Spinner, Text, XStack, YStack } from 'tamagui'
 
 import { MessageBlockStatus, ThinkingMessageBlock } from '@/types/message'
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
+  const { t } = useTranslation()
   const [messages, setMessages] = useState<string[]>([])
   const queueRef = useRef<string>('')
   const processedLengthRef = useRef(0)
@@ -18,15 +20,17 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
   const isStreaming = block.status === MessageBlockStatus.STREAMING
 
   const animationFrameIdRef = useRef<number | null>(null)
-  const clearAnimationFrame = useCallback(() => {
+
+  const clearAnimationFrame = () => {
     if (animationFrameIdRef.current) {
       cancelAnimationFrame(animationFrameIdRef.current)
       animationFrameIdRef.current = null
     }
-  }, [])
+  }
 
   const NEXT_CONTENT_COUNT = 50
-  const startOutputQueue = useCallback(() => {
+
+  const startOutputQueue = () => {
     if (processedLengthRef.current === 0) return
 
     const outputNextChar = () => {
@@ -42,7 +46,7 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
     }
 
     animationFrameIdRef.current = requestAnimationFrame(outputNextChar)
-  }, [clearAnimationFrame])
+  }
 
   useEffect(() => {
     const content = block.content || ''
@@ -53,7 +57,7 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
       processedLengthRef.current = content.length
       startOutputQueue()
     }
-  }, [block.content, isStreaming, startOutputQueue])
+  })
 
   useEffect(() => {
     return () => {
@@ -61,14 +65,14 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
       queueRef.current = ''
       processedLengthRef.current = 0
     }
-  }, [clearAnimationFrame])
+  })
 
   const lineHeight = 16
-  const containerHeight = useMemo(() => {
+  const containerHeight = (() => {
     if (!isStreaming && !expanded) return 40
     if (expanded) return lineHeight
     return Math.min(64, Math.max(messages.length + 1, 2) * lineHeight)
-  }, [expanded, isStreaming, messages.length])
+  })()
 
   return (
     <MotiView
@@ -94,14 +98,14 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
             animate={{ width: 20, height: 20, opacity: 1, marginRight: 10 }}
             exit={{ width: 0, height: 0, opacity: 0, marginRight: 0 }}
             transition={{ type: 'timing', duration: 150 }}>
-            <Spinner size="small" color="rgba(0, 185, 107, 1)" />
+            <Spinner size="small" color="$colorBrand" />
           </MotiView>
         )}
       </AnimatePresence>
       <YStack gap={5} flex={1} position="relative" height="100%">
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontWeight="bold" zIndex={2}>
-            Thinking for {Math.floor((block.thinking_millsec || 0) / 1000)} seconds
+            {t('chat.think', { seconds: Math.floor((block.thinking_millsec || 0) / 1000) })}
           </Text>
           <MotiView
             animate={{
@@ -112,7 +116,7 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
               duration: 150
             }}
             style={{ zIndex: 2 }}>
-            <ChevronRight size={20} />
+            <ChevronsRight size={20} />
           </MotiView>
         </XStack>
         <AnimatePresence>
@@ -128,7 +132,7 @@ const MarqueeComponent: React.FC<Props> = ({ block, expanded }) => {
                 duration: 50
               }}>
               <Text fontSize={12} opacity={0.5}>
-                Tap to read my mind
+                {t('chat.think_expand')}
               </Text>
             </MotiView>
           )}

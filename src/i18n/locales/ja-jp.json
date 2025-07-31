@@ -1,402 +1,149 @@
 {
   "translation": {
     "assistants": {
-      "edit": {
-        "title": "エディットアシスタント"
-      },
       "create": {
         "title": "アシスタントを作成する"
       },
-      "sort": {
-        "title": "アシスタントのソート",
-        "alphabetical": "アルファベット順",
-        "recent_use": "最近使用したもの",
-        "recent_add": "最近追加された"
+      "edit": {
+        "title": "エディットアシスタント"
       },
-      "search.no_results": "アシスタントが見つかりません",
-      "title": "アシスタント",
-      "title.recent": "最近のアシスタント",
-      "title.create": "アシスタントを作成",
-      "title.edit": "編集アシスタント",
+      "market": {
+        "add.success": "{{assistant_name}}の追加に成功しました",
+        "button.chat": "今すぐチャット",
+        "groups": {
+          "all": "オール",
+          "business": "ビジネス",
+          "career": "キャリア",
+          "language": "言語",
+          "tools": "ツール"
+        },
+        "my_assistant": "私のアシスタント",
+        "popular": "人気アシスタント",
+        "search_placeholder": "検索アシスタント...",
+        "title": "アシスタントマーケット"
+      },
       "name": "アシスタント名",
       "save": "セーブアシスタント",
-      "settings.temperature": "温度",
-      "settings.top_p": "トップP",
+      "search.no_results": "アシスタントが見つかりません",
       "settings.context": "文脈",
-      "settings.stream_output": "ストリーム出力",
       "settings.max_tokens": "最大トークン制限を有効にする",
       "settings.max_tokens_value": "最大トークン制限",
       "settings.reasoning": "推論努力",
       "settings.reasoning.auto": "オート",
+      "settings.reasoning.high": "ハイ",
       "settings.reasoning.low": "ロウ",
       "settings.reasoning.medium": "ミディアム",
-      "settings.reasoning.high": "ハイ",
-      "market": {
-        "title": "アシスタントマーケット",
-        "search_placeholder": "検索アシスタント...",
-        "groups": {
-          "all": "オール",
-          "career": "キャリア",
-          "business": "ビジネス",
-          "tools": "ツール",
-          "language": "言語"
-        },
-        "button.chat": "今すぐチャット",
-        "popular": "人気アシスタント"
-      }
+      "settings.reasoning.off": "オフ",
+      "settings.stream_output": "ストリーム出力",
+      "settings.temperature": "温度",
+      "settings.top_p": "トップP",
+      "sort": {
+        "alphabetical": "アルファベット順",
+        "recent_add": "最近追加された",
+        "recent_use": "最近使用したもの",
+        "title": "アシスタントのソート"
+      },
+      "title": "アシスタント",
+      "title.create": "アシスタントを作成",
+      "title.edit": "編集アシスタント",
+      "title.recent": "最近のアシスタント"
     },
     "button": {
       "add": "追加",
-      "manage": "マネージ",
-      "select_model": "モデルを選択してください。",
-      "web_search": "オンラインで検索する",
+      "checking": "確認中...",
       "image_generate": "画像生成",
+      "manage": "マネージ",
       "placeholder": "何かをカジュアルに尋ねる",
-      "start_check_model": "始めましょう",
+      "recents": "最近",
       "save": "保存",
-      "recents": "最近"
+      "select_model": "モデルを選択してください。",
+      "sort": "ソート",
+      "start_check_model": "始めましょう",
+      "success": "成功しました！",
+      "tag": "タグ",
+      "web_search": "オンラインで検索する"
     },
     "chat": {
-      "topics": {
-        "title": "トピック",
-        "list": "リスト",
-        "search": {
-          "results": "結果"
-        }
-      },
       "assistant": {
         "search": {
           "placeholder": "検索アシスタント"
         }
       },
+      "citation": "+ {{count}}件のソース",
       "default.name": "デフォルト",
+      "think": "{{seconds}}秒考え中",
+      "think_expand": "タップして私の心を読む",
       "title": "Cherry Studio へようこそ！",
+      "topics": {
+        "list": "リスト",
+        "search": {
+          "results": "結果"
+        },
+        "title": "トピック"
+      },
       "welcome": "私はあなたのAIプロダクション・アシスタントです。アシスタントの作成、モデルの管理などができます。"
     },
     "common": {
+      "added": "追加済み",
+      "camera": "カメラ",
       "cancel": "キャンセル",
-      "description": "説明",
-      "language": "言語",
-      "model": "モデル",
-      "name": "名前",
-      "save": "保存",
       "cherry_studio": "Cherry Studio",
       "cherry_studio_description": "パワフルなAIプロダクション・アシスタント",
-      "manage": "管理",
-      "enabled": "有効",
-      "search_placeholder": "検索...",
-      "prompt": "プロンプト",
-      "preset": "プリセット",
-      "tool": "ツール",
-      "added": "追加済み",
-      "visit": "訪問",
-      "see_all": "すべて表示",
-      "ok": "OK",
-      "error_occurred": "エラーが発生しました",
-      "loading": "読み込み中...",
-      "file": "ファイル",
-      "photo": "写真",
       "clear_all": "すべてクリア",
-      "camera": "カメラ"
+      "close": "閉じる",
+      "description": "説明",
+      "enabled": "有効",
+      "error_occurred": "エラーが発生しました",
+      "file": "ファイル",
+      "language": "言語",
+      "last_month": "先月",
+      "last_week": "先週",
+      "loading": "読み込み中...",
+      "manage": "管理",
+      "model": "モデル",
+      "name": "名前",
+      "ok": "OK",
+      "older": "年上",
+      "others": "他の人",
+      "photo": "写真",
+      "preset": "プリセット",
+      "prompt": "プロンプト",
+      "save": "保存",
+      "search_placeholder": "検索...",
+      "see_all": "すべて表示",
+      "source": "ソース",
+      "this_week": "今週",
+      "today": "今日",
+      "tool": "ツール",
+      "visit": "訪問",
+      "yesterday": "昨日"
+    },
+    "errors": {
+      "cannotOpenLink": "リンクを開けません: {{error}}",
+      "cannotOpenLinkTitle": "リンクを開けません",
+      "deviceCannotHandleLink": "このデバイスはリンクを処理できません: {{href}}",
+      "error_title": "エラー",
+      "linkErrorTitle": "リンクのオープンに失敗"
     },
     "history": {
-      "topics.empty": "トピックが見つかりません。",
       "search.placeholder": "トピックまたはメッセージを検索...",
-      "search.topics.empty": "トピックが見つかりません。すべてのメッセージを検索するには Enter キーを押してください。"
+      "search.topics.empty": "トピックが見つかりません。すべてのメッセージを検索するには Enter キーを押してください。",
+      "topics.empty": "トピックが見つかりません。"
     },
-    "settings": {
-      "data": {
-        "app_data": "アプリデータ",
-        "app_logs": "アプリログ",
-        "app_knowledge": "ナレッジベースファイル",
-        "app_knowledge.remove_all": "ファイルの削除",
-        "clear_cache": {
-          "button": "キャッシュをクリアする",
-          "title": "キャッシュをクリアする"
-        },
-        "data.title": "データディレクトリ",
-        "title": "データ設定",
-        "basic_title": "基本データ設定",
-        "backup": "データバックアップ",
-        "recovery": "データ復元",
-        "reset": "データリセット",
-        "cloud_backup": "クラウドバックアップ設定",
-        "third_party": "サードパーティ接続"
-      },
-      "models": {
-        "default_model": "デフォルトモデル",
-        "empty": "まだモデルがありません...",
-        "empty.tooltip": "お探しのページは見つかりませんでした。ご不便をおかけして申し訳ありません。",
-        "empty.add_model": "最初のモデルを追加しましょう。",
-        "search": "モデルを検索...",
-        "title": "モデル",
-        "add.model": "モデルを追加",
-        "add.model.id": "モデルID",
-        "add.model.id.placeholder": "必須 例: gpt-4o",
-        "add.model.name": "モデル名",
-        "add.model.name.placeholder": "任意 例: GPT-4o",
-        "add.model.group": "モデルグループ",
-        "add.model.group.placeholder": "任意 例: OpenAI"
-      },
-      "provider": {
-        "add.name": "プロバイダー名",
-        "add.name.placeholder": "例：OpenAI",
-        "add.title": "プロバイダーを追加する",
-        "add.type": "プロバイダータイプ",
-        "api.url.preview": "プレビュー: {{url}}",
-        "api.url.reset": "リセット",
-        "api.url.tip": "/で終わる場合はv1を無視し、#で終わる場合は入力アドレスの使用を強制します。",
-        "api_host": "APIホスト",
-        "api_key": "APIキー",
-        "api_key.tip": "カンマで区切られた複数のキー",
-        "delete.content": "このプロバイダーを削除してもよろしいですか？",
-        "delete.title": "プロバイダーの削除",
-        "title": "モデルプロバイダー",
-        "search": "検索プロバイダー...",
-        "api_service": "APIサービス",
-        "list.title": "プロバイダーリスト",
-        "api_key.placeholder": "APIキーを入力してください",
-        "api_key.get": "APIキーを取得",
-        "api_check.title": "検出",
-        "api_check.tooltip": "検出に使用するモデルを選択",
-        "enabled": "オン",
-        "checked": "確認済み",
-        "auth": {
-          "title": "{{provider}} サービス",
-          "login": "ログイン",
-          "balance_recharge": "残高チャージ",
-          "free_bills": "無料請求"
-        },
-        "api_host.placeholder": "APIホストを入力してください",
-        "not_found": "プロバイダーが見つかりません",
-        "not_found_message": "プロバイダーページに移動する際にエラーが発生しました。"
-      },
-      "proxy.title": "プロキシ アドレス",
-      "theme.window.style.opaque": "不透明ウィンドウ",
-      "theme.window.style.title": "ウィンドウスタイル",
-      "theme.window.style.transparent": "透明ウィンドウ",
-      "title": "設定",
-      "topic.position": "トピックの位置",
-      "topic.position.left": "左",
-      "topic.position.right": "右",
-      "topic.show.time": "トピックの時間を表示する",
-      "assistant.show.icon": "モデルのアイコンを表示する",
-      "tray.title": "システムトレイアイコンを有効にする",
-      "websearch": {
-        "tavily": {
-          "api_key.placeholder": "Tavily API キーを入力してください。"
-        },
-        "title": "Web検索",
-        "selectPlaceholder": "ウェブ検索プロバイダーを選択してください...",
-        "searchWithDates": "日付を含めて検索",
-        "overrideSearchService": "検索サービスを上書き",
-        "searchCount": "検索数",
-        "contentLengthLimit": "コンテンツ長の制限",
-        "blacklist.title": "ブラックリスト",
-        "blacklist_placeholder": "以下の形式を使用してください（改行で区切る）\nパターンマッチング：*://*.example.com/*\n正規表現：/example\\.(net|org)/",
-        "blacklist_description": "以下のウェブサイトからの結果は検索結果に表示されません",
-        "subscribe.title": "ブラックリスト購読",
-        "api_service": "APIサービス",
-        "api_host": "APIホスト",
-        "api_host.placeholder": "APIホストを入力してください",
-        "api_key": "APIキー",
-        "api_key.placeholder": "APIキーを入力してください",
-        "api_key.get": "APIキーを取得",
-        "provider": {
-          "free": {
-            "title": "無料サービスプロバイダー"
-          },
-          "api": {
-            "title": "APIサービスプロバイダー"
-          }
-        },
-        "check_success": "チェック成功",
-        "check_success_message": "APIは正常に動作しています",
-        "check_fail": "チェック失敗",
-        "check_error": "チェックエラー"
-      },
-      "modelAndService": "AIモデル＆サービス",
-      "dataAndSecurity": "データ & セキュリティ",
-      "about": {
-        "title": "私たちについて",
-        "header": "概要 & フィードバック",
-        "contact": {
-          "title": "お問い合わせ",
-          "button": "メール"
-        },
-        "feedback": {
-          "title": "フィードバック",
-          "button": "フィードバック"
-        },
-        "license": {
-          "title": "ライセンス",
-          "button": "ライセンス"
-        },
-        "releases": {
-          "title": "リリースノート",
-          "button": "リリース"
-        },
-        "website": {
-          "title": "公式ウェブサイト",
-          "button": "ウェブサイト"
-        }
-      },
-      "general": {
-        "title": "一般設定",
-        "display.title": "表示設定",
-        "theme.auto": "自動",
-        "theme.dark": "ダーク",
-        "theme.light": "ライト",
-        "theme.title": "テーマ",
-        "privacy.title": "プライバシー設定",
-        "privacy.anonymous": "エラーと統計を匿名で報告",
-        "language.title": "言語"
-      },
-      "webdav": {
-        "title": "WebDAV",
-        "config": {
-          "title": "WebDAV 設定",
-          "host": "WebDAV ホスト",
-          "host_placeholder": "http://localhost:8080",
-          "user": "WebDAV ユーザー",
-          "user_placeholder": "WebDAV ユーザー",
-          "password": "WebDAV パスワード",
-          "password_placeholder": "WebDAV パスワード",
-          "password_hint": "8文字以上である必要があります",
-          "path": "WebDAV パス",
-          "path_placeholder": "WebDAV パス",
-          "apply": "適用"
-        },
-        "backup": {
-          "title": "バックアップ設定",
-          "to_webdav": "WebDAV にバックアップ",
-          "from_webdav": "WebDAV から復元",
-          "auto_backup": "自動バックアップ",
-          "slim_backup": "スリムバックアップ",
-          "max_backups": "最大バックアップ数",
-          "unlimited": "無制限"
-        }
-      },
-      "nutstore": {
-        "nutstore": "Nutstore",
-        "config": "Nutstore設定",
-        "title": "Nutstore同期",
-        "username": "Nutstoreユーザー名",
-        "to_nutstore": "Nutstoreにバックアップ",
-        "from_nutstore": "Nutstoreから復元",
-        "backupStatus": "バックアップ状態",
-        "backupPath": "バックアップ保存パス",
-        "logout": "ログアウト",
-        "login": "Nutstoreアカウントでログイン"
-      },
-      "assistant": {
-        "title": "デフォルトアシスタント",
-        "default_assistant": {
-          "name": "デフォルトアシスタント",
-          "description": "新しいアシスタントを作成するときに使用されるアシスタント。設定されていない場合、このアシスタントが使用されます"
-        },
-        "topic_naming_assistant": {
-          "name": "トピック命名アシスタント",
-          "description": "新しいトピックを自動的に命名するときに使用されるアシスタント"
-        },
-        "translate_assistant": {
-          "name": "翻訳アシスタント",
-          "description": "翻訳サービスに使用されるアシスタント"
-        },
-        "empty": "まだアシスタントがありません..."
-      },
-      "notion": {
-        "api_key": "Notion APIキー",
-        "api_key_placeholder": "Notion APIキーを入力してください",
-        "check": {
-          "button": "確認",
-          "empty_api_key": "APIキーが設定されていません",
-          "empty_database_id": "データベースIDが設定されていません",
-          "error": "接続エラー、ネットワーク設定とAPIキーとデータベースIDを確認してください",
-          "fail": "接続に失敗しました、ネットワークとAPIキーとデータベースIDを確認してください",
-          "success": "接続成功"
-        },
-        "database_id": "NotionデータベースID",
-        "database_id_placeholder": "NotionデータベースIDを入力してください",
-        "help": "Notion設定ドキュメント",
-        "page_name_key": "ページタイトルフィールド名",
-        "page_name_key_placeholder": "ページタイトルフィールド名を入力してください（デフォルトはName）",
-        "title": "Notion設定",
-        "export_reasoning.title": "エクスポートに推論チェーンを含める",
-        "export_reasoning.help": "有効にすると、エクスポートされるコンテンツに推論チェーン（思考過程）が含まれます。"
-      },
-      "yuque": {
-        "check": {
-          "button": "確認",
-          "empty_repo_url": "ナレッジベースURLを先に入力してください",
-          "empty_token": "Yuqueトークンを先に入力してください",
-          "fail": "Yuque接続の検証に失敗しました",
-          "success": "Yuque接続の検証に成功しました"
-        },
-        "help": "Yuqueトークンを取得",
-        "repo_url": "Yuque URL",
-        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
-        "title": "Yuque設定",
-        "token": "Yuqueトークン",
-        "token_placeholder": "Yuqueトークンを入力してください"
-      },
-      "joplin": {
-        "check": {
-          "button": "確認",
-          "empty_token": "Joplin認証トークンを入力してください",
-          "empty_url": "JoplinクリッパーサービスURLを入力してください",
-          "fail": "Joplin接続の検証に失敗しました",
-          "success": "Joplin接続の検証に成功しました"
-        },
-        "help": "Joplin認証トークンを取得するにはここをクリック",
-        "title": "Joplin設定",
-        "token": "Joplin認証トークン",
-        "token_placeholder": "Joplin認証トークン",
-        "url": "JoplinウェブクリッパーサービスURL",
-        "url_placeholder": "http://127.0.0.1:41184/",
-        "export_reasoning.title": "エクスポートに推論チェーンを含める",
-        "export_reasoning.help": "有効にすると、エクスポートされるコンテンツにアシスタントが生成した推論チェーン（思考過程）が含まれます。"
-      },
-      "obsidian": {
-        "title": "Obsidian設定",
-        "default_vault": "デフォルトのObsidianボールト",
-        "default_vault_placeholder": "デフォルトのObsidianボールトを選択してください",
-        "default_vault_loading": "Obsidianボールトを読み込み中...",
-        "default_vault_no_vaults": "Obsidianボールトが見つかりません",
-        "default_vault_fetch_error": "Obsidianボールトの取得に失敗しました",
-        "default_vault_export_failed": "エクスポートに失敗しました"
-      },
-      "siyuan": {
-        "title": "思源ノート設定",
-        "api_url": "思源ノートAPI URL",
-        "api_url_placeholder": "例：http://127.0.0.1:6806",
-        "token": "思源ノートトークン",
-        "token.help": "思源ノートトークンを取得",
-        "token_placeholder": "思源ノートトークンを入力してください",
-        "box_id": "思源ノートボックスID",
-        "box_id_placeholder": "思源ノートボックスIDを入力してください",
-        "root_path": "思源ノートルートパス",
-        "root_path_placeholder": "例：/CherryStudio",
-        "check": {
-          "title": "接続確認",
-          "button": "確認",
-          "empty_config": "APIアドレスとトークンを入力してください",
-          "success": "接続成功",
-          "fail": "接続失敗、APIアドレスとトークンを確認してください",
-          "error": "接続エラー、ネットワーク接続を確認してください"
-        }
-      }
-    },
-    "profile": {
-      "editProfile": "プロフィールを編集する",
-      "avatar": "ユーザープロフィール画像",
-      "create": "作成に進む",
-      "createFirstAgent": "最初のAIインテリジェントボディを作成するためにクリックしてください。",
-      "noContent": "まだ{{type}}のコンテンツがありません。"
-    },
-    "home": {},
     "inputs": {
       "placeholder": "メッセージを送信..."
+    },
+    "menu": {
+      "assistant": {
+        "recent": "最近のアシスタント",
+        "title": "アシスタント"
+      },
+      "search_placeholder": "検索...",
+      "see_all": "すべて表示",
+      "topic": {
+        "recent": "最近のトピック",
+        "title": "トピック"
+      }
     },
     "models": {
       "no_models": "利用可能なモデルがありません",
@@ -413,14 +160,21 @@
         "websearch": "ウェブ検索"
       }
     },
+    "profile": {
+      "avatar": "ユーザープロフィール画像",
+      "create": "作成に進む",
+      "createFirstAgent": "最初のAIインテリジェントボディを作成するためにクリックしてください。",
+      "editProfile": "プロフィールを編集する",
+      "noContent": "まだ{{type}}のコンテンツがありません。"
+    },
     "provider": {
       "aihubmix": "AiHubMix",
-      "burncloud": "BurnCloud",
       "alayanew": "Alaya NeW",
       "anthropic": "Anthropic",
       "azure-openai": "Azure OpenAI",
       "baichuan": "Baichuan",
       "baidu-cloud": "Baidu Cloud",
+      "burncloud": "BurnCloud",
       "copilot": "GitHub Copilot",
       "dashscope": "Alibaba Cloud",
       "deepseek": "DeepSeek",
@@ -450,36 +204,345 @@
       "openrouter": "OpenRouter",
       "perplexity": "Perplexity",
       "ppio": "PPIO",
+      "qiniu": "Qiniu",
       "qwenlm": "QwenLM",
       "silicon": "SiliconFlow",
       "stepfun": "StepFun",
       "tencent-cloud-ti": "Tencent Cloud TI",
       "together": "Together",
+      "tokenflux": "TokenFlux",
+      "voyageai": "Voyage AI",
       "xirang": "State Cloud Xirang",
       "yi": "Yi",
       "zhinao": "360AI",
-      "zhipu": "ZHIPU AI",
-      "voyageai": "Voyage AI",
-      "qiniu": "Qiniu",
-      "tokenflux": "TokenFlux"
+      "zhipu": "ZHIPU AI"
     },
-    "menu": {
-      "search_placeholder": "検索...",
-      "see_all": "すべて表示",
-      "topic": {
-        "title": "トピック",
-        "recent": "最近のトピック"
+    "settings": {
+      "about": {
+        "contact": {
+          "button": "メール",
+          "title": "お問い合わせ"
+        },
+        "feedback": {
+          "button": "フィードバック",
+          "title": "フィードバック"
+        },
+        "header": "概要 & フィードバック",
+        "license": {
+          "button": "ライセンス",
+          "title": "ライセンス"
+        },
+        "releases": {
+          "button": "リリース",
+          "title": "リリースノート"
+        },
+        "title": "私たちについて",
+        "website": {
+          "button": "ウェブサイト",
+          "title": "公式ウェブサイト"
+        }
+      },
+      "assistant": {
+        "default_assistant": {
+          "description": "新しいアシスタントを作成するときに使用されるアシスタント。設定されていない場合、このアシスタントが使用されます",
+          "name": "デフォルトアシスタント"
+        },
+        "empty": "まだアシスタントがありません...",
+        "title": "デフォルトアシスタント",
+        "topic_naming_assistant": {
+          "description": "新しいトピックを自動的に命名するときに使用されるアシスタント",
+          "name": "トピック命名アシスタント"
+        },
+        "translate_assistant": {
+          "description": "翻訳サービスに使用されるアシスタント",
+          "name": "翻訳アシスタント"
+        }
+      },
+      "assistant.show.icon": "モデルのアイコンを表示する",
+      "data": {
+        "app_data": "アプリデータ",
+        "app_knowledge": "ナレッジベースファイル",
+        "app_knowledge.remove_all": "ファイルの削除",
+        "app_logs": "アプリログ",
+        "backup": "データバックアップ",
+        "basic_title": "基本データ設定",
+        "clear_cache": {
+          "button": "キャッシュをクリアする",
+          "title": "キャッシュをクリアする"
+        },
+        "cloud_backup": "クラウドバックアップ設定",
+        "data.title": "データディレクトリ",
+        "landrop": {
+          "filename": "ファイル名",
+          "scan_qr_code": {
+            "description": "Cherry StudioからQRコードをスキャン",
+            "success": "接続に成功しました 🎉",
+            "success_description": "今すぐ送信ボタンをクリックしてデータを復元できます！",
+            "title": "QRコードをスキャン"
+          },
+          "status": {
+            "connected": "接続済み",
+            "connecting": "接続中...",
+            "disconnected": "切断されました",
+            "error": "接続エラー",
+            "idle": "アイドル",
+            "title": "接続ステータス",
+            "zip_file_end": "ファイル転送完了",
+            "zip_file_start": "ファイル転送を開始しました"
+          },
+          "title": "ランドロップ"
+        },
+        "recovery": "データ復元",
+        "reset": "データリセット",
+        "restore": {
+          "error": "エラーを復元",
+          "error_message": "復元処理中にエラーが発生しました。ファイルを確認して、もう一度やり直してください。",
+          "progress": {
+            "error": "復元エラー",
+            "error_description": "復元処理中にエラーが発生しました。ファイルを確認して、もう一度お試しください。",
+            "pending": "復元中...",
+            "pending_description": "データを復元中、しばらくお待ちください...",
+            "success": "復元が成功しました",
+            "success_description": "復元が成功しました、お楽しみください！"
+          },
+          "steps": {
+            "restore_assistants": "アシスタントを復元",
+            "restore_llm_providers": "LLMプロバイダーを復元",
+            "restore_messages_blocks": "メッセージとブロックの復元",
+            "restore_topics": "トピックを復元",
+            "restore_websearch": "ウェブ検索を復元する"
+          }
+        },
+        "third_party": "サードパーティ接続",
+        "title": "データ設定"
+      },
+      "dataAndSecurity": "データ & セキュリティ",
+      "general": {
+        "display.title": "表示設定",
+        "language.title": "言語",
+        "privacy.anonymous": "エラーと統計を匿名で報告",
+        "privacy.title": "プライバシー設定",
+        "theme.auto": "自動",
+        "theme.dark": "ダーク",
+        "theme.light": "ライト",
+        "theme.title": "テーマ",
+        "title": "一般設定"
+      },
+      "joplin": {
+        "check": {
+          "button": "確認",
+          "empty_token": "Joplin認証トークンを入力してください",
+          "empty_url": "JoplinクリッパーサービスURLを入力してください",
+          "fail": "Joplin接続の検証に失敗しました",
+          "success": "Joplin接続の検証に成功しました"
+        },
+        "export_reasoning.help": "有効にすると、エクスポートされるコンテンツにアシスタントが生成した推論チェーン（思考過程）が含まれます。",
+        "export_reasoning.title": "エクスポートに推論チェーンを含める",
+        "help": "Joplin認証トークンを取得するにはここをクリック",
+        "title": "Joplin設定",
+        "token": "Joplin認証トークン",
+        "token_placeholder": "Joplin認証トークン",
+        "url": "JoplinウェブクリッパーサービスURL",
+        "url_placeholder": "http://127.0.0.1:41184/"
+      },
+      "modelAndService": "AIモデル＆サービス",
+      "models": {
+        "add.model": "モデルを追加",
+        "add.model.group": "モデルグループ",
+        "add.model.group.placeholder": "任意 例: OpenAI",
+        "add.model.id": "モデルID",
+        "add.model.id.placeholder": "必須 例: gpt-4o",
+        "add.model.name": "モデル名",
+        "add.model.name.placeholder": "任意 例: GPT-4o",
+        "default_model": "デフォルトモデル",
+        "empty": "まだモデルがありません...",
+        "empty.add_model": "最初のモデルを追加しましょう。",
+        "empty.tooltip": "お探しのページは見つかりませんでした。ご不便をおかけして申し訳ありません。",
+        "search": "モデルを検索...",
+        "title": "モデル"
+      },
+      "notion": {
+        "api_key": "Notion APIキー",
+        "api_key_placeholder": "Notion APIキーを入力してください",
+        "check": {
+          "button": "確認",
+          "empty_api_key": "APIキーが設定されていません",
+          "empty_database_id": "データベースIDが設定されていません",
+          "error": "接続エラー、ネットワーク設定とAPIキーとデータベースIDを確認してください",
+          "fail": "接続に失敗しました、ネットワークとAPIキーとデータベースIDを確認してください",
+          "success": "接続成功"
+        },
+        "database_id": "NotionデータベースID",
+        "database_id_placeholder": "NotionデータベースIDを入力してください",
+        "export_reasoning.help": "有効にすると、エクスポートされるコンテンツに推論チェーン（思考過程）が含まれます。",
+        "export_reasoning.title": "エクスポートに推論チェーンを含める",
+        "help": "Notion設定ドキュメント",
+        "page_name_key": "ページタイトルフィールド名",
+        "page_name_key_placeholder": "ページタイトルフィールド名を入力してください（デフォルトはName）",
+        "title": "Notion設定"
+      },
+      "nutstore": {
+        "backupPath": "バックアップ保存パス",
+        "backupStatus": "バックアップ状態",
+        "config": "Nutstore設定",
+        "from_nutstore": "Nutstoreから復元",
+        "login": "Nutstoreアカウントでログイン",
+        "logout": "ログアウト",
+        "nutstore": "Nutstore",
+        "title": "Nutstore同期",
+        "to_nutstore": "Nutstoreにバックアップ",
+        "username": "Nutstoreユーザー名"
+      },
+      "obsidian": {
+        "default_vault": "デフォルトのObsidianボールト",
+        "default_vault_export_failed": "エクスポートに失敗しました",
+        "default_vault_fetch_error": "Obsidianボールトの取得に失敗しました",
+        "default_vault_loading": "Obsidianボールトを読み込み中...",
+        "default_vault_no_vaults": "Obsidianボールトが見つかりません",
+        "default_vault_placeholder": "デフォルトのObsidianボールトを選択してください",
+        "title": "Obsidian設定"
+      },
+      "provider": {
+        "add.name": "プロバイダー名",
+        "add.name.placeholder": "例：OpenAI",
+        "add.title": "プロバイダーを追加する",
+        "add.type": "プロバイダータイプ",
+        "added": "追加しました",
+        "api.url.preview": "プレビュー: {{url}}",
+        "api.url.reset": "リセット",
+        "api.url.tip": "/で終わる場合はv1を無視し、#で終わる場合は入力アドレスの使用を強制します。",
+        "api_check.title": "検出",
+        "api_check.tooltip": "検出に使用するモデルを選択",
+        "api_host": "APIホスト",
+        "api_host.placeholder": "APIホストを入力してください",
+        "api_key": "APIキー",
+        "api_key.get": "APIキーを取得",
+        "api_key.placeholder": "APIキーを入力してください",
+        "api_key.tip": "カンマで区切られた複数のキー",
+        "api_service": "APIサービス",
+        "auth": {
+          "balance_recharge": "残高チャージ",
+          "free_bills": "無料請求",
+          "login": "ログイン",
+          "title": "{{provider}} サービス"
+        },
+        "delete.content": "このプロバイダーを削除してもよろしいですか？",
+        "delete.title": "プロバイダーの削除",
+        "enabled": "オン",
+        "list.title": "プロバイダーリスト",
+        "not_found": "プロバイダーが見つかりません",
+        "not_found_message": "プロバイダーページに移動する際にエラーが発生しました。",
+        "search": "検索プロバイダー...",
+        "title": "モデルプロバイダー"
+      },
+      "proxy.title": "プロキシ アドレス",
+      "siyuan": {
+        "api_url": "思源ノートAPI URL",
+        "api_url_placeholder": "例：http://127.0.0.1:6806",
+        "box_id": "思源ノートボックスID",
+        "box_id_placeholder": "思源ノートボックスIDを入力してください",
+        "check": {
+          "button": "確認",
+          "empty_config": "APIアドレスとトークンを入力してください",
+          "error": "接続エラー、ネットワーク接続を確認してください",
+          "fail": "接続失敗、APIアドレスとトークンを確認してください",
+          "success": "接続成功",
+          "title": "接続確認"
+        },
+        "root_path": "思源ノートルートパス",
+        "root_path_placeholder": "例：/CherryStudio",
+        "title": "思源ノート設定",
+        "token": "思源ノートトークン",
+        "token.help": "思源ノートトークンを取得",
+        "token_placeholder": "思源ノートトークンを入力してください"
+      },
+      "theme.window.style.opaque": "不透明ウィンドウ",
+      "theme.window.style.title": "ウィンドウスタイル",
+      "theme.window.style.transparent": "透明ウィンドウ",
+      "title": "設定",
+      "topic.position": "トピックの位置",
+      "topic.position.left": "左",
+      "topic.position.right": "右",
+      "topic.show.time": "トピックの時間を表示する",
+      "tray.title": "システムトレイアイコンを有効にする",
+      "webdav": {
+        "backup": {
+          "auto_backup": "自動バックアップ",
+          "from_webdav": "WebDAV から復元",
+          "max_backups": "最大バックアップ数",
+          "slim_backup": "スリムバックアップ",
+          "title": "バックアップ設定",
+          "to_webdav": "WebDAV にバックアップ",
+          "unlimited": "無制限"
+        },
+        "config": {
+          "apply": "適用",
+          "host": "WebDAV ホスト",
+          "host_placeholder": "http://localhost:8080",
+          "password": "WebDAV パスワード",
+          "password_hint": "8文字以上である必要があります",
+          "password_placeholder": "WebDAV パスワード",
+          "path": "WebDAV パス",
+          "path_placeholder": "WebDAV パス",
+          "title": "WebDAV 設定",
+          "user": "WebDAV ユーザー",
+          "user_placeholder": "WebDAV ユーザー"
+        },
+        "title": "WebDAV"
+      },
+      "websearch": {
+        "api_host": "APIホスト",
+        "api_host.placeholder": "APIホストを入力してください",
+        "api_key": "APIキー",
+        "api_key.get": "APIキーを取得",
+        "api_key.placeholder": "APIキーを入力してください",
+        "api_service": "APIサービス",
+        "blacklist.title": "ブラックリスト",
+        "blacklist_description": "以下のウェブサイトからの結果は検索結果に表示されません",
+        "blacklist_placeholder": "以下の形式を使用してください（改行で区切る）\nパターンマッチング：*://*.example.com/*\n正規表現：/example\\.(net|org)/",
+        "check_error": "チェックエラー",
+        "check_fail": "チェック失敗",
+        "check_success": "チェック成功",
+        "check_success_message": "APIは正常に動作しています",
+        "contentLengthLimit": "コンテンツ長の制限",
+        "empty": "プロバイダーはまだありません...",
+        "empty.description": "クリックしてプロバイダーを追加",
+        "overrideSearchService": "検索サービスを上書き",
+        "provider": {
+          "api": {
+            "title": "APIサービスプロバイダー"
+          },
+          "free": {
+            "title": "無料サービスプロバイダー"
+          },
+          "title": "Web検索プロバイダー"
+        },
+        "searchCount": "検索数",
+        "searchWithDates": "日付を含めて検索",
+        "selectPlaceholder": "ウェブ検索プロバイダーを選択してください...",
+        "subscribe.title": "ブラックリスト購読",
+        "title": "Web検索"
+      },
+      "yuque": {
+        "check": {
+          "button": "確認",
+          "empty_repo_url": "ナレッジベースURLを先に入力してください",
+          "empty_token": "Yuqueトークンを先に入力してください",
+          "fail": "Yuque接続の検証に失敗しました",
+          "success": "Yuque接続の検証に成功しました"
+        },
+        "help": "Yuqueトークンを取得",
+        "repo_url": "Yuque URL",
+        "repo_url_placeholder": "https://www.yuque.com/username/xxx",
+        "title": "Yuque設定",
+        "token": "Yuqueトークン",
+        "token_placeholder": "Yuqueトークンを入力してください"
       }
     },
     "topics": {
+      "new_topic": "新しいトピック",
       "title": "トピック",
       "title.recent": "最近のトピック"
-    },
-    "errors": {
-      "cannotOpenLink": "リンクを開けません: {{error}}",
-      "linkErrorTitle": "リンクのオープンに失敗",
-      "deviceCannotHandleLink": "このデバイスはリンクを処理できません: {{href}}",
-      "cannotOpenLinkTitle": "リンクを開けません"
     }
   }
 }

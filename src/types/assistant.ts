@@ -1,13 +1,14 @@
 import OpenAI from 'openai'
 
 import { Message } from './message'
+import { WebSearchProvider } from './websearch'
 
 export type Assistant = {
   id: string
   name: string
   prompt: string
   topics: Topic[]
-  type: string
+  type: 'system' | 'built_in' | 'external'
   emoji?: string
   description?: string
   model?: Model
@@ -15,6 +16,7 @@ export type Assistant = {
   settings?: Partial<AssistantSettings>
   /** enableWebSearch 代表使用模型内置网络搜索功能 */
   enableWebSearch?: boolean
+  webSearchProviderId?: WebSearchProvider['id']
   enableGenerateImage?: boolean
   knowledgeRecognition?: 'off' | 'on'
   tags?: string[] // 助手标签
@@ -54,6 +56,12 @@ export type Topic = {
   isNameManuallyEdited?: boolean
 }
 
+export type ModelPricing = {
+  input_per_million_tokens: number
+  output_per_million_tokens: number
+  currencySymbol?: string
+}
+
 export type Model = {
   id: string
   provider: string
@@ -62,6 +70,9 @@ export type Model = {
   owned_by?: string
   description?: string
   type?: ModelType[]
+  pricing?: ModelPricing
+  endpoint_type?: EndpointType
+  supported_endpoint_types?: EndpointType[]
 }
 
 export type ModelType = 'text' | 'vision' | 'embedding' | 'reasoning' | 'function_calling' | 'web_search'
@@ -86,7 +97,6 @@ export type Provider = {
   apiVersion?: string
   models: Model[]
   enabled?: boolean
-  checked?: boolean
   isSystem?: boolean
   isAuthed?: boolean
   rateLimit?: number
@@ -103,3 +113,7 @@ export type ProviderType =
   | 'qwenlm'
   | 'azure-openai'
   | 'vertexai'
+
+export type ApiStatus = 'idle' | 'processing' | 'success' | 'error'
+
+export type EndpointType = 'openai' | 'openai-response' | 'anthropic' | 'gemini' | 'image-generation' | 'jina-rerank'

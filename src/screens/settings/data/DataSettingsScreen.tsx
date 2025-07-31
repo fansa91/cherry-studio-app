@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import { ChevronRight, CloudUpload, FolderSearch2 } from '@tamagui/lucide-icons'
+import { ChevronRight, CloudUpload, FolderSearch2, Wifi } from '@tamagui/lucide-icons'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, Text, useTheme, XStack, YStack } from 'tamagui'
@@ -34,6 +34,11 @@ export default function DataSettingsScreen() {
           title: t('settings.data.basic_title'),
           screen: 'BasicDataSettingsScreen',
           icon: <FolderSearch2 size={24} />
+        },
+        {
+          title: t('settings.data.landrop.title'),
+          screen: 'LandropSettingsScreen',
+          icon: <Wifi size={24} />
         }
       ]
     },

@@ -1,3 +1,5 @@
+import { BaseTool } from './tool'
+
 export interface MCPToolResultContent {
   type: 'text' | 'image' | 'audio' | 'resource'
   text?: string
@@ -50,17 +52,9 @@ export interface MCPToolInputSchema {
   properties: Record<string, object>
 }
 
-export interface MCPTool {
-  id: string
-  serverId: string
-  serverName: string
-  name: string
-  description?: string
-  inputSchema: MCPToolInputSchema
-}
 interface BaseToolResponse {
   id: string // unique id
-  tool: MCPTool
+  tool: BaseTool
   arguments: Record<string, unknown> | undefined
   status: string // 'invoking' | 'done'
   response?: any

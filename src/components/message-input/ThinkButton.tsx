@@ -1,8 +1,11 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
+import { ImpactFeedbackStyle } from 'expo-haptics'
 import React, { useRef } from 'react'
+import { Keyboard } from 'react-native'
 import { Button } from 'tamagui'
 
-import { ReasoningEffortOptions } from '@/types/assistant'
+import { Assistant } from '@/types/assistant'
+import { haptic } from '@/utils/haptic'
 
 import {
   MdiLightbulbAutoOutline,
@@ -14,17 +17,17 @@ import {
 import { ReasoningSheet } from '../sheets/ReasoningSheet'
 
 interface ThinkButtonProps {
-  reasoningEffort: ReasoningEffortOptions | undefined
-  onReasoningEffortChange: (value: ReasoningEffortOptions) => void
+  assistant: Assistant
+  updateAssistant: (assistant: Assistant) => Promise<void>
 }
 
-export const ThinkButton: React.FC<ThinkButtonProps> = ({ reasoningEffort, onReasoningEffortChange }) => {
+export const ThinkButton: React.FC<ThinkButtonProps> = ({ assistant, updateAssistant }) => {
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
 
   const getIcon = () => {
-    const size = 24
+    const size = 20
 
-    switch (reasoningEffort) {
+    switch (assistant.settings?.reasoning_effort) {
       case 'auto':
         return <MdiLightbulbAutoOutline size={size} />
       case 'high':
@@ -40,24 +43,16 @@ export const ThinkButton: React.FC<ThinkButtonProps> = ({ reasoningEffort, onRea
   }
 
   const handlePress = () => {
+    Keyboard.dismiss()
+    haptic(ImpactFeedbackStyle.Light)
     bottomSheetModalRef.current?.present()
-  }
-
-  const handleValueChange = (newValue: ReasoningEffortOptions) => {
-    onReasoningEffortChange(newValue)
   }
 
   return (
     <>
-      <Button
-        chromeless
-        size={24}
-        icon={getIcon()}
-        onPress={handlePress}
-        color={reasoningEffort !== undefined ? 'rgba(0, 185, 107, 1)' : undefined}
-      />
+      <Button chromeless circular size={20} icon={getIcon()} onPress={handlePress} />
 
-      <ReasoningSheet ref={bottomSheetModalRef} value={reasoningEffort || 'auto'} onValueChange={handleValueChange} />
+      <ReasoningSheet ref={bottomSheetModalRef} assistant={assistant} updateAssistant={updateAssistant} />
     </>
   )
 }

@@ -2,10 +2,8 @@ import 'react-native-reanimated'
 import '@/i18n'
 
 import { createDrawerNavigator } from '@react-navigation/drawer'
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native'
 import React from 'react'
 import { Dimensions } from 'react-native'
-import { useTheme } from 'tamagui'
 
 import CustomDrawerContent from '../components/menu/CustomDrawerContent'
 import MainStackNavigator from './MainStackNavigator'
@@ -13,23 +11,20 @@ import MainStackNavigator from './MainStackNavigator'
 const Drawer = createDrawerNavigator()
 
 export default function AppNavigator() {
-  const theme = useTheme()
   const screenWidth = Dimensions.get('window').width
 
   return (
     <Drawer.Navigator
       drawerContent={props => <CustomDrawerContent {...props} />}
-      screenOptions={({ route }) => {
-        const focusedNestedRouteName = getFocusedRouteNameFromRoute(route)
-
-        const swipeEnabled = focusedNestedRouteName === 'Home'
-        return {
-          drawerStyle: {
-            width: screenWidth * 0.7,
-            backgroundColor: theme.background.val
-          },
-          swipeEnabled: swipeEnabled
-        }
+      screenOptions={{
+        drawerStyle: {
+          width: screenWidth * 0.8,
+          backgroundColor: 'transparent'
+        },
+        // 无法根据具体route设定开启，希望只在ChatScreen开启，但是当swipeEnabled为true时，所有界面都会开启
+        swipeEnabled: false,
+        drawerType: 'slide',
+        keyboardDismissMode: 'none'
       }}>
       <Drawer.Screen
         name="Main"

@@ -11,6 +11,7 @@ import {
   stepCountIs,
   type StreamTextParams,
   TextPart,
+  Tool,
   UserModelMessage
 } from '@cherrystudio/ai-core'
 import { aiSdk } from '@cherrystudio/ai-core'
@@ -32,14 +33,16 @@ import { isVisionModel } from '@/config/models/vision'
 import { isWebSearchModel } from '@/config/models/webSearch'
 import { DEFAULT_MAX_TOKENS, defaultTimeout } from '@/constants'
 import { getAssistantSettings, getDefaultModel } from '@/services/AssistantService'
-import { Assistant, Model } from '@/types/assistant'
+import { Assistant, Model, Provider } from '@/types/assistant'
+import { ExtractResults } from '@/types/extract'
 import { FileTypes } from '@/types/file'
-import { MCPTool } from '@/types/mcp'
 import { FileMessageBlock, ImageMessageBlock, Message, ThinkingMessageBlock } from '@/types/message'
+import { MCPTool } from '@/types/tool'
 import { findFileBlocks, findImageBlocks, findThinkingBlocks, getMainTextContent } from '@/utils/messageUtils/find'
 import { buildSystemPrompt } from '@/utils/prompt'
 
-import { buildProviderOptions } from './utils/reasoning'
+import { webSearchTool } from './tools/WebSearchTool'
+import { buildProviderOptions } from './utils/options'
 
 const { tool } = aiSdk
 
@@ -106,6 +109,40 @@ export async function extractFileContent(message: Message): Promise<string> {
   }
 
   return ''
+}
+
+/**
+ * 提取外部工具搜索关键词和问题
+ * 从用户消息中提取用于网络搜索和知识库搜索的关键词
+ */
+export async function extractSearchKeywords(
+  lastUserMessage: Message,
+  assistant: Assistant,
+  options: {
+    shouldWebSearch?: boolean
+    shouldKnowledgeSearch?: boolean
+    lastAnswer?: Message
+  } = {}
+): Promise<ExtractResults | undefined> {
+  // todo
+  const { shouldWebSearch = false, shouldKnowledgeSearch = false, lastAnswer } = options
+
+  if (!lastUserMessage) return undefined
+
+  return await getFallbackResult()
+
+  async function getFallbackResult(): Promise<ExtractResults> {
+    const fallbackContent = await getMainTextContent(lastUserMessage)
+    return {
+      websearch: shouldWebSearch ? { question: [fallbackContent || 'search'] } : undefined,
+      knowledge: shouldKnowledgeSearch
+        ? {
+            question: [fallbackContent || 'search'],
+            rewrite: fallbackContent || 'search'
+          }
+        : undefined
+    }
+  }
 }
 
 /**
@@ -247,9 +284,12 @@ export async function convertMessagesToSdkMessages(
 export async function buildStreamTextParams(
   sdkMessages: StreamTextParams['messages'],
   assistant: Assistant,
+  provider: Provider,
   options: {
     mcpTools?: MCPTool[]
     enableTools?: boolean
+    enableWebSearch?: boolean
+    webSearchProviderId?: string
     requestOptions?: {
       signal?: AbortSignal
       timeout?: number
@@ -261,7 +301,7 @@ export async function buildStreamTextParams(
   modelId: string
   capabilities: { enableReasoning?: boolean; enableWebSearch?: boolean; enableGenerateImage?: boolean }
 }> {
-  const { mcpTools, enableTools } = options
+  const { mcpTools, enableTools, webSearchProviderId } = options
 
   const model = assistant.model || getDefaultModel()
 
@@ -289,9 +329,14 @@ export async function buildStreamTextParams(
   //   model,
   //   enableToolUse: enableTools
   // })
+  const tools: Record<string, Tool> = {}
+
+  if (webSearchProviderId) {
+    tools['builtin_web_search'] = webSearchTool(webSearchProviderId)
+  }
 
   // 构建真正的 providerOptions
-  const providerOptions = buildProviderOptions(assistant, model, {
+  const providerOptions = buildProviderOptions(assistant, model, provider, {
     enableReasoning,
     enableWebSearch,
     enableGenerateImage
@@ -303,12 +348,15 @@ export async function buildStreamTextParams(
     maxOutputTokens: maxTokens || DEFAULT_MAX_TOKENS,
     temperature: getTemperature(assistant, model),
     topP: getTopP(assistant, model),
-    system: assistant.prompt || '',
     abortSignal: options.requestOptions?.signal,
     headers: options.requestOptions?.headers,
     providerOptions,
-    // tools,
+    tools,
     stopWhen: stepCountIs(10)
+  }
+
+  if (assistant.prompt) {
+    params.system = assistant.prompt
   }
 
   return { params, modelId: model.id, capabilities: { enableReasoning, enableWebSearch, enableGenerateImage } }
@@ -320,11 +368,12 @@ export async function buildStreamTextParams(
 export async function buildGenerateTextParams(
   messages: ModelMessage[],
   assistant: Assistant,
+  provider: Provider,
   options: {
     mcpTools?: MCPTool[]
     enableTools?: boolean
   } = {}
 ): Promise<any> {
   // 复用流式参数的构建逻辑
-  return await buildStreamTextParams(messages, assistant, options)
+  return await buildStreamTextParams(messages, assistant, provider, options)
 }

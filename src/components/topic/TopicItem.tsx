@@ -1,32 +1,39 @@
-import { useNavigation } from '@react-navigation/native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Trash2 } from '@tamagui/lucide-icons'
 import { MotiView } from 'moti'
-import { FC, useEffect, useRef, useState } from 'react'
+import { FC, useEffect, useRef, useState } from 'react' // CHANGED: Imported useMemo
 import React from 'react'
 import { RectButton } from 'react-native-gesture-handler'
 import ReanimatedSwipeable, { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable'
 import { interpolate, SharedValue, useAnimatedStyle } from 'react-native-reanimated'
-import { Text, XStack, YStack } from 'tamagui'
+import { Text, useTheme, XStack } from 'tamagui'
 
-import { Assistant, Topic } from '@/types/assistant'
-import { NavigationProps } from '@/types/naviagate'
-import { runAsyncFunction } from '@/utils'
+import { useNavigation } from '@/hooks/useNavigation'
+import { getCurrentTopicId } from '@/hooks/useTopic'
+import i18n from '@/i18n'
+import { getDefaultAssistant } from '@/services/AssistantService'
+import { loggerService } from '@/services/LoggerService'
+import { createNewTopic, deleteTopicById, getNewestTopic } from '@/services/TopicService'
+import { Topic } from '@/types/assistant'
+import { useIsDark } from '@/utils'
+const logger = loggerService.withContext('Topic Item')
 
-import { getAssistantById } from '../../../db/queries/assistants.queries'
+type TimeFormat = 'time' | 'date'
 
 interface TopicItemProps {
   topic: Topic
-  onDelete: (topicId: string) => Promise<void>
+  timeFormat?: TimeFormat
 }
 
 interface RenderRightActionsProps {
   progress: SharedValue<number>
   topic: Topic
-  onDelete: (topicId: string) => Promise<void>
   swipeableRef: React.RefObject<SwipeableMethods | null>
 }
 
-const RenderRightActions: FC<RenderRightActionsProps> = ({ progress, topic, onDelete, swipeableRef }) => {
+const RenderRightActions: FC<RenderRightActionsProps> = ({ progress, topic, swipeableRef }) => {
+  const theme = useTheme()
+  const { navigateToChatScreen } = useNavigation()
   const animatedStyle = useAnimatedStyle(() => {
     const translateX = interpolate(progress.value, [0, 1], [50, 0])
 
@@ -35,9 +42,31 @@ const RenderRightActions: FC<RenderRightActionsProps> = ({ progress, topic, onDe
     }
   })
 
-  const handleDelete = () => {
-    swipeableRef.current?.close()
-    onDelete(topic.id)
+  const handleDelete = async () => {
+    try {
+      swipeableRef.current?.close()
+      const deletedTopicId = topic.id
+      await deleteTopicById(deletedTopicId)
+
+      // 只在删除的是当前活动 topic 时才处理导航
+      if (deletedTopicId === getCurrentTopicId()) {
+        const nextTopic = await getNewestTopic()
+
+        if (nextTopic) {
+          // 如果还有其他 topic，直接跳转到最新的那一个
+          navigateToChatScreen(nextTopic.id)
+          logger.info('navigateToChatScreen after delete', nextTopic)
+        } else {
+          logger.info('No topics left, creating a new one.')
+          const defaultAssistant = await getDefaultAssistant()
+          const newTopic = await createNewTopic(defaultAssistant)
+          navigateToChatScreen(newTopic.id)
+          logger.info('navigateToChatScreen with new topic', newTopic)
+        }
+      }
+    } catch (error) {
+      logger.error('Delete Topic error', error)
+    }
   }
 
   return (
@@ -49,75 +78,68 @@ const RenderRightActions: FC<RenderRightActionsProps> = ({ progress, topic, onDe
           justifyContent: 'center'
         }}
         onPress={handleDelete}>
-        <Trash2 color="#C94040" size={20} />
+        <Trash2 color={theme.textDelete} size={20} />
       </RectButton>
     </MotiView>
   )
 }
 
-const TopicItem: FC<TopicItemProps> = ({ topic, onDelete }) => {
+const TopicItem: FC<TopicItemProps> = ({ topic, timeFormat = 'time' }) => {
+  const theme = useTheme()
+  const isDark = useIsDark()
+  const [currentLanguage, setCurrentLanguage] = useState<string>(i18n.language)
   const swipeableRef = useRef<SwipeableMethods>(null)
-  const navigation = useNavigation<NavigationProps>()
-  const [assistant, setAssistant] = useState<Assistant | null>(null)
+  const { navigateToChatScreen } = useNavigation()
 
   const renderRightActions = (progress: SharedValue<number>, _: SharedValue<number>) => {
-    return <RenderRightActions progress={progress} topic={topic} onDelete={onDelete} swipeableRef={swipeableRef} />
+    return <RenderRightActions progress={progress} topic={topic} swipeableRef={swipeableRef} />
   }
 
   const openTopic = () => {
-    navigation.navigate('HomeScreen', { topicId: topic.id })
+    navigateToChatScreen(topic.id)
   }
 
-  const updateTime = new Date(topic.updatedAt).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const date = new Date(topic.updatedAt)
+  const displayTime =
+    timeFormat === 'date'
+      ? date.toLocaleDateString(currentLanguage, {
+          month: 'short',
+          day: 'numeric'
+        })
+      : date.toLocaleTimeString(currentLanguage, {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })
 
   useEffect(() => {
-    runAsyncFunction(async () => {
-      try {
-        const assistantData = await getAssistantById(topic.assistantId)
-        setAssistant(assistantData)
-      } catch (error) {
-        console.error('Failed to fetch assistant:', error)
+    const fetchCurrentLanguage = async () => {
+      const storedLanguage = await AsyncStorage.getItem('language')
+
+      if (storedLanguage) {
+        setCurrentLanguage(storedLanguage)
       }
-    })
-  }, [topic.assistantId])
+    }
+
+    fetchCurrentLanguage()
+  })
 
   return (
     <ReanimatedSwipeable ref={swipeableRef} renderRightActions={renderRightActions} friction={1} rightThreshold={40}>
       <XStack
         borderRadius={30}
-        backgroundColor="rgba(255, 255, 255, 0.2)"
+        backgroundColor={isDark ? theme.uiCardDark : theme.uiCardLight}
         justifyContent="space-between"
         alignItems="center"
-        paddingVertical={3}
+        paddingVertical={15}
         paddingHorizontal={20}
         onPress={openTopic}>
-        <XStack gap={14} maxWidth="70%">
-          <Text fontSize={35}>{assistant?.emoji}</Text>
-          <YStack gap={2} flex={1}>
-            <Text fontSize={16} numberOfLines={1} ellipsizeMode="tail" fontWeight="500">
-              {topic.name}
-            </Text>
-            <Text fontSize={12} color="$gray10">
-              {updateTime}
-            </Text>
-          </YStack>
-        </XStack>
-        <XStack
-          height={20}
-          width={20}
-          paddingVertical={4}
-          backgroundColor="rgba(255, 255, 255, 0.3)"
-          borderRadius={99}
-          alignItems="center"
-          justifyContent="center">
-          <Text fontSize={10}>{topic.messages.length}</Text>
-        </XStack>
+        <Text fontSize={16} numberOfLines={1} ellipsizeMode="tail" fontWeight="500" maxWidth="80%" color={theme.color}>
+          {topic.name}
+        </Text>
+        <Text fontSize={12} color={theme.gray10}>
+          {displayTime}
+        </Text>
       </XStack>
     </ReanimatedSwipeable>
   )

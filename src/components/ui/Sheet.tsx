@@ -3,6 +3,8 @@ import { usePreventRemove } from '@react-navigation/native'
 import React, { useImperativeHandle, useRef } from 'react'
 import { useTheme } from 'tamagui'
 
+import { useIsDark } from '@/utils'
+
 interface ISheetProps {
   bottomSheetRef?: React.RefObject<BottomSheet | null>
   isOpen: boolean
@@ -29,6 +31,7 @@ export function ISheet({
   enableDynamicSizing = true
 }: ISheetProps) {
   const theme = useTheme()
+  const isDark = useIsDark()
   const memoizedSnapPoints = snapPoints
   const ref = useRef<BottomSheet | null>(null)
 
@@ -62,7 +65,7 @@ export function ISheet({
       onClose={onClose} // 当用户通过手势关闭或调用 close() 方法时触发
       backgroundStyle={{
         borderRadius: 30,
-        backgroundColor: theme.gray2.val
+        backgroundColor: isDark ? 'rgba(18, 18, 19, 1)' : 'rgba(247, 247, 247, 1)'
       }}
       handleIndicatorStyle={{
         backgroundColor: theme.color.val

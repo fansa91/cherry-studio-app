@@ -4,7 +4,7 @@ import { Eye, EyeOff, ShieldCheck } from '@tamagui/lucide-icons'
 import { sortBy } from 'lodash'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
+import { ActivityIndicator, Alert } from 'react-native'
 import { Button, Input, Stack, Text, useTheme, XStack, YStack } from 'tamagui'
 
 import ExternalLink from '@/components/ExternalLink'
@@ -16,9 +16,11 @@ import { isEmbeddingModel } from '@/config/models/embedding'
 import { PROVIDER_CONFIG } from '@/config/providers'
 import { useProvider } from '@/hooks/useProviders'
 import { checkApi } from '@/services/ApiService'
-import { Model } from '@/types/assistant'
+import { loggerService } from '@/services/LoggerService'
+import { ApiStatus, Model } from '@/types/assistant'
 import { NavigationProps, RootStackParamList } from '@/types/naviagate'
 import { getModelUniqId } from '@/utils/model'
+const logger = loggerService.withContext('ApiServiceScreen')
 
 type ProviderSettingsRouteProp = RouteProp<RootStackParamList, 'ApiServiceScreen'>
 
@@ -33,7 +35,7 @@ export default function ApiServiceScreen() {
 
   const [showApiKey, setShowApiKey] = useState(false)
   const [selectedModel, setSelectedModel] = useState<Model | undefined>()
-  const [isCheckingApi, setIsCheckingApi] = useState(false)
+  const [checkApiStatus, setCheckApiStatus] = useState<ApiStatus>('idle')
 
   const bottomSheetRef = useRef<BottomSheet>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
@@ -43,7 +45,7 @@ export default function ApiServiceScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaContainer>
+      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
       </SafeAreaContainer>
     )
@@ -84,6 +86,7 @@ export default function ApiServiceScreen() {
   }
 
   const handleBottomSheetClose = () => {
+    bottomSheetRef.current?.close()
     setIsBottomSheetOpen(false)
   }
 
@@ -116,14 +119,30 @@ export default function ApiServiceScreen() {
     if (!selectedModel) return
 
     try {
-      setIsCheckingApi(true)
+      setCheckApiStatus('processing')
       await checkApi(provider, selectedModel)
-      await updateProvider({ ...provider, checked: true })
-    } catch (error) {
-      console.error('Model check failed:', error)
-      await updateProvider({ ...provider, checked: false })
+      setCheckApiStatus('success')
+    } catch (error: any) {
+      logger.error('Model check failed:', error)
+      const errorMessage =
+        error && error.message
+          ? ' ' + (error.message.length > 100 ? error.message.substring(0, 100) + '...' : error.message)
+          : ''
+
+      setCheckApiStatus('error')
+
+      Alert.alert(t('settings.websearch.check_fail'), errorMessage, [
+        {
+          text: t('common.ok'),
+          style: 'cancel',
+          onPress: () => handleBottomSheetClose()
+        }
+      ])
     } finally {
-      setIsCheckingApi(false)
+      setTimeout(() => {
+        setCheckApiStatus('idle')
+        handleBottomSheetClose()
+      }, 500)
     }
   }
 
@@ -142,7 +161,7 @@ export default function ApiServiceScreen() {
             <SettingGroupTitle>{t('settings.provider.api_key')}</SettingGroupTitle>
             <Button
               size={16}
-              icon={<ShieldCheck size={16} color={provider.checked ? 'green' : 'white'} />}
+              icon={<ShieldCheck size={16} color="$textLink" />}
               backgroundColor="$colorTransparent"
               circular
               onPress={handleOpenBottomSheet}
@@ -203,7 +222,7 @@ export default function ApiServiceScreen() {
         selectOptions={selectOptions}
         apiKey={provider?.apiKey || ''}
         onStartModelCheck={handleStartModelCheck}
-        isCheckingApi={isCheckingApi}
+        checkApiStatus={checkApiStatus}
       />
     </SafeAreaContainer>
   )

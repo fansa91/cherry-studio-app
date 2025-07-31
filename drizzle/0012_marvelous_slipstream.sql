@@ -1,1 +1,0 @@
-ALTER TABLE `providers` ADD `checked` integer;

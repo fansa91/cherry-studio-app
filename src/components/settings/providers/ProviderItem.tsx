@@ -6,6 +6,8 @@ import { Text, XStack } from 'tamagui'
 
 import { Provider } from '@/types/assistant'
 import { NavigationProps } from '@/types/naviagate'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 
 import { ProviderIcon } from '../../ui/ProviderIcon'
 import { SettingRow } from '..'
@@ -17,11 +19,12 @@ interface ProviderItemProps {
 
 export const ProviderItem: React.FC<ProviderItemProps> = ({ provider, mode = 'enabled' }) => {
   const { t } = useTranslation()
+  const isDark = useIsDark()
   const navigation = useNavigation<NavigationProps>()
 
   // 根据模式决定显示条件和文本
-  const shouldShowStatus = mode === 'enabled' ? provider.enabled : provider.checked
-  const statusText = mode === 'enabled' ? t('settings.provider.enabled') : t('settings.provider.checked') // 假设你有这个翻译键
+  const shouldShowStatus = mode === 'enabled' ? provider.enabled : provider.apiKey
+  const statusText = mode === 'enabled' ? t('settings.provider.enabled') : t('settings.provider.added')
 
   return (
     <SettingRow onPress={() => navigation.navigate('ProviderSettingsScreen', { providerId: provider.id })}>
@@ -35,8 +38,10 @@ export const ProviderItem: React.FC<ProviderItemProps> = ({ provider, mode = 'en
             paddingVertical={2}
             paddingHorizontal={8}
             borderRadius={8}
-            backgroundColor="$backgroundGreen"
-            color="$foregroundGreen"
+            borderWidth={0.5}
+            backgroundColor={getGreenColor(isDark, 10)}
+            borderColor={getGreenColor(isDark, 20)}
+            color={getGreenColor(isDark, 100)}
             fontSize={14}>
             {statusText}
           </Text>

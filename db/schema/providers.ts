@@ -9,7 +9,6 @@ export const providers = sqliteTable('providers', {
   api_version: text('api_version'),
   models: text('models'),
   enabled: integer('enabled', { mode: 'boolean' }),
-  checked: integer('checked', { mode: 'boolean' }),
   is_system: integer('is_system', { mode: 'boolean' }),
   is_authed: integer('is_authed', { mode: 'boolean' }),
   rate_limit: integer('rate_limit'),

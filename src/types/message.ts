@@ -64,7 +64,7 @@ export interface MainTextMessageBlock extends BaseMessageBlock {
 export interface ThinkingMessageBlock extends BaseMessageBlock {
   type: MessageBlockType.THINKING
   content: string
-  thinking_millsec?: number
+  thinking_millsec: number
 }
 
 // 翻译块
@@ -179,8 +179,6 @@ export type Message = {
   blocks: MessageBlock['id'][]
 }
 
-export type GroupedMessage = Message & { index: number }
-
 export interface Response {
   text?: string
   reasoning_content?: string
@@ -199,9 +197,6 @@ export interface MessageInputBaseParams {
   topic: Topic
   content?: string
   files?: FileType[]
-  /**
-   * @deprecated
-   */
   knowledgeBaseIds?: string[]
   mentions?: Model[]
   /**
@@ -210,3 +205,5 @@ export interface MessageInputBaseParams {
   enabledMCPs?: MCPServer[]
   usage?: CompletionUsage
 }
+
+export type GroupedMessage = Message & { index: number }

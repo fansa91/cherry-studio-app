@@ -5,6 +5,8 @@ import { Accordion, Button, Square, Text, TextArea, XStack, YStack } from 'tamag
 
 import { SettingGroup, SettingGroupTitle, SettingRow } from '@/components/settings'
 import { SubscribeSource } from '@/types/websearch'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 
 interface BlacklistSettingsProps {
   blacklistText: string
@@ -24,6 +26,7 @@ export default function BlacklistSettings({
   onAddSubscription
 }: BlacklistSettingsProps) {
   const { t } = useTranslation()
+  const isDark = useIsDark()
 
   const renderAccordionTriggerContent = ({ open }: { open: boolean }) => (
     <XStack justifyContent="space-between" width="100%">
@@ -41,8 +44,8 @@ export default function BlacklistSettings({
           size={14}
           circular
           chromeless
-          backgroundColor="$backgroundGreen"
-          icon={<Plus size={14} color="$foregroundGreen" />}
+          backgroundColor={getGreenColor(isDark, 20)}
+          icon={<Plus size={14} color={getGreenColor(isDark, 100)} />}
           onPress={onAddSubscription}
         />
       </XStack>

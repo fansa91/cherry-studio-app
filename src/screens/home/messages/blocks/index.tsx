@@ -2,14 +2,18 @@ import { FC, memo } from 'react'
 import React from 'react'
 import { View, XStack } from 'tamagui'
 
+import { loggerService } from '@/services/LoggerService'
 import { MainTextMessageBlock, MessageBlock, MessageBlockStatus, MessageBlockType } from '@/types/message'
 
+import CitationBlock from './CitationBlock'
+import ErrorBlock from './ErrorBlock'
 import FileBlock from './FileBlock'
 import ImageBlock from './ImageBlock'
 import MainTextBlock from './MainTextBlock'
 import PlaceholderBlock from './PlaceholderBlock'
 import ThinkingBlock from './ThinkingBlock'
 import TranslationBlock from './TranslationBlock'
+const logger = loggerService.withContext('Message Blocks Index')
 
 interface MessageBlockRendererProps {
   blocks: MessageBlock[]
@@ -40,7 +44,6 @@ const filterMediaBlockGroups = (blocks: MessageBlock[]): (MessageBlock[] | Messa
 
 const MessageBlockRenderer: FC<MessageBlockRendererProps> = ({ blocks }) => {
   const groupedBlocks = filterMediaBlockGroups(blocks)
-
   return (
     <View flex={1} width="100%">
       {groupedBlocks.map(block => {
@@ -99,8 +102,15 @@ const MessageBlockRenderer: FC<MessageBlockRendererProps> = ({ blocks }) => {
           case MessageBlockType.TRANSLATION:
             blockComponent = <TranslationBlock key={block.id} block={block} />
             break
+          case MessageBlockType.CITATION:
+            blockComponent = <CitationBlock key={block.id} block={block} />
+            break
+          // todo: error无法触发
+          case MessageBlockType.ERROR:
+            blockComponent = <ErrorBlock key={block.id} block={block} />
+            break
           default:
-            console.warn('Unsupported block type in MessageBlockRenderer:', (block as any).type, block)
+            logger.warn('Unsupported block type in MessageBlockRenderer:', (block as any).type, block)
             break
         }
 

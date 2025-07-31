@@ -1,6 +1,5 @@
-import BottomSheet from '@gorhom/bottom-sheet'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
-import { BookmarkMinus } from '@tamagui/lucide-icons'
 import { debounce } from 'lodash'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,14 +8,17 @@ import { ScrollView, Tabs, Text } from 'tamagui'
 import AllAssistantsTab from '@/components/assistant/market/AllAssistantsTab'
 import AssistantItemSheet from '@/components/assistant/market/AssistantItemSheet'
 import CategoryAssistantsTab from '@/components/assistant/market/CategoryAssistantsTab'
+import { UnionIcon } from '@/components/icons/UnionIcon'
 import { SettingContainer } from '@/components/settings'
 import { HeaderBar } from '@/components/settings/HeaderBar'
 import { SearchInput } from '@/components/ui/SearchInput'
-import { useAssistants } from '@/hooks/useAssistant'
+import { useBuiltInAssistants } from '@/hooks/useAssistant'
 import { Assistant } from '@/types/assistant'
+import { NavigationProps } from '@/types/naviagate'
 import { groupByCategories } from '@/utils/assistants'
 
 import SafeAreaContainer from '../../components/ui/SafeAreaContainer'
+
 interface TabConfig {
   value: string
   label: string
@@ -26,22 +28,16 @@ type FilterType = 'all' | string
 
 export default function AssistantMarketScreen() {
   const { t } = useTranslation()
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProps>()
 
-  const bottomSheetRef = useRef<BottomSheet>(null)
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
+  const bottomSheetRef = useRef<BottomSheetModal>(null)
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null)
-  //TODO: hook 会反复执行引起性能问题
-  const { assistants: systemAssistants } = useAssistants()
 
-  const handleBottomSheetClose = () => {
-    setIsBottomSheetOpen(false)
-    setSelectedAssistant(null)
-  }
+  const { assistants: builtInAssistants } = useBuiltInAssistants()
 
   const handleAssistantItemPress = (assistant: Assistant) => {
     setSelectedAssistant(assistant)
-    setIsBottomSheetOpen(true)
+    bottomSheetRef.current?.present()
   }
 
   const [actualFilterType, setActualFilterType] = useState<FilterType>('all')
@@ -56,7 +52,7 @@ export default function AssistantMarketScreen() {
     return () => {
       debouncedSetSearchText.cancel()
     }
-  }, [searchText, debouncedSetSearchText])
+  })
 
   // Filter assistants by search text first
   const getBaseFilteredAssistants = (systemAssistants: Assistant[], debouncedSearchText: string) => {
@@ -77,11 +73,11 @@ export default function AssistantMarketScreen() {
     )
   }
 
-  const baseFilteredAssistants = getBaseFilteredAssistants(systemAssistants, debouncedSearchText)
+  const baseFilteredAssistants = getBaseFilteredAssistants(builtInAssistants, debouncedSearchText)
 
   const assistantGroupsForDisplay = groupByCategories(baseFilteredAssistants)
 
-  const assistantGroupsForTabs = groupByCategories(systemAssistants)
+  const assistantGroupsForTabs = groupByCategories(builtInAssistants)
 
   // 过滤助手逻辑 for CategoryAssistantsTab
   const filterAssistants =
@@ -123,8 +119,8 @@ export default function AssistantMarketScreen() {
     navigation.goBack()
   }
 
-  const handleBookmarkPress = () => {
-    console.log('Bookmark pressed')
+  const handleNavigateToMyAssistants = () => {
+    navigation.navigate('AssistantScreen')
   }
 
   const renderTabList = (
@@ -145,7 +141,6 @@ export default function AssistantMarketScreen() {
         <AllAssistantsTab
           assistantGroups={assistantGroupsForDisplay}
           onArrowClick={handleArrowClick}
-          setIsBottomSheetOpen={setIsBottomSheetOpen}
           onAssistantPress={handleAssistantItemPress}
         />
       </Tabs.Content>
@@ -153,11 +148,7 @@ export default function AssistantMarketScreen() {
         .filter(({ value }) => value !== 'all')
         .map(({ value }) => (
           <Tabs.Content key={value} value={value} flex={1}>
-            <CategoryAssistantsTab
-              assistants={filterAssistants}
-              setIsBottomSheetOpen={setIsBottomSheetOpen}
-              onAssistantPress={handleAssistantItemPress}
-            />
+            <CategoryAssistantsTab assistants={filterAssistants} onAssistantPress={handleAssistantItemPress} />
           </Tabs.Content>
         ))}
     </>
@@ -169,8 +160,8 @@ export default function AssistantMarketScreen() {
         title={t('assistants.market.title')}
         onBackPress={handleBackPress}
         rightButton={{
-          icon: <BookmarkMinus size={24} />,
-          onPress: handleBookmarkPress
+          icon: <UnionIcon size={24} />,
+          onPress: handleNavigateToMyAssistants
         }}
       />
       <SettingContainer>
@@ -189,18 +180,10 @@ export default function AssistantMarketScreen() {
           flexDirection="column"
           flex={1}>
           {renderTabList}
-          {/* TODO: 有时可以滚动有时不可以 */}
           {renderTabContents}
         </Tabs>
       </SettingContainer>
-      {selectedAssistant && (
-        <AssistantItemSheet
-          bottomSheetRef={bottomSheetRef}
-          isOpen={isBottomSheetOpen}
-          onClose={handleBottomSheetClose}
-          assistant={selectedAssistant}
-        />
-      )}
+      <AssistantItemSheet ref={bottomSheetRef} assistant={selectedAssistant} />
     </SafeAreaContainer>
   )
 }

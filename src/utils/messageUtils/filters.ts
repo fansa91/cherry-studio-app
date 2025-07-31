@@ -3,7 +3,7 @@
 
 import { isEmpty } from 'lodash'
 
-import { type GroupedMessage, type Message, MessageBlockType } from '@/types/message' // Assuming correct Message type import
+import { type GroupedMessage, MainTextMessageBlock, type Message, MessageBlockType } from '@/types/message' // Assuming correct Message type import
 
 import { getBlockById } from '../../../db/queries/messageBlocks.queries'
 // Assuming getGroupedMessages is also moved here or imported
@@ -154,6 +154,24 @@ export function filterUsefulMessages(messages: Message[]): Message[] {
   })
 
   return _messages
+}
+
+export async function filterMainTextMessages(messages: Message[]): Promise<Message[]> {
+  const inclusionChecks = messages.map(async message => {
+    if (!message.blocks?.length) {
+      return false
+    }
+
+    const blocks = await Promise.all(message.blocks.map(blockId => getBlockById(blockId)))
+
+    return blocks.some(
+      block => block?.type === MessageBlockType.MAIN_TEXT && !isEmpty((block as MainTextMessageBlock).content?.trim())
+    )
+  })
+
+  const results = await Promise.all(inclusionChecks)
+
+  return messages.filter((_, index) => results[index])
 }
 
 // Note: getGroupedMessages might also need to be moved or imported.

@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui'
 
 import { ISheet } from '@/components/ui/Sheet'
-import { Model } from '@/types/assistant'
+import { ApiStatus, Model } from '@/types/assistant'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 import { getModelUniqId } from '@/utils/model'
 
 import { ModelSelect } from './ModelSelect'
@@ -27,7 +29,7 @@ interface ApiCheckSheetProps {
   }[]
   apiKey: string
   onStartModelCheck: () => void
-  isCheckingApi: boolean
+  checkApiStatus: ApiStatus
 }
 
 export function ApiCheckSheet({
@@ -39,9 +41,10 @@ export function ApiCheckSheet({
   selectOptions,
   apiKey,
   onStartModelCheck,
-  isCheckingApi
+  checkApiStatus
 }: ApiCheckSheetProps) {
   const { t } = useTranslation()
+  const isDark = useIsDark()
   const sheetSnapPoints = ['40%']
 
   return (
@@ -66,18 +69,39 @@ export function ApiCheckSheet({
             height={60}
             width={224}
             borderRadius={70}
-            backgroundColor="$color1"
+            borderWidth={0.5}
+            backgroundColor={getGreenColor(isDark, 10)}
+            borderColor={getGreenColor(isDark, 20)}
             disabled={!selectedModel || !apiKey}
             onPress={onStartModelCheck}>
-            {isCheckingApi ? (
-              <Spinner size="small" />
-            ) : (
+            {checkApiStatus === 'processing' && (
+              <View>
+                <XStack gap={10} width="100%" alignItems="center" justifyContent="center">
+                  <Spinner size="small" color={getGreenColor(isDark, 100)} />
+                  <Text fontSize={18} fontWeight="bold" color={getGreenColor(isDark, 100)}>
+                    {t('button.checking')}
+                  </Text>
+                </XStack>
+              </View>
+            )}
+
+            {checkApiStatus === 'idle' && (
               <View>
                 <XStack width="100%" alignItems="center" justifyContent="space-between">
-                  <Text fontSize={18} fontWeight="bold">
+                  <Text fontSize={18} fontWeight="bold" color={getGreenColor(isDark, 100)}>
                     {t('button.start_check_model')}
                   </Text>
-                  <ChevronsRight />
+                  <ChevronsRight color={getGreenColor(isDark, 100)} />
+                </XStack>
+              </View>
+            )}
+
+            {checkApiStatus === 'success' && (
+              <View>
+                <XStack width="100%" alignItems="center" justifyContent="space-between">
+                  <Text fontSize={18} fontWeight="bold" color={getGreenColor(isDark, 100)}>
+                    {t('button.success')}
+                  </Text>
                 </XStack>
               </View>
             )}

@@ -1,7 +1,8 @@
 import { WebSearchResponse } from '@/types/websearch'
 
 import { KnowledgeReference } from './knowledge'
-import { MCPTool, MCPToolResponse } from './mcp'
+import { MCPToolResponse } from './mcp'
+import { MCPTool } from './tool'
 
 export type LanguageVarious =
   | 'zh-CN'
@@ -17,7 +18,7 @@ export type LanguageVarious =
 export enum ThemeMode {
   light = 'light',
   dark = 'dark',
-  auto = 'auto'
+  system = 'system'
 }
 
 export type ExternalToolResult = {

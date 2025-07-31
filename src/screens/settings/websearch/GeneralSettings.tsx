@@ -4,6 +4,8 @@ import { Input, Slider, XStack, YStack } from 'tamagui'
 
 import { SettingGroup, SettingGroupTitle, SettingRow, SettingRowTitle } from '@/components/settings'
 import { CustomSwitch } from '@/components/ui/Switch'
+import { useIsDark } from '@/utils'
+import { getGreenColor } from '@/utils/color'
 
 interface GeneralSettingsProps {
   searchWithDates: boolean
@@ -27,6 +29,7 @@ export default function GeneralSettings({
   onContentLimitChange
 }: GeneralSettingsProps) {
   const { t } = useTranslation()
+  const isDark = useIsDark()
 
   return (
     <YStack gap={8} paddingVertical={8}>
@@ -47,10 +50,10 @@ export default function GeneralSettings({
               <SettingRowTitle>{searchCount}</SettingRowTitle>
             </XStack>
             <Slider defaultValue={[searchCount]} min={1} max={20} step={1} onValueChange={onSearchCountChange}>
-              <Slider.Track backgroundColor="rgba(0, 185, 107, 0.2)">
-                <Slider.TrackActive backgroundColor="rgba(0, 185, 107, 1)" />
+              <Slider.Track backgroundColor={getGreenColor(isDark, 20)}>
+                <Slider.TrackActive backgroundColor={getGreenColor(isDark, 100)} />
               </Slider.Track>
-              <Slider.Thumb backgroundColor="rgba(0, 185, 107, 1)" borderWidth={0} size={16} index={0} circular />
+              <Slider.Thumb backgroundColor={getGreenColor(isDark, 100)} borderWidth={0} size={16} index={0} circular />
             </Slider>
           </YStack>
         </SettingRow>

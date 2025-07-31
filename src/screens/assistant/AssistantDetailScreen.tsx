@@ -3,8 +3,8 @@ import { ArrowLeftRight, PenLine } from '@tamagui/lucide-icons'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import { styled, Tabs, Text, useTheme, View, XStack, YStack } from 'tamagui'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { styled, Tabs, Text, XStack, YStack } from 'tamagui'
 
 import { ModelTabContent } from '@/components/assistant/ModelTabContent'
 import { PromptTabContent } from '@/components/assistant/PromptTabContent'
@@ -15,23 +15,25 @@ import { HeaderBar } from '@/components/settings/HeaderBar'
 import { AvatarEditButton } from '@/components/ui/AvatarEditButton'
 import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
 import { useAssistant } from '@/hooks/useAssistant'
+import { loggerService } from '@/services/LoggerService'
 import { RootStackParamList } from '@/types/naviagate'
+const logger = loggerService.withContext('AssistantDetailScreen')
 
 type AssistantDetailRouteProp = RouteProp<RootStackParamList, 'AssistantDetailScreen'>
 
 export default function AssistantDetailScreen() {
   const { t } = useTranslation()
-  const theme = useTheme()
+
   const navigation = useNavigation()
   const route = useRoute<AssistantDetailRouteProp>()
 
-  const { assistantId } = route.params
-  const [activeTab, setActiveTab] = useState('model')
+  const { assistantId, tab } = route.params
+  const [activeTab, setActiveTab] = useState(tab || 'prompt')
   const { assistant, isLoading, updateAssistant } = useAssistant(assistantId)
 
   if (isLoading) {
     return (
-      <SafeAreaContainer>
+      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
       </SafeAreaContainer>
     )
@@ -39,9 +41,9 @@ export default function AssistantDetailScreen() {
 
   if (!assistant) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <SafeAreaContainer style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>{t('assistants.error.notFound')}</Text>
-      </View>
+      </SafeAreaContainer>
     )
   }
 
@@ -63,11 +65,11 @@ export default function AssistantDetailScreen() {
               editIcon={assistant?.emoji ? <ArrowLeftRight size={24} /> : <PenLine size={24} />}
               onEditPress={() => {
                 // 处理编辑逻辑
-                console.log('Edit avatar')
+                logger.info('Edit avatar')
               }}
               onAvatarPress={() => {
                 // 处理头像点击逻辑（可选）
-                console.log('Avatar pressed')
+                logger.info('Avatar pressed')
               }}
             />
           </XStack>
@@ -80,16 +82,16 @@ export default function AssistantDetailScreen() {
               paddingVertical={4}
               paddingHorizontal={5}>
               <StyledTab value="prompt">
-                <Text fontSize="12">{t('common.prompt')}</Text>
+                <Text fontSize={12}>{t('common.prompt')}</Text>
               </StyledTab>
               <StyledTab value="model">
-                <Text fontSize="12">{t('common.model')}</Text>
+                <Text fontSize={12}>{t('common.model')}</Text>
               </StyledTab>
               <StyledTab value="tool">
-                <Text fontSize="12">{t('common.tool')}</Text>
+                <Text fontSize={12}>{t('common.tool')}</Text>
               </StyledTab>
             </Tabs.List>
-            <YStack flex={1} paddingTop={30}>
+            <YStack flex={1} paddingTop={10}>
               <Tabs.Content value="prompt" flex={1} gap={30}>
                 <PromptTabContent assistant={assistant} updateAssistant={updateAssistant} />
               </Tabs.Content>
