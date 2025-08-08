@@ -7,7 +7,6 @@ import { Button } from 'tamagui'
 
 import { Model } from '@/types/assistant'
 import { useIsDark } from '@/utils'
-import { getGreenColor } from '@/utils/color'
 import { haptic } from '@/utils/haptic'
 
 import ModelSheet from '../sheets/ModelSheet'
@@ -23,7 +22,7 @@ export const MentionButton: React.FC<MentionButtonProps> = ({ mentions, setMenti
 
   const handlePress = () => {
     Keyboard.dismiss()
-    haptic(ImpactFeedbackStyle.Light)
+    haptic(ImpactFeedbackStyle.Medium)
     bottomSheetModalRef.current?.present()
   }
 
@@ -34,7 +33,7 @@ export const MentionButton: React.FC<MentionButtonProps> = ({ mentions, setMenti
         chromeless
         size={20}
         icon={<AtSign size={20} />}
-        color={mentions.length > 0 ? getGreenColor(isDark, 100) : undefined}
+        color={mentions.length > 0 ? '$green100' : undefined}
         onPress={handlePress}
       />
 

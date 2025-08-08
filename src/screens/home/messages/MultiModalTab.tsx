@@ -1,13 +1,11 @@
-// 1. 从 React 中导入 useState
 import { MotiView } from 'moti'
 import React, { FC, useState } from 'react'
 import { ScrollView, Tabs, Text, View, XStack } from 'tamagui'
 
 import { MultiModalIcon } from '@/components/icons/MultiModelIcon'
 import { Assistant } from '@/types/assistant'
-import { GroupedMessage } from '@/types/message'
+import { AssistantMessageStatus, GroupedMessage } from '@/types/message'
 import { useIsDark } from '@/utils'
-import { getGreenColor, getTextPrimaryColor } from '@/utils/color'
 
 import MessageItem from './Message'
 import MessageFooter from './MessageFooter'
@@ -50,10 +48,7 @@ const MultiModalTab: FC<MultiModalTabProps> = ({ assistant, messages }) => {
                     justifyContent="center"
                     alignItems="center"
                     height={26}>
-                    <Text
-                      fontSize={12}
-                      lineHeight={17}
-                      color={currentTab === tabValue ? getGreenColor(isDark, 100) : getTextPrimaryColor(isDark)}>
+                    <Text fontSize={12} lineHeight={17} color={currentTab === tabValue ? '$green100' : '$textPrimary'}>
                       @{_message.model?.name}({_message.model?.provider})
                     </Text>
                   </Tabs.Tab>
@@ -76,7 +71,10 @@ const MultiModalTab: FC<MultiModalTabProps> = ({ assistant, messages }) => {
                 type: 'timing'
               }}>
               <MessageItem message={message} />
-              <MessageFooter assistant={assistant} message={message} />
+              {/* 输出过程中不显示footer */}
+              {message.status !== AssistantMessageStatus.PROCESSING && (
+                <MessageFooter assistant={assistant} message={message} />
+              )}
             </MotiView>
           </Tabs.Content>
         ))}

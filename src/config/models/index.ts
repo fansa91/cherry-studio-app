@@ -1,8 +1,9 @@
 // 导出所有模型相关功能
 import OpenAI from 'openai'
 
-import { getProviderByModel } from '@/services/AssistantService'
+import { getProviderByModel } from '@/services/ProviderService'
 import { Model } from '@/types/assistant'
+import { getLowerBaseModelName } from '@/utils/naming'
 
 import { isOpenAIReasoningModel } from './reasoning'
 
@@ -135,6 +136,10 @@ export function isOpenRouterBuiltInWebSearchModel(model: Model): boolean {
 
   const provider = getProviderByModel(model)
 
+  if (!provider) {
+    return false
+  }
+
   if (provider.id !== 'openrouter') {
     return false
   }
@@ -144,4 +149,20 @@ export function isOpenRouterBuiltInWebSearchModel(model: Model): boolean {
 
 export function isOpenAIWebSearchChatCompletionOnlyModel(model: Model): boolean {
   return model.id.includes('gpt-4o-search-preview') || model.id.includes('gpt-4o-mini-search-preview')
+}
+
+export function isOpenAIModel(model: Model): boolean {
+  if (!model) {
+    return false
+  }
+
+  return model.id.includes('gpt') || isOpenAIReasoningModel(model)
+}
+
+export const isAnthropicModel = (model?: Model): boolean => {
+  if (!model) {
+    return false
+  }
+
+  return getLowerBaseModelName(model.id).startsWith('claude')
 }

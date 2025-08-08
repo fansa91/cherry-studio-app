@@ -1,12 +1,6 @@
 {
   "translation": {
     "assistants": {
-      "create": {
-        "title": "Create Assistant"
-      },
-      "edit": {
-        "title": "Edit Assistant"
-      },
       "market": {
         "add.success": "Add {{assistant_name}} Successful",
         "button.chat": "Chat Now",
@@ -46,6 +40,7 @@
       "title": "Assistants",
       "title.create": "Create Assistant",
       "title.edit": "Edit Assistant",
+      "title.mine": "My assistant",
       "title.recent": "Recent Assistants"
     },
     "button": {
@@ -95,6 +90,7 @@
       "enabled": "Enabled",
       "error_occurred": "An error occurred",
       "file": "File",
+      "generateImage": "Create an image",
       "language": "Language",
       "last_month": "Last Month",
       "last_week": "Last Week",
@@ -116,6 +112,7 @@
       "today": "Today",
       "tool": "Tool",
       "visit": "Visit",
+      "websearch": "Web Search",
       "yesterday": "Yesterday"
     },
     "errors": {
@@ -143,6 +140,12 @@
       "topic": {
         "recent": "Recent Topics",
         "title": "Topic"
+      }
+    },
+    "message": {
+      "searching": "Searching...",
+      "websearch": {
+        "fetch_complete": "Completed {{count}} searches..."
       }
     },
     "models": {
@@ -401,6 +404,10 @@
         "default_vault_no_vaults": "No Obsidian vaults found",
         "default_vault_placeholder": "Please select the default Obsidian vault",
         "title": "Obsidian Configuration"
+      },
+      "personal": {
+        "name": "Username",
+        "title": "Personal Settings"
       },
       "provider": {
         "add.name": "Provider Name",

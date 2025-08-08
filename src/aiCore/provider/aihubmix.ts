@@ -1,6 +1,6 @@
 import { ProviderId } from '@cherrystudio/ai-core'
 
-import { isOpenAILLMModel } from '@/config/models/webSearch'
+import { isOpenAIModel } from '@/config/models'
 import { Model, Provider } from '@/types/assistant'
 
 export function getAiSdkProviderIdForAihubmix(model: Model): ProviderId | 'openai-compatible' {
@@ -17,7 +17,7 @@ export function getAiSdkProviderIdForAihubmix(model: Model): ProviderId | 'opena
     return 'google'
   }
 
-  if (isOpenAILLMModel(model)) {
+  if (isOpenAIModel(model)) {
     return 'openai'
   }
 
@@ -45,7 +45,7 @@ export function createAihubmixProvider(model: Model, provider: Provider): Provid
   if (providerId === 'openai') {
     return {
       ...provider,
-      type: 'openai'
+      type: 'openai-response'
     }
   }
 

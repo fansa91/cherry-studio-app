@@ -16,16 +16,14 @@ import { Model, Topic } from '@/types/assistant'
 import { FileType } from '@/types/file'
 import { MessageInputBaseParams } from '@/types/message'
 import { useIsDark } from '@/utils'
-import { getGreenColor } from '@/utils/color'
 import { haptic } from '@/utils/haptic'
 
-import { AddAssetsButton } from './AddAssetsButton'
 import FilePreview from './FilePreview'
 import { MentionButton } from './MentionButton'
 import { SendButton } from './SendButton'
 import { ThinkButton } from './ThinkButton'
-import { VoiceButton } from './VoiceButton'
-import { WebsearchButton } from './WebsearchButton'
+import { ToolButton } from './ToolButton'
+import ToolPreview from './ToolPreview'
 const logger = loggerService.withContext('Message Input')
 
 interface MessageInputProps {
@@ -78,8 +76,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({ topic }) => {
     return null
   }
 
-  const showBackgroundColor = (assistant.webSearchProviderId || assistant.enableWebSearch) && isReasoning
-
   return (
     <LinearGradient
       padding={1}
@@ -87,7 +83,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ topic }) => {
       colors={isDark ? ['#acf3a633', '#acf3a6ff', '#acf3a633'] : ['#8de59e4d', '#81df94ff', '#8de59e4d']}
       start={[0, 0]}
       end={[1, 1]}>
-      <InputContent>
+      <InputContent style={{ backgroundColor: isDark ? '#121213ff' : '#f7f7f7ff' }}>
         <View>
           <YStack gap={10}>
             {files.length > 0 && <FilePreview files={files} setFiles={setFiles} />}
@@ -101,29 +97,30 @@ export const MessageInput: React.FC<MessageInputProps> = ({ topic }) => {
                 value={text}
                 onChangeText={setText}
                 lineHeight={22}
-                color={isDark ? '$textSecondaryDark' : '$textSecondaryLight'}
+                color="$textSecondaryLight"
               />
             </XStack>
             {/* button */}
-            <XStack justifyContent="space-between" alignItems="center">
+            <XStack justifyContent="space-between" alignItems="center" minHeight={30}>
               <XStack gap={10} alignItems="center">
-                <AddAssetsButton files={files} setFiles={setFiles} />
-                <XStack
-                  gap={14}
-                  paddingHorizontal={showBackgroundColor ? 12 : 0}
-                  paddingVertical={10}
-                  backgroundColor={showBackgroundColor ? getGreenColor(isDark, 20) : undefined}
-                  borderRadius={48}>
-                  {(assistant.webSearchProviderId || assistant.enableWebSearch) && (
-                    <WebsearchButton assistant={assistant} updateAssistant={updateAssistant} />
-                  )}
-                  {isReasoning && <ThinkButton assistant={assistant} updateAssistant={updateAssistant} />}
-                </XStack>
+                <ToolButton files={files} setFiles={setFiles} assistant={assistant} updateAssistant={updateAssistant} />
+                {isReasoning && <ThinkButton assistant={assistant} updateAssistant={updateAssistant} />}
+                <ToolPreview assistant={assistant} updateAssistant={updateAssistant} />
               </XStack>
               <XStack gap={10} alignItems="center">
                 <MentionButton mentions={mentions} setMentions={setMentions} />
                 <AnimatePresence exitBeforeEnter>
-                  {text ? (
+                  {text && (
+                    <MotiView
+                      key="send-button"
+                      from={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      transition={{ type: 'timing', duration: 200 }}>
+                      <SendButton onSend={sendMessage} />
+                    </MotiView>
+                  )}
+                  {/*{text ? (
                     <MotiView
                       key="send-button"
                       from={{ opacity: 0, scale: 0.5 }}
@@ -141,7 +138,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ topic }) => {
                       transition={{ type: 'timing', duration: 100 }}>
                       <VoiceButton />
                     </MotiView>
-                  )}
+                  )}*/}
                 </AnimatePresence>
               </XStack>
             </XStack>
@@ -155,6 +152,5 @@ export const MessageInput: React.FC<MessageInputProps> = ({ topic }) => {
 const InputContent = styled(YStack, {
   paddingHorizontal: 16,
   paddingVertical: 12,
-  borderRadius: 20,
-  backgroundColor: '$background'
+  borderRadius: 20
 })

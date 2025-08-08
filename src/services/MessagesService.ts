@@ -1,11 +1,17 @@
 import { throttle } from 'lodash'
 import { LRUCache } from 'lru-cache'
 
+import ModernAiProvider from '@/aiCore/index_new'
+import { AiSdkMiddlewareConfig } from '@/aiCore/middleware/AiSdkMiddlewareBuilder'
+import { buildStreamTextParams, convertMessagesToSdkMessages } from '@/aiCore/transformParameters'
+import { isDedicatedImageGenerationModel } from '@/config/models/image'
 import { loggerService } from '@/services/LoggerService'
 import { Assistant, Model, Topic, Usage } from '@/types/assistant'
+import { ChunkType } from '@/types/chunk'
 import { FileType, FileTypes } from '@/types/file'
 import { AssistantMessageStatus, Message, MessageBlock, MessageBlockStatus } from '@/types/message'
 import { uuid } from '@/utils'
+import { addAbortController } from '@/utils/abortController'
 import {
   createAssistantMessage,
   createFileBlock,
@@ -16,17 +22,27 @@ import {
 } from '@/utils/messageUtils/create'
 import { getTopicQueue } from '@/utils/queue'
 
-import { getBlockById, removeManyBlocks, updateOneBlock, upsertBlocks } from '../../db/queries/messageBlocks.queries'
 import {
+  deleteBlocksByMessageId,
+  deleteBlocksByTopicId,
+  getBlockById,
+  removeManyBlocks,
+  updateOneBlock,
+  upsertBlocks
+} from '../../db/queries/messageBlocks.queries'
+import {
+  deleteMessageById as _deleteMessageById,
+  deleteMessagesByTopicId as _deleteMessagesByTopicId,
   getMessageById,
   getMessagesByTopicId,
   updateMessageById,
   upsertMessages
 } from '../../db/queries/messages.queries'
 import { getTopicById, updateTopicMessages } from '../../db/queries/topics.queries'
-import { getDefaultModel } from './AssistantService'
+import { getAssistantById, getDefaultModel } from './AssistantService'
 import { BlockManager, createCallbacks } from './messageStreaming'
 import { OrchestrationService } from './OrchestrationService'
+import { getAssistantProvider } from './ProviderService'
 import { createStreamProcessor, StreamProcessorCallbacks } from './StreamProcessingService'
 
 const logger = loggerService.withContext('Messages Service')
@@ -419,7 +435,7 @@ export async function fetchAndProcessAssistantResponseImpl(
       messagesForContext = contextSlice.filter(m => m && !m.status?.includes('ing'))
     }
 
-    callbacks = createCallbacks({
+    callbacks = await createCallbacks({
       blockManager,
       topicId,
       assistantMsgId,
@@ -428,12 +444,16 @@ export async function fetchAndProcessAssistantResponseImpl(
     })
     const streamProcessorCallbacks = createStreamProcessor(callbacks)
 
+    const abortController = new AbortController()
+    addAbortController(userMessageId!, () => abortController.abort())
+
     const orchestrationService = new OrchestrationService()
     await orchestrationService.handleUserMessage(
       {
         messages: messagesForContext,
         assistant,
         options: {
+          signal: abortController.signal,
           timeout: 30000
         }
       },
@@ -505,5 +525,90 @@ export async function cleanupMultipleBlocks(blockIds: string[]) {
 
   if (blockIds.length > 0) {
     await removeManyBlocks(blockIds)
+  }
+}
+
+export async function deleteMessagesByTopicId(topicId: string): Promise<void> {
+  try {
+    await deleteBlocksByTopicId(topicId)
+    await _deleteMessagesByTopicId(topicId)
+  } catch (error) {
+    logger.error('Error in deleteMessagesByTopicId:', error)
+    throw error
+  }
+}
+
+export async function deleteMessageById(messageId: string): Promise<void> {
+  try {
+    await deleteBlocksByMessageId(messageId)
+    await _deleteMessageById(messageId)
+  } catch (error) {
+    logger.error('Error in deleteMessageById:', error)
+    throw error
+  }
+}
+
+export async function fetchTranslateThunk(assistantMessageId: string, message: Message) {
+  let callbacks: StreamProcessorCallbacks = {}
+  const translateAssistant = await getAssistantById('translate')
+  // 创建 BlockManager 实例
+  const blockManager = new BlockManager({
+    saveUpdatedBlockToDB,
+    saveUpdatesToDB,
+    assistantMsgId: assistantMessageId,
+    topicId: message.topicId,
+    throttledBlockUpdate,
+    cancelThrottledBlockUpdate
+  })
+
+  callbacks = await createCallbacks({
+    blockManager,
+    topicId: message.topicId,
+    assistantMsgId: assistantMessageId,
+    saveUpdatesToDB,
+    assistant: translateAssistant
+  })
+
+  const streamProcessorCallbacks = createStreamProcessor(callbacks)
+
+  if (!translateAssistant.model) {
+    throw new Error('Translate assistant model is not defined')
+  }
+
+  const provider = await getAssistantProvider(translateAssistant)
+  message = {
+    ...message,
+    role: 'user'
+  }
+  const llmMessages = await convertMessagesToSdkMessages([message], translateAssistant.model)
+
+  const AI = new ModernAiProvider(translateAssistant.model || getDefaultModel(), provider)
+  const {
+    params: aiSdkParams,
+    modelId,
+    capabilities
+  } = await buildStreamTextParams(llmMessages, translateAssistant, provider)
+
+  const middlewareConfig: AiSdkMiddlewareConfig = {
+    streamOutput: translateAssistant.settings?.streamOutput ?? true,
+    onChunk: streamProcessorCallbacks,
+    model: translateAssistant.model,
+    provider: provider,
+    enableReasoning: capabilities.enableReasoning,
+    isPromptToolUse: false,
+    isSupportedToolUse: false,
+    isImageGenerationEndpoint: isDedicatedImageGenerationModel(translateAssistant.model || getDefaultModel()),
+    enableWebSearch: capabilities.enableWebSearch,
+    enableGenerateImage: capabilities.enableGenerateImage,
+    mcpTools: [],
+    assistant: translateAssistant
+  }
+
+  try {
+    streamProcessorCallbacks({ type: ChunkType.LLM_RESPONSE_CREATED })
+    return (await AI.completions(modelId, aiSdkParams, middlewareConfig)).getText() || ''
+  } catch (error: any) {
+    logger.error('Error during translation:', error)
+    return ''
   }
 }

@@ -23,7 +23,7 @@ export const HeaderBar = ({ topic, showAssistantCard, setShowAssistantCard }: He
   const { assistant, isLoading } = useAssistant(topic.assistantId)
 
   const handleMenuPress = () => {
-    haptic(ImpactFeedbackStyle.Soft)
+    haptic(ImpactFeedbackStyle.Medium)
     navigation.dispatch(DrawerActions.openDrawer())
   }
 
@@ -33,7 +33,7 @@ export const HeaderBar = ({ topic, showAssistantCard, setShowAssistantCard }: He
 
   return (
     <>
-      <XStack paddingHorizontal="$4" alignItems="center" height={44} justifyContent="space-between">
+      <XStack alignItems="center" height={44} justifyContent="space-between">
         <XStack alignItems="center" minWidth={40}>
           <MenuButton onMenuPress={handleMenuPress} />
         </XStack>

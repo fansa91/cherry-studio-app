@@ -1,12 +1,6 @@
 {
   "translation": {
     "assistants": {
-      "create": {
-        "title": "アシスタントを作成する"
-      },
-      "edit": {
-        "title": "エディットアシスタント"
-      },
       "market": {
         "add.success": "{{assistant_name}}の追加に成功しました",
         "button.chat": "今すぐチャット",
@@ -46,6 +40,7 @@
       "title": "アシスタント",
       "title.create": "アシスタントを作成",
       "title.edit": "編集アシスタント",
+      "title.mine": "私のアシスタント",
       "title.recent": "最近のアシスタント"
     },
     "button": {
@@ -95,6 +90,7 @@
       "enabled": "有効",
       "error_occurred": "エラーが発生しました",
       "file": "ファイル",
+      "generateImage": "画像を作成する",
       "language": "言語",
       "last_month": "先月",
       "last_week": "先週",
@@ -116,6 +112,7 @@
       "today": "今日",
       "tool": "ツール",
       "visit": "訪問",
+      "websearch": "ウェブ検索",
       "yesterday": "昨日"
     },
     "errors": {
@@ -143,6 +140,12 @@
       "topic": {
         "recent": "最近のトピック",
         "title": "トピック"
+      }
+    },
+    "message": {
+      "searching": "検索中...",
+      "websearch": {
+        "fetch_complete": "検索が {{count}} 回完了しました..."
       }
     },
     "models": {
@@ -401,6 +404,10 @@
         "default_vault_no_vaults": "Obsidianボールトが見つかりません",
         "default_vault_placeholder": "デフォルトのObsidianボールトを選択してください",
         "title": "Obsidian設定"
+      },
+      "personal": {
+        "name": "ユーザー名",
+        "title": "個人設定"
       },
       "provider": {
         "add.name": "プロバイダー名",

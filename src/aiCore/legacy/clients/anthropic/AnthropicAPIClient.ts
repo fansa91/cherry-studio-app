@@ -21,7 +21,6 @@ import {
 import { MessageStream } from '@anthropic-ai/sdk/resources/messages/messages'
 import { File } from 'expo-file-system/next'
 
-import { GenericChunk } from '@/aiCore/middleware/schemas'
 import { findTokenLimit } from '@/config/models'
 import { EFFORT_RATIO, isClaudeReasoningModel, isReasoningModel } from '@/config/models/reasoning'
 import { isWebSearchModel } from '@/config/models/webSearch'
@@ -57,6 +56,7 @@ import {
 import { findFileBlocks, findImageBlocks } from '@/utils/messageUtils/find'
 import { buildSystemPrompt } from '@/utils/prompt'
 
+import { GenericChunk } from '../../middleware/schemas'
 import { BaseApiClient } from '../BaseApiClient'
 import { AnthropicStreamListener, RawStreamListener, RequestTransformer, ResponseChunkTransformer } from '../types'
 
@@ -381,13 +381,13 @@ export class AnthropicAPIClient extends BaseApiClient<
     rawOutput: AnthropicSdkRawOutput,
     listener: RawStreamListener<AnthropicSdkRawChunk>
   ): AnthropicSdkRawOutput {
-    console.log(`[AnthropicApiClient] 附加流监听器到原始输出`)
+    logger.info('附加流监听器到原始输出')
     // 专用的Anthropic事件处理
     const anthropicListener = listener as AnthropicStreamListener
 
     // 检查是否为MessageStream
     if (rawOutput instanceof MessageStream) {
-      console.log(`[AnthropicApiClient] 检测到 Anthropic MessageStream，附加专用监听器`)
+      logger.info('检测到 Anthropic MessageStream，附加专用监听器')
 
       if (listener.onStart) {
         listener.onStart()

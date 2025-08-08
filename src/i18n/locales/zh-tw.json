@@ -1,12 +1,6 @@
 {
   "translation": {
     "assistants": {
-      "create": {
-        "title": "創建助理"
-      },
-      "edit": {
-        "title": "編輯助理"
-      },
       "market": {
         "add.success": "新增 {{assistant_name}} 成功",
         "button.chat": "立即聊天",
@@ -46,6 +40,7 @@
       "title": "助手",
       "title.create": "建立助理",
       "title.edit": "編輯助理",
+      "title.mine": "我的助手",
       "title.recent": "最近的助手"
     },
     "button": {
@@ -95,6 +90,7 @@
       "enabled": "已啟用",
       "error_occurred": "發生錯誤",
       "file": "檔案",
+      "generateImage": "建立圖片",
       "language": "語言",
       "last_month": "上個月",
       "last_week": "上週",
@@ -116,6 +112,7 @@
       "today": "今天",
       "tool": "工具",
       "visit": "訪問",
+      "websearch": "網路搜尋",
       "yesterday": "昨天"
     },
     "errors": {
@@ -143,6 +140,12 @@
       "topic": {
         "recent": "最近的主題",
         "title": "主題"
+      }
+    },
+    "message": {
+      "searching": "搜尋中...",
+      "websearch": {
+        "fetch_complete": "已完成 {{count}} 次搜尋..."
       }
     },
     "models": {
@@ -401,6 +404,10 @@
         "default_vault_no_vaults": "未找到 Obsidian 儲存庫",
         "default_vault_placeholder": "請選擇預設的 Obsidian 儲存庫",
         "title": "Obsidian 配置"
+      },
+      "personal": {
+        "name": "使用者名稱",
+        "title": "個人設定"
       },
       "provider": {
         "add.name": "提供者名稱",

@@ -1,12 +1,6 @@
 {
   "translation": {
     "assistants": {
-      "create": {
-        "title": "创建助手"
-      },
-      "edit": {
-        "title": "编辑助手"
-      },
       "market": {
         "add.success": "添加 {{assistant_name}} 成功",
         "button.chat": "立即聊天",
@@ -46,6 +40,7 @@
       "title": "助手",
       "title.create": "创建助手",
       "title.edit": "编辑助手",
+      "title.mine": "我的助手",
       "title.recent": "最近使用的助手"
     },
     "button": {
@@ -95,6 +90,7 @@
       "enabled": "已启用",
       "error_occurred": "发生错误",
       "file": "文件",
+      "generateImage": "创建图片",
       "language": "语言",
       "last_month": "上月",
       "last_week": "上周",
@@ -116,6 +112,7 @@
       "today": "今天",
       "tool": "工具",
       "visit": "访问",
+      "websearch": "网络搜索",
       "yesterday": "昨天"
     },
     "errors": {
@@ -143,6 +140,12 @@
       "topic": {
         "recent": "最近的主题",
         "title": "主题"
+      }
+    },
+    "message": {
+      "searching": "正在搜索...",
+      "websearch": {
+        "fetch_complete": "已完成 {{count}} 次搜索..."
       }
     },
     "models": {
@@ -275,7 +278,7 @@
         "landrop": {
           "filename": "文件名",
           "scan_qr_code": {
-            "description": "请使用樱桃工作室扫码",
+            "description": "请使用Cherry Studio扫码",
             "success": "连接成功 🎉",
             "success_description": "现在可以点击发送按钮来恢复数据了！",
             "title": "扫描二维码"
@@ -290,7 +293,7 @@
             "zip_file_end": "文件传输完成",
             "zip_file_start": "文件传输已开始"
           },
-          "title": "蓝卓投送"
+          "title": "局域网传输"
         },
         "recovery": "数据恢复",
         "reset": "数据重置",
@@ -401,6 +404,10 @@
         "default_vault_no_vaults": "未找到 Obsidian 仓库",
         "default_vault_placeholder": "请选择默认的 Obsidian 仓库",
         "title": "Obsidian 配置"
+      },
+      "personal": {
+        "name": "用户名",
+        "title": "个人设置"
       },
       "provider": {
         "add.name": "提供者名称",

@@ -1,6 +1,7 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import { BrushCleaning } from '@tamagui/lucide-icons'
 import { sortBy } from 'lodash'
+import debounce from 'lodash/debounce'
 import { forwardRef, useEffect, useState } from 'react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -29,7 +30,17 @@ const ModelSheet = forwardRef<BottomSheetModal, ModelSheetProps>(({ mentions, se
   const theme = useTheme()
   const isDark = useIsDark()
   const [selectedModels, setSelectedModels] = useState<string[]>(() => mentions.map(m => getModelUniqId(m)))
+  const [inputValue, setInputValue] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const debouncedSetQuery = debounce((query: string) => {
+    setSearchQuery(query)
+  }, 300)
+
+  const handleSearchChange = (text: string) => {
+    setInputValue(text)
+    debouncedSetQuery(text)
+  }
 
   useEffect(() => {
     setSelectedModels(mentions.map(m => getModelUniqId(m)))
@@ -117,8 +128,8 @@ const ModelSheet = forwardRef<BottomSheetModal, ModelSheetProps>(({ mentions, se
           <XStack gap={5}>
             <Stack flex={1}>
               <BottomSheetSearchInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
+                value={inputValue}
+                onChangeText={handleSearchChange}
                 placeholder={t('common.search_placeholder')}
               />
             </Stack>
@@ -140,12 +151,8 @@ const ModelSheet = forwardRef<BottomSheetModal, ModelSheetProps>(({ mentions, se
                     paddingHorizontal={8}
                     paddingVertical={8}
                     borderWidth={1}
-                    borderColor={
-                      selectedModels.includes(item.value) ? (isDark ? '$green20Dark' : '$green20Light') : 'transparent'
-                    }
-                    backgroundColor={
-                      selectedModels.includes(item.value) ? (isDark ? '$green10Dark' : '$green10Light') : 'transparent'
-                    }>
+                    borderColor={selectedModels.includes(item.value) ? '$green20' : 'transparent'}
+                    backgroundColor={selectedModels.includes(item.value) ? '$green10' : 'transparent'}>
                     <XStack gap={8} flex={1} alignItems="center" justifyContent="space-between" width="100%">
                       <XStack gap={8} flex={1} alignItems="center" maxWidth="80%">
                         {/* Model icon */}
@@ -159,7 +166,7 @@ const ModelSheet = forwardRef<BottomSheetModal, ModelSheetProps>(({ mentions, se
                       </XStack>
                       <XStack gap={8} alignItems="center" flexShrink={0}>
                         {/* Model tags */}
-                        <ModelTags model={item.model} size={11} style={{ flexShrink: 0 }} />
+                        <ModelTags model={item.model} size={11} />
                       </XStack>
                     </XStack>
                   </Button>

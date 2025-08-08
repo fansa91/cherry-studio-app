@@ -5,7 +5,7 @@ import { debounce, groupBy, isEmpty, uniqBy } from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
-import { Accordion, Button, ScrollView, Tabs, Text, useTheme, YStack } from 'tamagui'
+import { Accordion, Button, ScrollView, Tabs, Text, YStack } from 'tamagui'
 
 import { SettingContainer } from '@/components/settings'
 import { HeaderBar } from '@/components/settings/HeaderBar'
@@ -19,13 +19,12 @@ import { isReasoningModel } from '@/config/models/reasoning'
 import { isRerankModel } from '@/config/models/rerank'
 import { isVisionModel } from '@/config/models/vision'
 import { isWebSearchModel } from '@/config/models/webSearch'
-import { useProvider } from '@/hooks/useProviders'
 import { fetchModels } from '@/services/ApiService'
 import { loggerService } from '@/services/LoggerService'
+import { getProviderById, saveProvider } from '@/services/ProviderService'
 import { Model, Provider } from '@/types/assistant'
 import { RootStackParamList } from '@/types/naviagate'
 import { useIsDark } from '@/utils'
-import { getGreenColor } from '@/utils/color'
 import { getDefaultGroupName } from '@/utils/naming'
 const logger = loggerService.withContext('ManageModelsScreen')
 
@@ -108,7 +107,6 @@ const TAB_CONFIGS = [
 export default function ManageModelsScreen() {
   const { t } = useTranslation()
   const isDark = useIsDark()
-  const theme = useTheme()
   const navigation = useNavigation()
   const route = useRoute<ProviderSettingsRouteProp>()
 
@@ -118,25 +116,36 @@ export default function ManageModelsScreen() {
   const [activeFilterType, setActiveFilterType] = useState<string>('all')
   const [isLoading, setIsLoading] = useState(true)
 
+  // 创建防抖函数，300ms 延迟
+  const debouncedSetSearch = debounce((text: string) => {
+    setDebouncedSearchText(text)
+  }, 300)
+
   const { providerId } = route.params
-  const { provider, updateProvider } = useProvider(providerId)
+  const [provider, setProvider] = useState<Provider | undefined>(undefined)
+  // const { provider, updateProvider } = useProvider(providerId)
 
   const isModelInCurrentProvider = getIsModelInProvider(provider?.models || [])
   const isAllModelsInCurrentProvider = getIsAllInProvider(isModelInCurrentProvider)
 
-  useEffect(() => {
-    const handler = debounce(() => setDebouncedSearchText(searchText), 300)
-    handler()
-    return () => handler.cancel()
-  })
-
   const filteredModels = filterModels(allModels, debouncedSearchText, activeFilterType)
   const sortedModelGroups = groupAndSortModels(filteredModels, provider?.id || '')
+
+  // 监听 searchText 变化，触发防抖更新
+  useEffect(() => {
+    debouncedSetSearch(searchText)
+
+    // 清理函数，组件卸载时取消防抖
+    return () => {
+      debouncedSetSearch.cancel()
+    }
+  })
 
   const handleUpdateModels = async (newModels: Model[]) => {
     if (!provider) return
     const updatedProvider = { ...provider, models: newModels }
-    await updateProvider(updatedProvider)
+    setProvider(updatedProvider)
+    await saveProvider(updatedProvider)
   }
 
   const onAddModel = async (model: Model) => {
@@ -158,12 +167,15 @@ export default function ManageModelsScreen() {
 
   useEffect(() => {
     const fetchAndSetModels = async () => {
-      if (!provider) return
+      const fetchedProvider = await getProviderById(providerId)
+      setProvider(fetchedProvider)
+
+      if (!fetchedProvider) return
       setIsLoading(true)
 
       try {
-        const modelsFromApi = await fetchModels(provider)
-        const transformedModels = transformApiModels(modelsFromApi, provider)
+        const modelsFromApi = await fetchModels(fetchedProvider)
+        const transformedModels = transformApiModels(modelsFromApi, fetchedProvider)
         setAllModels(uniqBy(transformedModels, 'id'))
       } catch (error) {
         logger.error('Failed to fetch models', error)
@@ -174,7 +186,7 @@ export default function ManageModelsScreen() {
     }
 
     fetchAndSetModels()
-  })
+  }, [providerId])
 
   const renderModelGroupItem = ({ item: [groupName, currentModels], index }: ListRenderItemInfo<[string, Model[]]>) => (
     <ModelGroup
@@ -190,12 +202,7 @@ export default function ManageModelsScreen() {
             isAllModelsInCurrentProvider(groupButtonModels) ? (
               <Minus size={14} borderRadius={99} backgroundColor="$red20" color="$red100" />
             ) : (
-              <Plus
-                size={14}
-                borderRadius={99}
-                backgroundColor={getGreenColor(isDark, 20)}
-                color={getGreenColor(isDark, 100)}
-              />
+              <Plus size={14} borderRadius={99} backgroundColor="$green20" color="$green100" />
             )
           }
           onPress={
@@ -213,12 +220,7 @@ export default function ManageModelsScreen() {
             isModelInCurrentProvider(model.id) ? (
               <Minus size={14} borderRadius={99} backgroundColor="$red20" color="$red100" />
             ) : (
-              <Plus
-                size={14}
-                borderRadius={99}
-                backgroundColor={getGreenColor(isDark, 20)}
-                color={getGreenColor(isDark, 100)}
-              />
+              <Plus size={14} borderRadius={99} backgroundColor="$green20" color="$green100" />
             )
           }
           onPress={isModelInCurrentProvider(model.id) ? () => onRemoveModel(model) : () => onAddModel(model)}
@@ -236,8 +238,7 @@ export default function ManageModelsScreen() {
   return (
     <SafeAreaContainer
       style={{
-        flex: 1,
-        backgroundColor: theme.background.val
+        flex: 1
       }}>
       <HeaderBar title={provider?.name || t('settings.models.manage_models')} onBackPress={() => navigation.goBack()} />
       <SettingContainer>

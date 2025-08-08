@@ -1,7 +1,11 @@
+import { writeBase64File } from '@/services/FileService'
+import { loggerService } from '@/services/LoggerService'
 import { ImageMessageBlock, MessageBlockStatus, MessageBlockType } from '@/types/message'
 import { createImageBlock } from '@/utils/messageUtils/create'
 
 import { BlockManager } from '../BlockManager'
+
+const logger = loggerService.withContext('createImageCallbacks')
 
 interface ImageCallbacksDependencies {
   blockManager: BlockManager
@@ -44,8 +48,8 @@ export const createImageCallbacks = (deps: ImageCallbacksDependencies) => {
         blockManager.smartBlockUpdate(imageBlockId, changes, MessageBlockType.IMAGE, true)
       }
     },
-
-    onImageGenerated: (imageData: any) => {
+    // 将生成的图片处理成file类型，加快读取速度
+    onImageGenerated: async (imageData: any) => {
       if (imageBlockId) {
         if (!imageData) {
           const changes: Partial<ImageMessageBlock> = {
@@ -53,10 +57,9 @@ export const createImageCallbacks = (deps: ImageCallbacksDependencies) => {
           }
           blockManager.smartBlockUpdate(imageBlockId, changes, MessageBlockType.IMAGE)
         } else {
-          const imageUrl = imageData.images?.[0] || 'placeholder_image_url'
+          const imageFile = await writeBase64File(imageData.images?.[0])
           const changes: Partial<ImageMessageBlock> = {
-            url: imageUrl,
-            metadata: { generateImageResponse: imageData },
+            file: imageFile,
             status: MessageBlockStatus.SUCCESS
           }
           blockManager.smartBlockUpdate(imageBlockId, changes, MessageBlockType.IMAGE, true)
@@ -64,7 +67,16 @@ export const createImageCallbacks = (deps: ImageCallbacksDependencies) => {
 
         imageBlockId = null
       } else {
-        console.error('[onImageGenerated] Last block was not an Image block or ID is missing.')
+        if (imageData) {
+          const imageFile = await writeBase64File(imageData.images?.[0])
+          const imageBlock = createImageBlock(assistantMsgId, {
+            file: imageFile,
+            status: MessageBlockStatus.SUCCESS
+          })
+          await blockManager.handleBlockTransition(imageBlock, MessageBlockType.IMAGE)
+        } else {
+          logger.error('[onImageGenerated] Last block was not an Image block or ID is missing.')
+        }
       }
     }
   }

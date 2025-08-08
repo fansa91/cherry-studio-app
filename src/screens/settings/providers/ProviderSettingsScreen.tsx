@@ -1,8 +1,9 @@
-import BottomSheet from '@gorhom/bottom-sheet'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronRight, HeartPulse, Plus, Settings, Settings2 } from '@tamagui/lucide-icons'
 import { groupBy } from 'lodash'
-import React, { useRef, useState } from 'react'
+import debounce from 'lodash/debounce'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
@@ -20,7 +21,6 @@ import { loggerService } from '@/services/LoggerService'
 import { Model } from '@/types/assistant'
 import { NavigationProps, RootStackParamList } from '@/types/naviagate'
 import { useIsDark } from '@/utils'
-import { getGreenColor } from '@/utils/color'
 const logger = loggerService.withContext('ProviderSettingsScreen')
 
 type ProviderSettingsRouteProp = RouteProp<RootStackParamList, 'ProviderSettingsScreen'>
@@ -31,16 +31,27 @@ export default function ProviderSettingsScreen() {
   const navigation = useNavigation<NavigationProps>()
   const route = useRoute<ProviderSettingsRouteProp>()
 
-  const bottomSheetRef = useRef<BottomSheet>(null)
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
+  const bottomSheetRef = useRef<BottomSheetModal>(null)
+
+  // 搜索状态
+  const [searchText, setSearchText] = useState('')
+  const [debouncedSearchText, setDebouncedSearchText] = useState('')
+
+  // 防抖处理
+  const debouncedSetSearchText = debounce((text: string) => {
+    setDebouncedSearchText(text)
+  }, 300)
+
+  useEffect(() => {
+    debouncedSetSearchText(searchText)
+
+    return () => {
+      debouncedSetSearchText.cancel()
+    }
+  }, [searchText, debouncedSetSearchText])
 
   const handleOpenBottomSheet = () => {
-    bottomSheetRef.current?.expand()
-    setIsBottomSheetOpen(true)
-  }
-
-  const handleBottomSheetClose = () => {
-    setIsBottomSheetOpen(false)
+    bottomSheetRef.current?.present()
   }
 
   const { providerId } = route.params
@@ -48,19 +59,37 @@ export default function ProviderSettingsScreen() {
 
   const modelGroups = groupBy(provider?.models, 'group')
 
+  // 搜索过滤模型
+  const filteredModelGroups = Object.fromEntries(
+    Object.entries(modelGroups)
+      .map(([groupName, models]) => [
+        groupName,
+        models.filter(model => {
+          if (!debouncedSearchText) return true
+
+          const query = debouncedSearchText.toLowerCase().trim()
+          if (!query) return true
+
+          return (
+            (model.name && model.name.toLowerCase().includes(query)) ||
+            (model.id && model.id.toLowerCase().includes(query))
+          )
+        })
+      ])
+      .filter(([, models]) => models.length > 0)
+  )
+
   // 对分组进行排序
-  const sortedModelGroups = Object.entries(modelGroups).sort(([a], [b]) => a.localeCompare(b))
+  const sortedModelGroups = Object.entries(filteredModelGroups).sort(([a], [b]) => a.localeCompare(b))
 
   // 默认展开前6个分组
   const defaultOpenGroups = sortedModelGroups.slice(0, 6).map((_, index) => `item-${index}`)
 
   const onAddModel = () => {
-    // 添加模型逻辑
     handleOpenBottomSheet()
   }
 
   const onManageModel = () => {
-    // 管理模型逻辑
     navigation.navigate('ManageModelsScreen', { providerId })
   }
 
@@ -147,9 +176,9 @@ export default function ProviderSettingsScreen() {
                         paddingVertical={2}
                         paddingHorizontal={8}
                         borderRadius={8}
-                        backgroundColor={getGreenColor(isDark, 10)}
-                        borderColor={getGreenColor(isDark, 20)}
-                        color={getGreenColor(isDark, 100)}
+                        backgroundColor="$green10"
+                        borderColor="$green20"
+                        color="$green100"
                         borderWidth={0.5}
                         fontWeight="bold"
                         fontSize={12}>
@@ -165,7 +194,7 @@ export default function ProviderSettingsScreen() {
             <Separator />
 
             {/* Search Card */}
-            <SearchInput placeholder={t('settings.models.search')} />
+            <SearchInput placeholder={t('settings.models.search')} value={searchText} onChangeText={setSearchText} />
 
             {/* Model List Card with Accordion */}
             <YStack flex={1}>
@@ -176,27 +205,22 @@ export default function ProviderSettingsScreen() {
 
               {sortedModelGroups.length > 0 ? (
                 <Accordion overflow="hidden" type="multiple" defaultValue={defaultOpenGroups}>
-                  {sortedModelGroups.map(
-                    (
-                      [groupName, modelsInGroup],
-                      index // Renamed models to modelsInGroup to avoid conflict
-                    ) => (
-                      <ModelGroup
-                        key={groupName}
-                        groupName={groupName}
-                        models={modelsInGroup} // Use modelsInGroup
-                        index={index}
-                        renderModelButton={(model: Model) => (
-                          <Button
-                            size={14}
-                            chromeless
-                            icon={<Settings size={14} />}
-                            onPress={() => onSettingModel(model)}
-                          />
-                        )} // Add onSettingModel to dependency array
-                      />
-                    )
-                  )}
+                  {sortedModelGroups.map(([groupName, modelsInGroup], index) => (
+                    <ModelGroup
+                      key={groupName}
+                      groupName={groupName}
+                      models={modelsInGroup as Model[]}
+                      index={index}
+                      renderModelButton={(model: Model) => (
+                        <Button
+                          size={14}
+                          chromeless
+                          icon={<Settings size={14} />}
+                          onPress={() => onSettingModel(model)}
+                        />
+                      )}
+                    />
+                  ))}
                 </Accordion>
               ) : (
                 <Text textAlign="center" color="$gray10" paddingVertical={24}>
@@ -208,7 +232,7 @@ export default function ProviderSettingsScreen() {
         </KeyboardAwareScrollView>
       </SettingContainer>
 
-      <AddModelSheet bottomSheetRef={bottomSheetRef} isOpen={isBottomSheetOpen} onClose={handleBottomSheetClose} />
+      <AddModelSheet ref={bottomSheetRef} provider={provider} updateProvider={updateProvider} />
     </SafeAreaContainer>
   )
 }

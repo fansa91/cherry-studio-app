@@ -5,7 +5,7 @@ import { sortBy } from 'lodash'
 import React, { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Alert } from 'react-native'
-import { Button, Input, Stack, Text, useTheme, XStack, YStack } from 'tamagui'
+import { Button, Input, Stack, Text, XStack, YStack } from 'tamagui'
 
 import ExternalLink from '@/components/ExternalLink'
 import { SettingContainer, SettingGroupTitle, SettingHelpText } from '@/components/settings'
@@ -26,7 +26,6 @@ type ProviderSettingsRouteProp = RouteProp<RootStackParamList, 'ApiServiceScreen
 
 export default function ApiServiceScreen() {
   const { t } = useTranslation()
-  const theme = useTheme()
   const navigation = useNavigation<NavigationProps>()
   const route = useRoute<ProviderSettingsRouteProp>()
 
@@ -149,8 +148,7 @@ export default function ApiServiceScreen() {
   return (
     <SafeAreaContainer
       style={{
-        flex: 1,
-        backgroundColor: theme.background.val
+        flex: 1
       }}>
       <HeaderBar title={t('settings.provider.api_service')} onBackPress={handleBackPress} />
 

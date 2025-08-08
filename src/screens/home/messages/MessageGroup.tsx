@@ -3,12 +3,13 @@ import React from 'react'
 import { View } from 'tamagui'
 
 import { Assistant } from '@/types/assistant'
-import { GroupedMessage } from '@/types/message'
+import { AssistantMessageStatus, GroupedMessage } from '@/types/message'
 
 import MessageItem from './Message'
 import MessageFooter from './MessageFooter'
 import MessageHeader from './MessageHeader'
 import MultiModalTab from './MultiModalTab'
+
 interface MessageGroupProps {
   assistant: Assistant
   item: [string, GroupedMessage[]]
@@ -27,7 +28,10 @@ const MessageGroup: FC<MessageGroupProps> = ({ assistant, item }) => {
         <View gap={10}>
           <MessageHeader assistant={assistant} message={messagesInGroup[0]} />
           <MessageItem message={messagesInGroup[0]} />
-          <MessageFooter assistant={assistant} message={messagesInGroup[0]} />
+          {/* 输出过程中不显示footer */}
+          {messagesInGroup[0].status !== AssistantMessageStatus.PROCESSING && (
+            <MessageFooter assistant={assistant} message={messagesInGroup[0]} />
+          )}
         </View>
       )
     }

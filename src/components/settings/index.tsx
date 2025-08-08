@@ -1,5 +1,5 @@
 import { MotiView } from 'moti'
-import { Keyboard } from 'react-native'
+import { Appearance, Keyboard } from 'react-native'
 import { Separator, styled, XStack, YStack } from 'tamagui'
 import { Text, View } from 'tamagui'
 
@@ -11,12 +11,13 @@ import { Text, View } from 'tamagui'
 //   onPress: Keyboard.dismiss,
 //   overflow: 'hidden'
 // })
+const isDark = Appearance.getColorScheme() === 'dark'
 
 export const SettingContainer = styled(MotiView, {
   flex: 1,
   padding: '$4',
   gap: 20,
-  backgroundColor: '$background',
+  backgroundColor: '$colorTransparent',
   overflow: 'hidden',
 
   from: {
@@ -68,9 +69,9 @@ export const SettingDescription = styled(Text, {
 
 export const SettingDivider = styled(Separator, {
   margin: '10px 0',
-  borderBlockStartWidth: 0.5,
-  borderBlockStartStyle: 'solid',
-  borderBlockStartColor: 'var(--color-border)'
+  borderWidth: 0.5,
+  borderStyle: 'solid'
+  // borderColor: 'var(--color-border)'
 })
 
 export const SettingRow = styled(XStack, {
@@ -104,7 +105,7 @@ export const SettingGroup = styled(YStack, {
   gap: 8,
   paddingVertical: 8,
   borderRadius: 9,
-  backgroundColor: '$colorTransparent'
+  backgroundColor: '$uiCardBackground'
 })
 
 export const SettingGroupTitle = styled(Text, {
