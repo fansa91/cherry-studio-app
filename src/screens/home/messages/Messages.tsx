@@ -15,13 +15,15 @@ import MessageGroup from './MessageGroup'
 interface MessagesProps {
   assistant: Assistant
   topic: Topic
+  autoScroll: boolean
+  setAutoScroll: (value: boolean) => void
   onScroll?: (event: NativeScrollEvent) => void
   onScrollToBottom?: (scrollToBottom: () => void) => React.ReactNode
 }
 
-const Messages: FC<MessagesProps> = ({ assistant, topic, onScroll, onScrollToBottom }) => {
+const Messages: FC<MessagesProps> = ({ assistant, topic, autoScroll, setAutoScroll, onScroll, onScrollToBottom }) => {
   const { messages } = useMessages(topic.id)
-  const groupedMessages = Object.entries(getGroupedMessages(messages))
+  const groupedMessages = Object.entries(getGroupedMessages(messages)).reverse()
   const flashListRef = useRef<FlashList<[string, GroupedMessage[]]>>(null)
 
   const renderMessageGroup = ({ item }: { item: [string, GroupedMessage[]] }) => {
@@ -63,10 +65,13 @@ const Messages: FC<MessagesProps> = ({ assistant, topic, onScroll, onScrollToBot
           ItemSeparatorComponent={() => <YStack height={20} />}
           onScroll={onScroll ? ({ nativeEvent }) => onScroll(nativeEvent) : undefined}
           scrollEventThrottle={16}
-          maintainVisibleContentPosition={{
-            minIndexForVisible: 0,
-            autoscrollToTopThreshold: 100
+          inverted
+          onContentSizeChange={() => {
+            if (autoScroll) {
+              scrollToBottom()
+            }
           }}
+          onScrollBeginDrag={() => setAutoScroll(false)}
         />
       </MotiView>
       {onScrollToBottom?.(scrollToBottom)}

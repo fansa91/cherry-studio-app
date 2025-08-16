@@ -5,9 +5,8 @@ import { groupBy } from 'lodash'
 import debounce from 'lodash/debounce'
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import { Accordion, Button, Separator, Text, XStack, YStack } from 'tamagui'
+import { Accordion, Button, Separator, Stack, Text, XStack, YStack } from 'tamagui'
 
 import { SettingContainer, SettingGroup, SettingGroupTitle, SettingRow } from '@/components/settings'
 import { HeaderBar } from '@/components/settings/HeaderBar'
@@ -20,14 +19,12 @@ import { useProvider } from '@/hooks/useProviders'
 import { loggerService } from '@/services/LoggerService'
 import { Model } from '@/types/assistant'
 import { NavigationProps, RootStackParamList } from '@/types/naviagate'
-import { useIsDark } from '@/utils'
 const logger = loggerService.withContext('ProviderSettingsScreen')
 
 type ProviderSettingsRouteProp = RouteProp<RootStackParamList, 'ProviderSettingsScreen'>
 
 export default function ProviderSettingsScreen() {
   const { t } = useTranslation()
-  const isDark = useIsDark()
   const navigation = useNavigation<NavigationProps>()
   const route = useRoute<ProviderSettingsRouteProp>()
 
@@ -115,8 +112,8 @@ export default function ProviderSettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
+      <SafeAreaContainer>
+        <Stack />
       </SafeAreaContainer>
     )
   }

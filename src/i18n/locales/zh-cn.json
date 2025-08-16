@@ -86,6 +86,7 @@
       "cherry_studio_description": "强大的 AI 生产力助手",
       "clear_all": "清除全部",
       "close": "关闭",
+      "confirm": "确认",
       "description": "描述",
       "enabled": "已启用",
       "error_occurred": "发生错误",
@@ -114,6 +115,38 @@
       "visit": "访问",
       "websearch": "网络搜索",
       "yesterday": "昨天"
+    },
+    "error": {
+      "backup": {
+        "file_format": "备份文件格式错误"
+      },
+      "chat": {
+        "response": "出错了，如果没有配置 API 密钥，请前往设置 > 模型提供商中配置密钥"
+      },
+      "http": {
+        "400": "请求错误，请检查请求参数是否正确。如果修改了模型设置，请重置到默认设置",
+        "401": "身份验证失败，请检查 API 密钥是否正确",
+        "403": "禁止访问，请翻译具体报错信息查看原因，或联系服务商询问被禁止原因",
+        "404": "模型不存在或者请求路径错误",
+        "429": "请求速率超过限制，请稍后再试",
+        "500": "服务器错误，请稍后再试",
+        "502": "网关错误，请稍后再试",
+        "503": "服务不可用，请稍后再试",
+        "504": "网关超时，请稍后再试"
+      },
+      "missing_user_message": "无法切换模型响应：原始用户消息已被删除。请发送新消息以获取此模型的响应",
+      "model": {
+        "exists": "模型已存在"
+      },
+      "no_api_key": "API 密钥未配置",
+      "pause_placeholder": "已中断",
+      "provider_disabled": "模型提供商未启用",
+      "render": {
+        "description": "消息内容渲染失败，请检查消息内容格式是否正确",
+        "title": "渲染错误"
+      },
+      "unknown": "未知错误",
+      "user_message_not_found": "无法找到原始用户消息"
     },
     "errors": {
       "cannotOpenLink": "无法打开链接: {{error}}",
@@ -146,7 +179,10 @@
       "searching": "正在搜索...",
       "websearch": {
         "fetch_complete": "已完成 {{count}} 次搜索..."
-      }
+      },
+      "delete_translation": "删除翻译",
+      "translate_message": "翻译消息",
+      "delete_message": "删除消息"
     },
     "models": {
       "no_models": "暂无可用模型",
@@ -270,11 +306,14 @@
         "backup": "数据备份",
         "basic_title": "基础数据设置",
         "clear_cache": {
-          "button": "清除缓存",
+          "button": "清除缓存 ({{cacheSize}})",
           "title": "清除缓存"
         },
         "cloud_backup": "云端备份设置",
         "data.title": "数据目录",
+        "data_reset": {
+          "error": "数据重置失败。请重试，如果问题持续存在，请联系技术支持。"
+        },
         "landrop": {
           "filename": "文件名",
           "scan_qr_code": {
@@ -297,6 +336,8 @@
         },
         "recovery": "数据恢复",
         "reset": "数据重置",
+        "reset_success": "数据重置成功！应用已恢复到初始状态。",
+        "reset_warning": "您确定要重置所有数据吗？这将删除所有对话、消息和用户创建的内容。此操作无法撤销。",
         "restore": {
           "error": "恢复错误",
           "error_message": "恢复过程中出现错误，请检查文件并重试。",
@@ -407,6 +448,7 @@
       },
       "personal": {
         "name": "用户名",
+        "namePlaceholder": "请输入用户名",
         "title": "个人设置"
       },
       "provider": {
@@ -525,7 +567,7 @@
           "title": "网络搜索服务提供商"
         },
         "searchCount": "搜索数量",
-        "searchWithDates": "包含日期��索",
+        "searchWithDates": "包含日期搜索",
         "selectPlaceholder": "请选择网页搜索提供商...",
         "subscribe.title": "黑名单订阅",
         "title": "网络搜索"
@@ -544,6 +586,12 @@
         "title": "语雀配置",
         "token": "语雀 Token",
         "token_placeholder": "请输入语雀 Token"
+      },
+      "mcp": {
+        "errors": {
+          "toolNotFound": "工具 '{{name}}' 未找到",
+          "32000": "MCP 服务器错误"
+        }
       }
     },
     "topics": {
