@@ -38,15 +38,15 @@ jobs:
         shell: bash
         run: |
           cd android
-          # ./gradlew assembleRelease
-          ./gradlew bundleRelease
-          ./gradlew clean assembleRelease --no-daemon
+          ./gradlew assembleRelease
+          # ./gradlew bundleRelease
+          # ./gradlew clean assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: |
-           # android/app/build/outputs/apk/release/*.apk
-           android/app/build/outputs/apk/**/release/*.apk
-           android/app/build/outputs/bundle/release/*.aab
+           android/app/build/outputs/apk/release/*.apk
+           # android/app/build/outputs/apk/**/release/*.apk
+           # android/app/build/outputs/bundle/release/*.aab
