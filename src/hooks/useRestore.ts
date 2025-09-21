@@ -1,14 +1,14 @@
-import { useToastController } from '@tamagui/toast'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 
-import { RestoreStep } from '@/components/settings/data/RestoreProgressModal'
+import { useDialog } from '@/hooks/useDialog'
 import { ProgressUpdate, restore, RestoreStepId } from '@/services/BackupService'
 import { loggerService } from '@/services/LoggerService'
-import { FileType } from '@/types/file'
+import { FileMetadata } from '@/types/file'
 import { uuid } from '@/utils'
 import { getFileType } from '@/utils/file'
+import { RestoreStep } from '@/componentsV2/features/SettingsScreen/RestoreProgressModal'
 const logger = loggerService.withContext('useRestore')
 
 // 定义步骤配置类型
@@ -19,38 +19,21 @@ export interface StepConfig {
 
 // 预定义的步骤配置
 export const RESTORE_STEP_CONFIGS = {
-  // 公共步骤
-  RESTORE_TOPICS: { id: 'restore_topics' as RestoreStepId, titleKey: 'settings.data.restore.steps.restore_topics' },
-  RESTORE_MESSAGES_BLOCKS: {
-    id: 'restore_messages_blocks' as RestoreStepId,
-    titleKey: 'settings.data.restore.steps.restore_messages_blocks'
+  RESTORE_SETTINGS: {
+    id: 'restore_settings' as RestoreStepId,
+    titleKey: 'settings.data.restore.steps.restore_settings'
   },
-  RESTORE_LLM_PROVIDERS: {
-    id: 'restore_llm_providers' as RestoreStepId,
-    titleKey: 'settings.data.restore.steps.restore_llm_providers'
-  },
-  RESTORE_ASSISTANTS: {
-    id: 'restore_assistants' as RestoreStepId,
-    titleKey: 'settings.data.restore.steps.restore_assistants'
-  },
-  RESTORE_WEBSEARCH: {
-    id: 'restore_websearch' as RestoreStepId,
-    titleKey: 'settings.data.restore.steps.restore_websearch'
+  RESTORE_MESSAGES: {
+    id: 'restore_messages' as RestoreStepId,
+    titleKey: 'settings.data.restore.steps.restore_messages'
   }
 } as const
 
 // 预定义的步骤组合
 export const DEFAULT_RESTORE_STEPS: StepConfig[] = [
-  RESTORE_STEP_CONFIGS.RESTORE_TOPICS,
-  RESTORE_STEP_CONFIGS.RESTORE_MESSAGES_BLOCKS,
-  RESTORE_STEP_CONFIGS.RESTORE_LLM_PROVIDERS,
-  RESTORE_STEP_CONFIGS.RESTORE_ASSISTANTS,
-  RESTORE_STEP_CONFIGS.RESTORE_WEBSEARCH
+  RESTORE_STEP_CONFIGS.RESTORE_SETTINGS,
+  RESTORE_STEP_CONFIGS.RESTORE_MESSAGES
 ]
-
-export const LOCAL_RESTORE_STEPS: StepConfig[] = [...DEFAULT_RESTORE_STEPS]
-
-export const NETWORK_RESTORE_STEPS: StepConfig[] = [...DEFAULT_RESTORE_STEPS]
 
 const createStepsFromConfig = (stepConfigs: StepConfig[], t: (key: string) => string): RestoreStep[] => {
   return stepConfigs.map(config => ({
@@ -62,13 +45,16 @@ const createStepsFromConfig = (stepConfigs: StepConfig[], t: (key: string) => st
 
 export interface UseRestoreOptions {
   stepConfigs?: StepConfig[]
-  customRestoreFunction?: (file: Omit<FileType, 'md5'>, onProgress: (update: ProgressUpdate) => void) => Promise<void>
+  customRestoreFunction?: (
+    file: Omit<FileMetadata, 'md5'>,
+    onProgress: (update: ProgressUpdate) => void
+  ) => Promise<void>
 }
 
 export function useRestore(options: UseRestoreOptions = {}) {
   const { t } = useTranslation()
-  const toast = useToastController()
   const dispatch = useDispatch()
+  const dialog = useDialog()
 
   const { stepConfigs = DEFAULT_RESTORE_STEPS, customRestoreFunction = restore } = options
 
@@ -77,12 +63,13 @@ export function useRestore(options: UseRestoreOptions = {}) {
   const [overallStatus, setOverallStatus] = useState<'running' | 'success' | 'error'>('running')
 
   const validateFile = (file: { mimeType?: string; name: string; type?: string }) => {
-    const isZip = file.mimeType === 'application/zip' || file.name.endsWith('.zip') || file.type === 'application/zip'
+    const isValid = file.name.includes('cherry-studio')
 
-    if (!isZip) {
-      toast.show(t('settings.data.restore.error'), {
-        message: t('settings.data.restore.error_message'),
-        native: true
+    if (!isValid) {
+      dialog.open({
+        type: 'error',
+        title: t('error.backup.title'),
+        content: t('error.backup.file_invalid')
       })
       return false
     }
@@ -96,7 +83,7 @@ export function useRestore(options: UseRestoreOptions = {}) {
     size?: number
     mimeType?: string
     type?: string
-  }): Omit<FileType, 'md5'> => ({
+  }): Omit<FileMetadata, 'md5'> => ({
     id: uuid(),
     name: file.name,
     origin_name: file.name,
@@ -104,15 +91,19 @@ export function useRestore(options: UseRestoreOptions = {}) {
     size: file.size || 0,
     ext: file.name.split('.').pop() || '',
     type: getFileType(file.name.split('.').pop() || ''),
-    mime_type: file.mimeType || file.type || '',
     created_at: new Date().toISOString(),
     count: 1
   })
 
   const handleProgressUpdate = (update: ProgressUpdate) => {
-    setRestoreSteps(prevSteps =>
-      prevSteps.map(step => (step.id === update.step ? { ...step, status: update.status, error: update.error } : step))
-    )
+    logger.info('handleProgressUpdate called:', update.step, update.status)
+    setRestoreSteps(prevSteps => {
+      const newSteps = prevSteps.map(step =>
+        step.id === update.step ? { ...step, status: update.status, error: update.error } : step
+      )
+      logger.info('State updated for step:', update.step, 'new status:', update.status)
+      return newSteps
+    })
   }
 
   const handleError = () => {
@@ -138,14 +129,17 @@ export function useRestore(options: UseRestoreOptions = {}) {
     setOverallStatus('running')
     setModalOpen(true)
 
-    try {
-      const fileObject = createFileObject(file)
-      await customRestoreFunction(fileObject, handleProgressUpdate, dispatch)
-      setOverallStatus('success')
-    } catch (err) {
-      logger.error('Error during restore process:', err)
-      handleError()
-    }
+    // Use setTimeout to ensure the modal renders before starting the restore process
+    setTimeout(async () => {
+      try {
+        const fileObject = createFileObject(file)
+        await customRestoreFunction(fileObject, handleProgressUpdate, dispatch)
+        setOverallStatus('success')
+      } catch (err) {
+        logger.error('Error during restore process:', err)
+        handleError()
+      }
+    }, 400)
   }
 
   return {

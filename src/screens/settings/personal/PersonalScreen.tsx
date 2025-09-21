@@ -1,24 +1,20 @@
-import { useNavigation } from '@react-navigation/native'
-import { CircleUserRound } from '@tamagui/lucide-icons'
+import { Camera, CircleUserRound } from '@/componentsV2/icons/LucideIcon'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, TouchableOpacity } from 'react-native'
-import { Avatar, Input, Text, useTheme, XStack } from 'tamagui'
+import { TouchableOpacity } from 'react-native'
 
-import { SettingContainer, SettingGroup, SettingRow } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
+import { Card } from 'heroui-native'
+import { HeaderBar, Text, XStack, YStack, SafeAreaContainer, Container, Image, TextField } from '@/componentsV2'
+import { useDialog } from '@/hooks/useDialog'
 import { useSettings } from '@/hooks/useSettings'
 import { loggerService } from '@/services/LoggerService'
-import { NavigationProps } from '@/types/naviagate'
 
 const logger = loggerService.withContext('PersonalScreen')
 
 export default function PersonalScreen() {
   const { t } = useTranslation()
-  const navigation = useNavigation<NavigationProps>()
-  const theme = useTheme()
+  const dialog = useDialog()
   const { avatar, userName, setAvatar, setUserName } = useSettings()
 
   const handleAvatarPress = async () => {
@@ -39,41 +35,52 @@ export default function PersonalScreen() {
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image')
+      dialog.open({
+        type: 'error',
+        title: 'Error',
+        content: 'Failed to pick image'
+      })
       logger.error('handleAvatarPress', error as Error)
     }
   }
 
   return (
     <SafeAreaContainer>
-      <HeaderBar title={t('settings.personal.title')} onBackPress={() => navigation.goBack()} />
-      <SettingContainer>
-        <SettingGroup>
-          <TouchableOpacity
-            onPress={handleAvatarPress}
-            style={{
-              alignItems: 'center'
-            }}>
-            <Avatar circular size={80}>
-              <Avatar.Image accessibilityLabel="Avatar" src={avatar || require('@/assets/images/favicon.png')} />
-              <Avatar.Fallback delayMs={600} backgroundColor={theme.blue10} />
-            </Avatar>
-          </TouchableOpacity>
-          <SettingRow justifyContent="space-between">
-            <XStack gap={5} justifyContent="center" alignItems="center">
-              <CircleUserRound />
-              <Text>{t('settings.personal.name')}</Text>
+      <HeaderBar title={t('settings.personal.title')} />
+      <Container>
+        <Card className="p-4 rounded-2xl bg-ui-card-background dark:bg-ui-card-background-dark">
+          <YStack className="gap-6">
+            <XStack className="items-center justify-center mt-2">
+              <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
+                <XStack className="relative">
+                  <Image
+                    className="w-24 h-24 rounded-full"
+                    source={avatar ? { uri: avatar } : require('@/assets/images/favicon.png')}
+                  />
+                  <XStack className="absolute bottom-0 right-0 bg-blue-100 p-1.5 rounded-full border-2 border-white">
+                    <Camera className="text-white" size={14} />
+                  </XStack>
+                </XStack>
+              </TouchableOpacity>
             </XStack>
-            <Input
-              height={30}
-              minWidth={200}
-              value={userName}
-              onChangeText={setUserName}
-              placeholder={t('settings.personal.namePlaceholder')}
-            />
-          </SettingRow>
-        </SettingGroup>
-      </SettingContainer>
+
+            <XStack className="gap-2 justify-between items-center rounded-2xl py-0 pl-3.5">
+              <XStack className="gap-1.5 items-center">
+                <CircleUserRound />
+                <Text>{t('settings.personal.name')}</Text>
+              </XStack>
+
+              <TextField className="flex-1">
+                <TextField.Input
+                  value={userName}
+                  onChangeText={setUserName}
+                  placeholder={t('settings.personal.namePlaceholder')}
+                />
+              </TextField>
+            </XStack>
+          </YStack>
+        </Card>
+      </Container>
     </SafeAreaContainer>
   )
 }

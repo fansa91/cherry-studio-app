@@ -27,9 +27,16 @@
       "settings.reasoning.high": "High",
       "settings.reasoning.low": "Low",
       "settings.reasoning.medium": "Medium",
+      "settings.reasoning.minimal": "Weinian",
       "settings.reasoning.off": "Off",
       "settings.stream_output": "Stream Output",
       "settings.temperature": "Temperature",
+      "settings.tooluse": {
+        "empty": "Tool invocation method not set",
+        "function": "function call",
+        "prompt": "Prompt invocation",
+        "title": "Tool invocation method"
+      },
       "settings.top_p": "Top P",
       "sort": {
         "alphabetical": "Alphabetical",
@@ -38,6 +45,7 @@
         "title": "Sort Assistants"
       },
       "title": "Assistants",
+      "title.change": "Switch Assistant",
       "title.create": "Create Assistant",
       "title.edit": "Edit Assistant",
       "title.mine": "My assistant",
@@ -45,13 +53,19 @@
     },
     "button": {
       "add": "Add",
+      "best_answer": "Best Answer",
       "checking": "Checking...",
+      "generate_topic_name": "Generate Topic Name",
       "image_generate": "Image generation",
       "manage": "Manage",
+      "multiple": "Multi",
       "placeholder": "Ask something casually",
       "recents": "Recents",
+      "rename_topic_name": "Rename Topic Name",
       "save": "Save",
+      "save_image": "Save to Photos",
       "select_model": "Select Model",
+      "share": "Share",
       "sort": "Sort",
       "start_check_model": "Let's Start",
       "success": "Successful!",
@@ -87,11 +101,18 @@
       "clear_all": "Clear All",
       "close": "Close",
       "confirm": "Confirm",
+      "copied": "Copied",
+      "copy": "Copy Text",
+      "delete": "Delete",
+      "delete_translation": "Delete Translation",
       "description": "Description",
+      "detail": "Details",
+      "edit": "Edit",
       "enabled": "Enabled",
       "error_occurred": "An error occurred",
       "file": "File",
       "generateImage": "Create an image",
+      "go_to_settings": "Settings",
       "language": "Language",
       "last_month": "Last Month",
       "last_week": "Last Week",
@@ -103,26 +124,44 @@
       "older": "Older",
       "others": "Others",
       "photo": "Photo",
+      "play": "Play",
       "preset": "Preset",
       "prompt": "Prompt",
+      "regenerate": "Regenerate",
+      "rename": "Rename",
       "save": "Save",
+      "saved": "Saved",
       "search_placeholder": "Search...",
       "see_all": "See All",
+      "select_text": "Select Text",
       "source": "Source",
+      "stop": "Stop",
       "this_week": "This Week",
       "today": "Today",
       "tool": "Tool",
+      "translate": "Translate",
       "visit": "Visit",
       "websearch": "Web Search",
       "yesterday": "Yesterday"
     },
     "error": {
+      "availableProviders": "Available Providers",
+      "availableTools": "Available Tools",
       "backup": {
-        "file_format": "Backup file format error"
+        "file_format": "Backup file format error",
+        "file_invalid": "The backup file is invalid. You need to export it to a mobile device through Cherry Studio.",
+        "title": "Backup failed"
       },
+      "cause": "Cause",
       "chat": {
         "response": "An error occurred. If no API key is configured, please go to Settings > Model Provider to set up the key."
       },
+      "content": "Content",
+      "data": "Data",
+      "detail": "Error Details",
+      "errors": "Errors",
+      "finishReason": "Finish Reason",
+      "functionality": "Functionality",
       "http": {
         "400": "Request error, please check if the request parameters are correct. If you have modified the model settings, please reset them to the default settings.",
         "401": "Authentication failed, please check if the API key is correct.",
@@ -134,19 +173,49 @@
         "503": "Service unavailable, please try again later",
         "504": "Gateway timeout, please try again later."
       },
+      "lastError": "Last Error",
+      "maxEmbeddingsPerCall": "Max Embeddings Per Call",
+      "message": "Error Message",
       "missing_user_message": "Unable to switch model response: The original user message has been deleted. Please send a new message to get a response from this model.",
       "model": {
         "exists": "Model already exists"
       },
+      "modelId": "Model ID",
+      "modelType": "Model Type",
+      "name": "Error Name",
       "no_api_key": "API key is not configured",
+      "originalError": "Original Error",
+      "originalMessage": "Original Message",
+      "parameter": "Parameter",
       "pause_placeholder": "Interrupted",
+      "prompt": "Prompt",
+      "provider": "Provider",
+      "providerId": "Provider ID",
       "provider_disabled": "Model provider not enabled",
+      "reason": "Reason",
       "render": {
         "description": "Failed to render message content. Please check if the message format is correct.",
         "title": "Rendering error"
       },
+      "requestBodyValues": "Request Body",
+      "requestUrl": "Request URL",
+      "response": "Response",
+      "responseBody": "Response Body",
+      "responseHeaders": "Response Headers",
+      "responses": "Responses",
+      "role": "Role",
+      "stack": "Stack Trace",
+      "statusCode": "Status Code",
+      "statusText": "Status Text",
+      "text": "Text",
+      "toolInput": "Tool Input",
+      "toolName": "Tool Name",
+      "translate_assistant_model_not_defined": "Translate assistant model is not configured. Please go to Settings > Default Assistant to configure the translation assistant model",
       "unknown": "Unknown error",
-      "user_message_not_found": "Unable to locate the original user message"
+      "usage": "Usage",
+      "user_message_not_found": "Unable to locate the original user message",
+      "value": "Value",
+      "values": "Values"
     },
     "errors": {
       "cannotOpenLink": "Cannot open link: {{error}}",
@@ -155,12 +224,60 @@
       "error_title": "Error",
       "linkErrorTitle": "Link Opening Error"
     },
+    "export": {
+      "image": "Export as image",
+      "joplin": "Export to Joplin",
+      "md": {
+        "label": "Export as markdown",
+        "reason": "Export as Markdown (with reasoning)"
+      },
+      "notion": "Export to Notion",
+      "obsidian": "Export to Obsidian",
+      "obsidian_atributes": "Configure Note Attributes",
+      "obsidian_btn": "Confirm",
+      "obsidian_created": "Creation Time",
+      "obsidian_created_placeholder": "Please select the creation time",
+      "obsidian_export_failed": "Export failed",
+      "obsidian_export_success": "Export success",
+      "obsidian_fetch_error": "Failed to fetch Obsidian vaults",
+      "obsidian_fetch_folders_error": "Failed to fetch folder structure",
+      "obsidian_loading": "Loading...",
+      "obsidian_no_vault_selected": "Please select a vault first",
+      "obsidian_no_vaults": "No Obsidian vaults found",
+      "obsidian_operate": "Operation Method",
+      "obsidian_operate_append": "Append",
+      "obsidian_operate_new_or_overwrite": "Create New (Overwrite if it exists)",
+      "obsidian_operate_placeholder": "Please select the operation method",
+      "obsidian_operate_prepend": "Prepend",
+      "obsidian_path": "Path",
+      "obsidian_path_placeholder": "Please select the path",
+      "obsidian_reasoning": "Include Reasoning Chain",
+      "obsidian_root_directory": "Root Directory",
+      "obsidian_select_vault_first": "Please select a vault first",
+      "obsidian_source": "Source",
+      "obsidian_source_placeholder": "Please enter the source",
+      "obsidian_tags": "Tags",
+      "obsidian_tags_placeholder": "Please enter tags, separate multiple tags with commas",
+      "obsidian_title": "Title",
+      "obsidian_title_placeholder": "Please enter the title",
+      "obsidian_title_required": "The title cannot be empty",
+      "obsidian_vault": "Vault",
+      "obsidian_vault_placeholder": "Please select the vault name",
+      "siyuan": "Export to Siyuan Note",
+      "title": "Export Message",
+      "title_naming_failed": "Failed to generate title, using default title",
+      "title_naming_success": "Title generated successfully",
+      "wait_for_title_naming": "Generating title...",
+      "word": "Export as Word",
+      "yuque": "Export to Yuque"
+    },
     "history": {
       "search.placeholder": "Search topics or messages...",
       "search.topics.empty": "No topics found, press Enter to search all messages",
       "topics.empty": " No topics found"
     },
     "inputs": {
+      "mentions": "@ {{number}} models",
       "placeholder": "Send Message..."
     },
     "menu": {
@@ -176,13 +293,20 @@
       }
     },
     "message": {
+      "assistant_deleted": "Assistant deleted",
+      "delete_message": "Delete Message",
+      "delete_message_confirmation": "Are you sure you want to delete this message?",
+      "delete_topic": "Delete Topic",
+      "delete_topic_confirmation": "Are you sure you want to delete this topic?",
+      "delete_translation": "Remove Translation",
+      "marked_as_best_answer": "Marked as best answer",
       "searching": "Searching...",
+      "topic_deleted": "Topic deleted",
+      "translate_message": "Translate Message",
+      "unmarked_as_best_answer": "Unmarked as best answer",
       "websearch": {
         "fetch_complete": "Completed {{count}} searches..."
-      },
-      "delete_translation": "Remove Translation",
-      "translate_message": "Translate Message",
-      "delete_message": "Delete Message"
+      }
     },
     "models": {
       "no_models": "No models available",
@@ -207,13 +331,16 @@
       "noContent": "No {{type}} content yet"
     },
     "provider": {
+      "302ai": "302.AI",
       "aihubmix": "AiHubMix",
       "alayanew": "Alaya NeW",
       "anthropic": "Anthropic",
+      "aws-bedrock": "AWS Bedrock",
       "azure-openai": "Azure OpenAI",
       "baichuan": "Baichuan",
       "baidu-cloud": "Baidu Cloud",
       "burncloud": "BurnCloud",
+      "cephalon": "Cephalon",
       "copilot": "GitHub Copilot",
       "dashscope": "Alibaba Cloud",
       "deepseek": "DeepSeek",
@@ -230,11 +357,13 @@
       "hyperbolic": "Hyperbolic",
       "infini": "Infini",
       "jina": "Jina",
+      "lanyun": "LANYUN",
       "lmstudio": "LM Studio",
       "minimax": "MiniMax",
       "mistral": "Mistral",
       "modelscope": "ModelScope",
       "moonshot": "Moonshot",
+      "new-api": "New API",
       "nvidia": "Nvidia",
       "o3": "O3",
       "ocoolai": "ocoolAI",
@@ -242,14 +371,17 @@
       "openai": "OpenAI",
       "openrouter": "OpenRouter",
       "perplexity": "Perplexity",
+      "ph8": "PH8",
+      "poe": "Poe",
       "ppio": "PPIO",
-      "qiniu": "Qiniu",
+      "qiniu": "Qiniu AI",
       "qwenlm": "QwenLM",
       "silicon": "SiliconFlow",
       "stepfun": "StepFun",
       "tencent-cloud-ti": "Tencent Cloud TI",
       "together": "Together",
       "tokenflux": "TokenFlux",
+      "vertexai": "Vertex AI",
       "voyageai": "Voyage AI",
       "xirang": "State Cloud Xirang",
       "yi": "Yi",
@@ -287,11 +419,11 @@
           "name": "Default Assistant"
         },
         "empty": "No Assistant yet...",
-        "title": "Default Assistant",
-        "topic_naming_assistant": {
-          "description": "Assistant used when automatically naming a new topic",
-          "name": "Topic Naming Assistant"
+        "quick_assistant": {
+          "description": "Assistant used for simple tasks such as topic naming and keyword extraction",
+          "name": "Quick Assistant"
         },
+        "title": "Default Assistant",
         "translate_assistant": {
           "description": "Assistant used for translation service",
           "name": "Translation Assistant"
@@ -300,6 +432,7 @@
       "assistant.show.icon": "Show model icon",
       "data": {
         "app_data": "App Data",
+        "app_data_location": "App data location",
         "app_knowledge": "Knowledge Base Files",
         "app_knowledge.remove_all": "Remove Files",
         "app_logs": "App Logs",
@@ -318,6 +451,9 @@
           "filename": "File Name",
           "scan_qr_code": {
             "description": "Scan QR Code from Cherry Studio",
+            "grant_permission": "Grant Permission",
+            "permission_denied": "Camera permission not granted. Please enable it in your device settings to scan QR codes.",
+            "requesting_permission": "Requesting camera permission...",
             "success": "Connection Successful 🎉",
             "success_description": "You can now Click Send Button to Restore Data!",
             "title": "Scan QR Code"
@@ -334,6 +470,7 @@
           },
           "title": "Landrop"
         },
+        "log_location": "Log file location",
         "recovery": "Data Recovery",
         "reset": "Data Reset",
         "reset_success": "Data reset successful! The app has been restored to its initial state.",
@@ -350,11 +487,8 @@
             "success_description": "Restore Successful, Enjoy your time!"
           },
           "steps": {
-            "restore_assistants": "Restore Assistants",
-            "restore_llm_providers": "Restore LLM Providers",
-            "restore_messages_blocks": "Restore Messages and Blocks",
-            "restore_topics": " Restore Topics",
-            "restore_websearch": "Restore Web Search"
+            "restore_messages": "Restore messages",
+            "restore_settings": "Restore configuration"
           }
         },
         "third_party": "Third-party Connections",
@@ -388,6 +522,12 @@
         "token_placeholder": "Joplin Authorization Token",
         "url": "Joplin Web Clipper Service URL",
         "url_placeholder": "http://127.0.0.1:41184/"
+      },
+      "mcp": {
+        "errors": {
+          "32000": "MCP server error",
+          "toolNotFound": "Tool '{{name}}' not found"
+        }
       },
       "modelAndService": "AI Models & Services",
       "models": {
@@ -475,12 +615,22 @@
           "login": "Log in",
           "title": "{{provider}} Service"
         },
+        "check_failed": {
+          "api_key_empty": "API key cannot be empty",
+          "model_api_key_empty": "Model and API key cannot be empty",
+          "model_empty": "Model cannot be empty.",
+          "title": "Model check failed"
+        },
         "delete.content": "Are you sure you want to delete this provider?",
         "delete.title": "Delete Provider",
+        "edit": {
+          "title": "Edit Provider"
+        },
         "enabled": "On",
         "list.title": "Provider List",
         "not_found": "Provider not found",
         "not_found_message": "There is an error navigate to the provider page.",
+        "provider_deleted": "Provider deleted",
         "search": "Search Providers...",
         "title": "Model Provider"
       },
@@ -555,7 +705,7 @@
         "check_success_message": "The API is working properly",
         "contentLengthLimit": "Content Length Limit",
         "empty": "No Provider yet...",
-        "empty.description": "Click Button To Add Provider",
+        "empty.description": "Go to Add Provider",
         "overrideSearchService": "Override search service",
         "provider": {
           "api": {
@@ -586,16 +736,14 @@
         "title": "Yuque Configuration",
         "token": "Yuque Token",
         "token_placeholder": "Please enter the Yuque Token"
-      },
-      "mcp": {
-        "errors": {
-          "toolNotFound": "Tool '{{name}}' not found",
-          "32000": "MCP server error"
-        }
       }
     },
     "topics": {
       "new_topic": "New Topic",
+      "rename": {
+        "title": "Rename Topic"
+      },
+      "select_assistant": "Select New Assistant",
       "title": "Topic",
       "title.recent": "Recent Topics"
     }

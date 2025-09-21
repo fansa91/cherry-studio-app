@@ -1,7 +1,8 @@
 import { CompletionUsage } from 'openai/resources/completions.mjs'
 
 import { Assistant, Metrics, Model, Topic, Usage } from './assistant'
-import { FileType } from './file'
+import { SerializedError } from './error'
+import { FileMetadata } from './file'
 import { GenerateImageResponse } from './image'
 import { KnowledgeReference } from './knowledge'
 import { MCPServer, MCPToolResponse } from './mcp'
@@ -41,7 +42,7 @@ export interface BaseMessageBlock {
   status: MessageBlockStatus // 块状态
   model?: Model // 使用的模型
   metadata?: Record<string, any> // 通用元数据
-  error?: Record<string, any> // Added optional error field to base
+  error?: SerializedError // Added optional error field to base
 }
 
 export interface PlaceholderMessageBlock extends BaseMessageBlock {
@@ -84,7 +85,7 @@ export interface CodeMessageBlock extends BaseMessageBlock {
 export interface ImageMessageBlock extends BaseMessageBlock {
   type: MessageBlockType.IMAGE
   url?: string // For generated images or direct links
-  file?: FileType // For user uploaded image files
+  file?: FileMetadata // For user uploaded image files
   metadata?: BaseMessageBlock['metadata'] & {
     prompt?: string
     negativePrompt?: string
@@ -114,7 +115,7 @@ export interface CitationMessageBlock extends BaseMessageBlock {
 // 文件块
 export interface FileMessageBlock extends BaseMessageBlock {
   type: MessageBlockType.FILE
-  file: FileType // 文件信息
+  file: FileMetadata // 文件信息
 }
 // 错误块
 export interface ErrorMessageBlock extends BaseMessageBlock {
@@ -196,7 +197,7 @@ export interface MessageInputBaseParams {
   assistant: Assistant
   topic: Topic
   content?: string
-  files?: FileType[]
+  files?: FileMetadata[]
   knowledgeBaseIds?: string[]
   mentions?: Model[]
   /**

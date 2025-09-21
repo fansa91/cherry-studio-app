@@ -1,67 +1,116 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import { Copy, MoreHorizontal, RefreshCw } from '@tamagui/lucide-icons'
-import * as Clipboard from 'expo-clipboard'
+import { ImpactFeedbackStyle } from 'expo-haptics'
 import React, { useRef } from 'react'
-import { Button, View, XStack } from 'tamagui'
+import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 
-import { loggerService } from '@/services/LoggerService'
-import { regenerateAssistantMessage } from '@/services/MessagesService'
-import { useAppDispatch } from '@/store'
+import { TranslatedIcon, TranslationIcon } from '@/componentsV2/icons'
+import { IconButton, XStack, SelectionSheet } from '@/componentsV2'
+import {
+  AudioLines,
+  CirclePause,
+  Copy,
+  MoreHorizontal,
+  RefreshCw,
+  ThumbsUp,
+  Trash2
+} from '@/componentsV2/icons/LucideIcon'
+import { useMessageActions } from '@/hooks/useMessageActions'
 import { Assistant } from '@/types/assistant'
 import { Message } from '@/types/message'
-import { filterMessages } from '@/utils/messageUtils/filters'
-import { getMainTextContent } from '@/utils/messageUtils/find'
-
-import MessageFooterMoreSheet from './MessageFooterMoreSheet'
-
-const logger = loggerService.withContext('MessageFooter')
+import { haptic } from '@/utils/haptic'
 
 interface MessageFooterProps {
   assistant: Assistant
   message: Message
+  isMultiModel?: boolean
 }
 
-const MessageFooter = ({ message, assistant }: MessageFooterProps) => {
-  const dispatch = useAppDispatch()
+const MessageFooter = ({ message, assistant, isMultiModel = false }: MessageFooterProps) => {
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
+  const {
+    isTranslated,
+    playState,
+    handleCopy,
+    handleRegenerate,
+    handlePlay,
+    handleBestAnswer,
+    handleDeleteTranslation,
+    handleTranslate,
+    handleDelete
+  } = useMessageActions({
+    message,
+    assistant
+  })
 
-  const onCopy = async () => {
-    // todo: 暂时无法复制翻译后的message
-    try {
-      const filteredMessages = await filterMessages([message])
-      logger.info('Filtered Messages:', filteredMessages)
-      const mainContent = await getMainTextContent(filteredMessages[0])
-      await Clipboard.setStringAsync(mainContent)
-    } catch (error) {
-      logger.error('Error copying message:', error)
-      // 可以添加 toast 提示用户复制失败
+  const { t } = useTranslation()
+
+  const moreItems = [
+    {
+      id: 'translate',
+      label: isTranslated ? t('common.delete_translation') : t('message.translate_message'),
+      icon: isTranslated ? (
+        <TranslatedIcon size={18} color={isTranslated ? 'red' : '$textPrimary'} />
+      ) : (
+        <TranslationIcon size={18} color="$textPrimary" />
+      ),
+      color: isTranslated ? '$red100' : undefined,
+      backgroundColor: isTranslated ? '$red20' : undefined,
+      onSelect: isTranslated ? handleDeleteTranslation : handleTranslate
+    },
+    {
+      id: 'delete',
+      label: t('message.delete_message'),
+      icon: <Trash2 size={18} className="text-red-600" />,
+      color: '$red100',
+      backgroundColor: '$red20',
+      onSelect: handleDelete
     }
-  }
+  ]
 
-  const onRegenerate = async () => {
-    try {
-      await regenerateAssistantMessage(message, assistant, dispatch)
-    } catch (error) {
-      logger.error('Error regenerating message:', error)
-      // 可以添加 toast 提示用户重新生成失败
+  const getAudioIcon = () => {
+    switch (playState) {
+      case 'playing':
+        return <CirclePause size={18} className="text-text-secondary dark:text-text-secondary-dark " />
+      default:
+        return <AudioLines size={18} className="text-text-secondary dark:text-text-secondary-dark" />
     }
   }
 
   return (
-    <View>
-      <XStack gap={20}>
-        <Button chromeless circular size={24} icon={<Copy size={18} />} onPress={onCopy}></Button>
-        <Button chromeless circular size={24} icon={<RefreshCw size={18} />} onPress={onRegenerate}></Button>
-        <Button
-          chromeless
-          circular
-          size={24}
-          icon={<MoreHorizontal size={18} />}
+    <View className="px-5 pb-3.5">
+      <XStack className="gap-5">
+        <IconButton
+          icon={<Copy size={18} className="text-text-secondary dark:text-text-secondary-dark" />}
+          onPress={handleCopy}
+        />
+        <IconButton
+          icon={<RefreshCw size={18} className="text-text-secondary dark:text-text-secondary-dark" />}
+          onPress={handleRegenerate}
+        />
+        <IconButton icon={getAudioIcon()} onPress={handlePlay} />
+        {message.role === 'assistant' && isMultiModel && (
+          <IconButton
+            icon={
+              message.useful ? (
+                <ThumbsUp size={18} className="text-green-600" />
+              ) : (
+                <ThumbsUp size={18} className="text-text-secondary dark:text-text-secondary-dark" />
+              )
+            }
+            onPress={handleBestAnswer}
+          />
+        )}
+        <IconButton
+          icon={<MoreHorizontal size={18} className="text-text-secondary dark:text-text-secondary-dark" />}
           onPress={() => {
+            haptic(ImpactFeedbackStyle.Medium)
             bottomSheetModalRef.current?.present()
-          }}></Button>
+          }}
+        />
       </XStack>
-      <MessageFooterMoreSheet ref={bottomSheetModalRef} message={message} />
+
+      <SelectionSheet ref={bottomSheetModalRef} items={moreItems} />
     </View>
   )
 }

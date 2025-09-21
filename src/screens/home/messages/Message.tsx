@@ -1,23 +1,18 @@
-import { FC, memo } from 'react'
-import React from 'react'
-import { View, YStack } from 'tamagui'
+import React, { FC, memo } from 'react'
 
+import { Assistant } from '@/types/assistant'
 import { Message } from '@/types/message'
 
 import MessageContent from './MessageContent'
 
 interface MessageItemProps {
   message: Message
+  assistant?: Assistant
+  isMultiModel?: boolean
 }
 
-const MessageItem: FC<MessageItemProps> = ({ message }) => {
-  return (
-    <View flex={1}>
-      <YStack flex={1}>
-        <MessageContent message={message} />
-      </YStack>
-    </View>
-  )
+const MessageItem: FC<MessageItemProps> = ({ message, assistant, isMultiModel = false }) => {
+  return <MessageContent message={message} assistant={assistant} isMultiModel={isMultiModel} />
 }
 
 export default memo(MessageItem)

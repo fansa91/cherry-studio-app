@@ -1,42 +1,40 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
-import { ChevronRight } from '@tamagui/lucide-icons'
-import { useCallback, useState } from 'react'
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Text, useTheme, XStack, YStack } from 'tamagui'
 
-import { SettingContainer, SettingGroup, SettingGroupTitle, SettingRow } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { CustomSwitch } from '@/components/ui/Switch'
+import {
+  Container,
+  Group,
+  GroupTitle,
+  HeaderBar,
+  PressableRow,
+  RowRightArrow,
+  SafeAreaContainer,
+  Text,
+  XStack,
+  YStack
+} from '@/componentsV2'
 import { languagesOptions } from '@/config/languages'
-import { themeOptions } from '@/config/theme'
-import { NavigationProps } from '@/types/naviagate'
+import { useTheme } from '@/hooks/useTheme'
+import { GeneralSettingsNavigationProps } from '@/types/naviagate'
+import { storage } from '@/utils'
 
 export default function GeneralSettingsScreen() {
   const { t, i18n } = useTranslation()
 
   const [language, setLanguage] = useState('zh-CN')
-  const [currentTheme, setCurrentTheme] = useState('system')
+  const { activeTheme } = useTheme()
 
-  const theme = useTheme()
-  const navigation = useNavigation<NavigationProps>()
+  const navigation = useNavigation<GeneralSettingsNavigationProps>()
 
   const handleFocus = useCallback(() => {
     const loadSettings = async () => {
-      const storedLanguage = await AsyncStorage.getItem('language')
+      const storedLanguage = storage.getString('language')
 
       if (storedLanguage) {
         setLanguage(storedLanguage)
       } else {
         setLanguage(i18n.language)
-      }
-
-      const storedTheme = await AsyncStorage.getItem('theme')
-
-      if (storedTheme) {
-        setCurrentTheme(storedTheme)
       }
     }
 
@@ -50,50 +48,45 @@ export default function GeneralSettingsScreen() {
     return currentLang ? `${currentLang.flag} ${currentLang.label}` : 'English'
   }
 
-  const getCurrentTheme = () => {
-    const currentThemeOption = themeOptions.find(item => item.value === currentTheme)
-    return currentThemeOption ? t(currentThemeOption.label) : t('settings.general.theme.auto')
-  }
-
   return (
-    <SafeAreaContainer style={{ flex: 1 }}>
-      <HeaderBar title={t('settings.general.title')} onBackPress={() => navigation.goBack()} />
-      <SettingContainer>
-        <YStack gap={24} flex={1}>
+    <SafeAreaContainer className="flex-1">
+      <HeaderBar title={t('settings.general.title')} />
+      <Container>
+        <YStack className="gap-6 flex-1">
           {/* Display settings */}
-          <YStack gap={8}>
-            <SettingGroupTitle>{t('settings.general.display.title')}</SettingGroupTitle>
-            <SettingGroup>
-              <SettingRow onPress={() => navigation.navigate('ThemeSettingsScreen')}>
-                <XStack alignItems="center">
-                  <Text fontSize="$5">{t('settings.general.theme.title')}</Text>
+          <YStack className="gap-2">
+            <GroupTitle>{t('settings.general.display.title')}</GroupTitle>
+            <Group>
+              <PressableRow onPress={() => navigation.navigate('ThemeSettingsScreen')}>
+                <XStack className="items-center">
+                  <Text className="text-lg">{t('settings.general.theme.title')}</Text>
                 </XStack>
-                <XStack alignItems="center" space="$2">
-                  <Text color="$colorFocus">{getCurrentTheme()}</Text>
-                  <ChevronRight size={24} color="$colorFocus" />
+                <XStack className="items-center gap-2">
+                  <Text className="text-gray-500">{t(`settings.general.theme.${activeTheme}`)}</Text>
+                  <RowRightArrow />
                 </XStack>
-              </SettingRow>
-            </SettingGroup>
+              </PressableRow>
+            </Group>
           </YStack>
 
           {/* General settings */}
-          <YStack gap={8}>
-            <SettingGroupTitle>{t('settings.general.title')}</SettingGroupTitle>
-            <SettingGroup>
-              <SettingRow onPress={() => navigation.navigate('LanguageChangeScreen')}>
-                <XStack alignItems="center">
-                  <Text fontSize="$5">{t('settings.general.language.title')}</Text>
+          <YStack className="gap-2">
+            <GroupTitle>{t('settings.general.title')}</GroupTitle>
+            <Group>
+              <PressableRow onPress={() => navigation.navigate('LanguageChangeScreen')}>
+                <XStack className="items-center">
+                  <Text className="text-lg">{t('settings.general.language.title')}</Text>
                 </XStack>
-                <XStack alignItems="center" space="$2">
-                  <Text color="$colorFocus">{getCurrentLanguage()}</Text>
-                  <ChevronRight size={24} color="$colorFocus" />
+                <XStack className="items-center gap-2">
+                  <Text>{getCurrentLanguage()}</Text>
+                  <RowRightArrow />
                 </XStack>
-              </SettingRow>
-            </SettingGroup>
+              </PressableRow>
+            </Group>
           </YStack>
 
           {/* Privacy settings */}
-          <YStack gap={8}>
+          {/*<YStack gap={8}>
             <SettingGroupTitle>{t('settings.general.display.title')}</SettingGroupTitle>
             <SettingGroup>
               <SettingRow>
@@ -103,9 +96,9 @@ export default function GeneralSettingsScreen() {
                 <CustomSwitch />
               </SettingRow>
             </SettingGroup>
-          </YStack>
+          </YStack>*/}
         </YStack>
-      </SettingContainer>
+      </Container>
     </SafeAreaContainer>
   )
 }

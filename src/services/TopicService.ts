@@ -7,6 +7,7 @@ import { uuid } from '@/utils'
 import {
   deleteTopicById as _deleteTopicById,
   deleteTopicsByAssistantId as _deleteTopicsByAssistantId,
+  getNewestTopic as _getNewestTopic,
   getTopicById as _getTopicById,
   getTopics as _getTopics,
   getTopicsByAssistantId as _getTopicsByAssistantId,
@@ -40,14 +41,18 @@ export async function upsertTopics(topics: Topic[]): Promise<void> {
   await _upsertTopics(updatedTopics)
 }
 
+/**
+ * rank topic by createdAt time
+ * @returns Topic
+ */
 export async function getNewestTopic(): Promise<Topic | null> {
-  const topics = await getTopics()
+  const newestTopic = await _getNewestTopic()
 
-  if (topics.length === 0) {
+  if (!newestTopic) {
     return null
   }
 
-  return topics[0]
+  return newestTopic
 }
 
 export async function deleteTopicById(topicId: string): Promise<void> {
@@ -106,6 +111,29 @@ export async function deleteTopicsByAssistantId(assistantId: string): Promise<vo
     await _deleteTopicsByAssistantId(assistantId)
   } catch (error) {
     logger.error('Failed to delete topic:', error)
+    throw error
+  }
+}
+
+export async function renameTopic(topicId: string, newName: string): Promise<void> {
+  try {
+    const topic = await getTopicById(topicId)
+
+    if (!topic) {
+      throw new Error(`Topic with ID ${topicId} not found`)
+    }
+
+    const updatedTopic: Topic = {
+      ...topic,
+      name: newName.trim(),
+      updatedAt: new Date().toISOString(),
+      isNameManuallyEdited: true
+    }
+
+    await upsertTopics([updatedTopic])
+    logger.info('renameTopic', topicId, newName)
+  } catch (error) {
+    logger.error('Failed to rename topic:', error)
     throw error
   }
 }

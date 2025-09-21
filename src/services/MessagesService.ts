@@ -3,15 +3,14 @@ import { LRUCache } from 'lru-cache'
 
 import ModernAiProvider from '@/aiCore/index_new'
 import { AiSdkMiddlewareConfig } from '@/aiCore/middleware/AiSdkMiddlewareBuilder'
-import { buildStreamTextParams, convertMessagesToSdkMessages } from '@/aiCore/transformParameters'
-import { isDedicatedImageGenerationModel } from '@/config/models/image'
+import { buildStreamTextParams, convertMessagesToSdkMessages } from '@/aiCore/prepareParams'
 import { loggerService } from '@/services/LoggerService'
 import { AppDispatch } from '@/store'
 import { newMessagesActions } from '@/store/newMessage'
 import { Assistant, Model, Topic, Usage } from '@/types/assistant'
 import { ChunkType } from '@/types/chunk'
-import { FileType, FileTypes } from '@/types/file'
-import { AssistantMessageStatus, Message, MessageBlock, MessageBlockStatus } from '@/types/message'
+import { FileMetadata, FileTypes } from '@/types/file'
+import { AssistantMessageStatus, Message, MessageBlock, MessageBlockStatus, MessageBlockType } from '@/types/message'
 import { uuid } from '@/utils'
 import { addAbortController } from '@/utils/abortController'
 import {
@@ -20,6 +19,7 @@ import {
   createImageBlock,
   createMainTextBlock,
   createMessage,
+  createTranslationBlock,
   resetAssistantMessage
 } from '@/utils/messageUtils/create'
 import { getTopicQueue } from '@/utils/queue'
@@ -41,9 +41,10 @@ import {
   upsertMessages
 } from '../../db/queries/messages.queries'
 import { getTopicById, updateTopicMessages } from '../../db/queries/topics.queries'
+import { fetchTopicNaming } from './ApiService'
 import { getAssistantById, getDefaultModel } from './AssistantService'
 import { BlockManager, createCallbacks } from './messageStreaming'
-import { OrchestrationService } from './OrchestrationService'
+import { transformMessagesAndFetch } from './OrchestrationService'
 import { getAssistantProvider } from './ProviderService'
 import { createStreamProcessor, StreamProcessorCallbacks } from './StreamProcessingService'
 
@@ -74,7 +75,7 @@ export function getUserMessage({
   topic: Topic
   type?: Message['type']
   content?: string
-  files?: FileType[]
+  files?: FileMetadata[]
   mentions?: Model[]
   usage?: Usage
 }): { message: Message; blocks: MessageBlock[] } {
@@ -134,6 +135,7 @@ export function getUserMessage({
  * @param userMessageBlocks 用户消息关联的消息块
  * @param assistant 助手对象
  * @param topicId 主题ID
+ * @param dispatch Redux dispatch 函数
  */
 export async function sendMessage(
   userMessage: Message,
@@ -217,7 +219,7 @@ export async function regenerateAssistantMessage(
     const resetAssistantMsg = resetAssistantMessage(
       messageToResetEntity,
       // Grouped message (mentioned model message) should not reset model and modelId, always use the original model
-      assistantMessage.modelId
+      assistantMessage.mentions
         ? {
             status: AssistantMessageStatus.PENDING,
             updatedAt: new Date().toISOString()
@@ -239,17 +241,13 @@ export async function regenerateAssistantMessage(
     // const finalMessagesToSave = await getMessagesByTopicId(topicId)
 
     // 7. Add fetch/process call to the queue
-    const queue = getTopicQueue(topicId)
     const assistantConfigForRegen = {
       ...assistant,
       ...(resetAssistantMsg.model ? { model: resetAssistantMsg.model } : {})
     }
 
     // Add the fetch/process call to the queue
-    queue.add(
-      async () =>
-        await fetchAndProcessAssistantResponseImpl(topicId, assistantConfigForRegen, resetAssistantMsg, dispatch)
-    )
+    await fetchAndProcessAssistantResponseImpl(topicId, assistantConfigForRegen, resetAssistantMsg, dispatch)
   } catch (error) {
     logger.error('Error in regenerateAssistantMessage:', error)
   } finally {
@@ -466,11 +464,11 @@ export async function fetchAndProcessAssistantResponseImpl(
     const abortController = new AbortController()
     addAbortController(userMessageId!, () => abortController.abort())
 
-    const orchestrationService = new OrchestrationService()
-    await orchestrationService.handleUserMessage(
+    await transformMessagesAndFetch(
       {
         messages: messagesForContext,
         assistant,
+        topicId,
         options: {
           signal: abortController.signal,
           timeout: 30000
@@ -490,6 +488,8 @@ export async function fetchAndProcessAssistantResponseImpl(
       // 确保无论如何都设置 loading 为 false（onError 回调中已设置，这里是保险）
       dispatch(newMessagesActions.setTopicLoading({ topicId, loading: false }))
     }
+  } finally {
+    await fetchTopicNaming(topicId)
   }
 }
 
@@ -543,11 +543,11 @@ export async function cleanupMultipleBlocks(blockIds: string[]) {
   //     .filter((block): block is MessageBlock => block !== null)
   //     .filter(block => block.type === MessageBlockType.FILE || block.type === MessageBlockType.IMAGE)
   //     .map(block => block.file)
-  //     .filter((file): file is FileType => file !== undefined)
+  //     .filter((file): file is FileMetadata => file !== undefined)
   //   return isEmpty(files) ? [] : files
   // }
 
-  // const cleanupFiles = async (files: FileType[]) => {
+  // const cleanupFiles = async (files: FileMetadata[]) => {
   //   await Promise.all(files.map(file => FileManager.deleteFile(file.id, false)))
   // }
 
@@ -581,6 +581,11 @@ export async function deleteMessageById(messageId: string): Promise<void> {
 export async function fetchTranslateThunk(assistantMessageId: string, message: Message) {
   let callbacks: StreamProcessorCallbacks = {}
   const translateAssistant = await getAssistantById('translate')
+
+  const newBlock = createTranslationBlock(assistantMessageId, '', {
+    status: MessageBlockStatus.STREAMING
+  })
+
   // 创建 BlockManager 实例
   const blockManager = new BlockManager({
     saveUpdatedBlockToDB,
@@ -599,9 +604,51 @@ export async function fetchTranslateThunk(assistantMessageId: string, message: M
     assistant: translateAssistant
   })
 
+  callbacks.onTextStart = async () => {
+    if (blockManager.hasInitialPlaceholder) {
+      logger.debug('onTextStart hasInitialPlaceholder')
+      const changes = {
+        type: MessageBlockType.TRANSLATION,
+        content: '',
+        status: MessageBlockStatus.STREAMING
+      }
+      newBlock.id = blockManager.initialPlaceholderBlockId!
+      blockManager.smartBlockUpdate(newBlock.id, changes, MessageBlockType.TRANSLATION, true)
+      logger.debug('onTextStart', changes)
+    }
+  }
+
+  callbacks.onTextChunk = async (text: string) => {
+    if (text) {
+      const blockChanges: Partial<MessageBlock> = {
+        content: text,
+        status: MessageBlockStatus.STREAMING
+      }
+      blockManager.smartBlockUpdate(newBlock.id, blockChanges, MessageBlockType.TRANSLATION)
+      logger.info('onTextChunk', blockChanges)
+    }
+  }
+
+  callbacks.onTextComplete = async (finalText: string) => {
+    console.log('onTextComplete', newBlock, finalText)
+
+    if (newBlock.id) {
+      const changes = {
+        content: finalText,
+        status: MessageBlockStatus.SUCCESS
+      }
+      blockManager.smartBlockUpdate(newBlock.id, changes, MessageBlockType.TRANSLATION, true)
+      logger.debug('onTextComplete', changes)
+    } else {
+      logger.warn(
+        `[onTextComplete] Received text.complete but last block was not MAIN_TEXT (was ${blockManager.lastBlockType}) or lastBlockId is null.`
+      )
+    }
+  }
+
   const streamProcessorCallbacks = createStreamProcessor(callbacks)
 
-  if (!translateAssistant.model) {
+  if (!translateAssistant.defaultModel) {
     throw new Error('Translate assistant model is not defined')
   }
 
@@ -610,33 +657,39 @@ export async function fetchTranslateThunk(assistantMessageId: string, message: M
     ...message,
     role: 'user'
   }
-  const llmMessages = await convertMessagesToSdkMessages([message], translateAssistant.model)
+  const llmMessages = await convertMessagesToSdkMessages([message], translateAssistant.defaultModel)
 
-  const AI = new ModernAiProvider(translateAssistant.model || getDefaultModel(), provider)
-  const {
-    params: aiSdkParams,
-    modelId,
-    capabilities
-  } = await buildStreamTextParams(llmMessages, translateAssistant, provider)
+  const AI = new ModernAiProvider(translateAssistant.defaultModel || getDefaultModel(), provider)
+  const { params: aiSdkParams, modelId } = await buildStreamTextParams(llmMessages, translateAssistant, provider)
 
   const middlewareConfig: AiSdkMiddlewareConfig = {
-    streamOutput: translateAssistant.settings?.streamOutput ?? true,
+    streamOutput: true,
     onChunk: streamProcessorCallbacks,
-    model: translateAssistant.model,
+    model: translateAssistant.defaultModel,
     provider: provider,
-    enableReasoning: capabilities.enableReasoning,
+    enableReasoning: false,
     isPromptToolUse: false,
     isSupportedToolUse: false,
-    isImageGenerationEndpoint: isDedicatedImageGenerationModel(translateAssistant.model || getDefaultModel()),
-    enableWebSearch: capabilities.enableWebSearch,
-    enableGenerateImage: capabilities.enableGenerateImage,
-    mcpTools: [],
-    assistant: translateAssistant
+    isImageGenerationEndpoint: false,
+    enableWebSearch: false,
+    enableGenerateImage: false,
+    enableUrlContext: false,
+    mcpTools: []
   }
 
   try {
     streamProcessorCallbacks({ type: ChunkType.LLM_RESPONSE_CREATED })
-    return (await AI.completions(modelId, aiSdkParams, middlewareConfig)).getText() || ''
+    return (
+      (
+        await AI.completions(modelId, aiSdkParams, {
+          ...middlewareConfig,
+          assistant: translateAssistant,
+          topicId: message.topicId,
+          callType: 'chat',
+          uiMessages: [message]
+        })
+      ).getText() || ''
+    )
   } catch (error: any) {
     logger.error('Error during translation:', error)
     return ''

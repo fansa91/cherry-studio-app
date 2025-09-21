@@ -27,9 +27,16 @@
       "settings.reasoning.high": "Высокий",
       "settings.reasoning.low": "Низкий",
       "settings.reasoning.medium": "Средний (необходимо уточнить контекст для более точного перевода)  \n\nПримечание: \n1. Слово \"medium\" имеет несколько значений в зависимости от контекста (например, \"средний\" в размере, \"носитель\" в искусстве, \"способ\" передачи информации). Для точного перевода желательно уточнить сферу использования.",
+      "settings.reasoning.minimal": "микрон",
       "settings.reasoning.off": "Выключено",
       "settings.stream_output": "Потоковый вывод",
       "settings.temperature": "Температура",
+      "settings.tooluse": {
+        "empty": "Способ вызова инструмента не установлен",
+        "function": "вызов функции",
+        "prompt": "вызов подсказки",
+        "title": "Вызов инструмента"
+      },
       "settings.top_p": "Top P",
       "sort": {
         "alphabetical": "Алфавитный",
@@ -38,6 +45,7 @@
         "title": "Сортировка помощников"
       },
       "title": "Ассистенты",
+      "title.change": "переключить помощника",
       "title.create": "Создать ассистента",
       "title.edit": "Редактор Помощник",
       "title.mine": "Мой помощник",
@@ -45,13 +53,19 @@
     },
     "button": {
       "add": "Добавить",
+      "best_answer": "Лучший ответ",
       "checking": "Проверка...",
+      "generate_topic_name": "Генерировать название темы",
       "image_generate": "Генерация изображений",
       "manage": "Управлять",
+      "multiple": "Множественный выбор",
       "placeholder": "Спроси что-нибудь небрежно",
       "recents": "Недавние",
+      "rename_topic_name": "Редактировать название темы",
       "save": "Сохранить",
+      "save_image": "Сохранить в фото",
       "select_model": "Выберите модель",
+      "share": "Поделиться",
       "sort": "Сортировать",
       "start_check_model": "Начать",
       "success": "Успешно!",
@@ -87,11 +101,18 @@
       "clear_all": "Очистить всё",
       "close": "Закрыть",
       "confirm": "подтверждение",
+      "copied": "Скопировано",
+      "copy": "Копировать текст",
+      "delete": "Удалить",
+      "delete_translation": "Удалить перевод",
       "description": "Описание",
+      "detail": "Подробности",
+      "edit": "Редактировать",
       "enabled": "Включено",
       "error_occurred": "Произошла ошибка",
       "file": "Файл",
       "generateImage": "Создать изображение",
+      "go_to_settings": "В настройки",
       "language": "Язык",
       "last_month": "Прошлый месяц",
       "last_week": "На прошлой неделе",
@@ -103,26 +124,44 @@
       "older": "Старше",
       "others": "Другие",
       "photo": "Фото",
+      "play": "Играть",
       "preset": "Пресет",
       "prompt": "Промпт",
+      "regenerate": "Регенерация",
+      "rename": "Переименовать",
       "save": "Сохранить",
+      "saved": "Сохранить",
       "search_placeholder": "Поиск...",
       "see_all": "Показать все",
+      "select_text": "Выбрать текст",
       "source": "Источник",
+      "stop": "Стоп",
       "this_week": "На этой неделе",
       "today": "Сегодня",
       "tool": "Инструмент",
+      "translate": "Перевод",
       "visit": "Посетить",
       "websearch": "Поиск в интернете",
       "yesterday": "Вчера"
     },
     "error": {
+      "availableProviders": "Доступные провайдеры",
+      "availableTools": "Доступные инструменты",
       "backup": {
-        "file_format": "Формат файла резервной копии неверен."
+        "file_format": "Формат файла резервной копии неверен.",
+        "file_invalid": "Резервная копия недействительна. Получите ее через экспорт в мобильное приложение в Cherry Studio.",
+        "title": "Резервная копия не создана"
       },
+      "cause": "причина",
       "chat": {
         "response": "Произошла ошибка. Если API-ключ не настроен, перейдите в Настройки > Поставщик моделей, чтобы добавить ключ."
       },
+      "content": "содержание",
+      "data": "данные",
+      "detail": "Подробности ошибки",
+      "errors": "Список ошибок",
+      "finishReason": "Причина завершения",
+      "functionality": "функция",
       "http": {
         "400": "Ошибка запроса, пожалуйста, проверьте правильность параметров запроса. Если вы изменили настройки модели, сбросьте их к значениям по умолчанию.",
         "401": "Аутентификация не удалась. Проверьте правильность API-ключа.",
@@ -134,19 +173,49 @@
         "503": "Сервис недоступен, пожалуйста, попробуйте позже",
         "504": "Превышено время ожидания шлюза, повторите попытку позже"
       },
+      "lastError": "последняя ошибка",
+      "maxEmbeddingsPerCall": "Максимальное количество встраиваний при каждом вызове",
+      "message": "Сообщение об ошибке",
       "missing_user_message": "Не удалось изменить модель ответа: исходное сообщение пользователя было удалено. Пожалуйста, отправьте новое сообщение, чтобы получить ответ этой модели.",
       "model": {
         "exists": "Модель уже существует"
       },
+      "modelId": "ID модели",
+      "modelType": "тип модели",
+      "name": "Название ошибки",
       "no_api_key": "Ключ API не настроен",
+      "originalError": "Исходная ошибка",
+      "originalMessage": "оригинальное сообщение",
+      "parameter": "параметр",
       "pause_placeholder": "Прервано",
+      "prompt": "подсказка",
+      "provider": "поставщик",
+      "providerId": "Идентификатор провайдера",
       "provider_disabled": "Провайдер модели не активирован.",
+      "reason": "причина",
       "render": {
         "description": "Не удалось отобразить содержимое сообщения. Проверьте правильность формата содержимого сообщения.",
         "title": "Ошибка рендеринга"
       },
+      "requestBodyValues": "тело запроса",
+      "requestUrl": "адрес запроса",
+      "response": "отклик",
+      "responseBody": "Тело ответа",
+      "responseHeaders": "Заголовки ответа",
+      "responses": "ответ",
+      "role": "персонаж",
+      "stack": "трассировка стека",
+      "statusCode": "Код состояния",
+      "statusText": "Статус текста",
+      "text": "текст",
+      "toolInput": "ввод инструмента",
+      "toolName": "название инструмента",
+      "translate_assistant_model_not_defined": "Ошибка: модель помощника для перевода не настроена. Пожалуйста, перейдите в Настройки > Основной помощник для настройки модели помощника для перевода.",
       "unknown": "Неизвестная ошибка",
-      "user_message_not_found": "Не удается найти исходное сообщение пользователя"
+      "usage": "использование",
+      "user_message_not_found": "Не удается найти исходное сообщение пользователя",
+      "value": "стоит",
+      "values": "значение"
     },
     "errors": {
       "cannotOpenLink": "Не удается открыть ссылку: {{error}}",
@@ -155,12 +224,60 @@
       "error_title": "Ошибка",
       "linkErrorTitle": "Ошибка открытия ссылки"
     },
+    "export": {
+      "image": "Экспорт как изображение",
+      "joplin": "Экспорт в Joplin",
+      "md": {
+        "label": "Экспорт как markdown",
+        "reason": "Экспорт в Markdown (с рассуждениями)"
+      },
+      "notion": "Экспорт в Notion",
+      "obsidian": "Экспорт в Obsidian",
+      "obsidian_atributes": "Настроить атрибуты заметки",
+      "obsidian_btn": "Подтвердить",
+      "obsidian_created": "Дата создания",
+      "obsidian_created_placeholder": "Пожалуйста, выберите дату создания",
+      "obsidian_export_failed": "Экспорт не удалось",
+      "obsidian_export_success": "Экспорт успешно завершен",
+      "obsidian_fetch_error": "Не удалось получить хранилища Obsidian",
+      "obsidian_fetch_folders_error": "Не удалось получить структуру папок",
+      "obsidian_loading": "Загрузка...",
+      "obsidian_no_vault_selected": "Пожалуйста, сначала выберите хранилище",
+      "obsidian_no_vaults": "Хранилища Obsidian не найдены",
+      "obsidian_operate": "Метод обработки",
+      "obsidian_operate_append": "Добавить в конец",
+      "obsidian_operate_new_or_overwrite": "Создать новый (перезаписать, если уже существует)",
+      "obsidian_operate_placeholder": "Пожалуйста, выберите метод обработки",
+      "obsidian_operate_prepend": "Добавить в начало",
+      "obsidian_path": "Путь",
+      "obsidian_path_placeholder": "Выберите путь",
+      "obsidian_reasoning": "Включить цепочку рассуждений",
+      "obsidian_root_directory": "Корневая директория",
+      "obsidian_select_vault_first": "Пожалуйста, сначала выберите хранилище",
+      "obsidian_source": "Источник",
+      "obsidian_source_placeholder": "Пожалуйста, введите источник",
+      "obsidian_tags": "Тэги",
+      "obsidian_tags_placeholder": "Пожалуйста, введите имена тегов. Разделяйте несколько тегов запятыми на английском языке",
+      "obsidian_title": "Заголовок",
+      "obsidian_title_placeholder": "Пожалуйста, введите заголовок",
+      "obsidian_title_required": "Заголовок не может быть пустым",
+      "obsidian_vault": "Хранилище",
+      "obsidian_vault_placeholder": "Выберите имя хранилища",
+      "siyuan": "Экспорт в Siyuan Note",
+      "title": "Экспортировать сообщения",
+      "title_naming_failed": "Не удалось создать заголовок, используется заголовок по умолчанию",
+      "title_naming_success": "Заголовок успешно создан",
+      "wait_for_title_naming": "Создание заголовка...",
+      "word": "Экспорт как Word",
+      "yuque": "Экспорт в Yuque"
+    },
     "history": {
       "search.placeholder": "Поиск тем или сообщений...",
       "search.topics.empty": "Темы не найдены, нажмите Enter для поиска всех сообщений",
       "topics.empty": "Темы не найдены"
     },
     "inputs": {
+      "mentions": "@ {{number}} моделей",
       "placeholder": "Отправить сообщение..."
     },
     "menu": {
@@ -176,13 +293,20 @@
       }
     },
     "message": {
+      "assistant_deleted": "Помощник удален",
+      "delete_message": "Удалить сообщение",
+      "delete_message_confirmation": "Вы уверены, что хотите удалить это сообщение?",
+      "delete_topic": "Удалить тему",
+      "delete_topic_confirmation": "Вы уверены, что хотите удалить эту тему?",
+      "delete_translation": "Удалить перевод",
+      "marked_as_best_answer": "Отмечено как лучший ответ",
       "searching": "Поиск...",
+      "topic_deleted": "Тема удалена",
+      "translate_message": "Перевести сообщение",
+      "unmarked_as_best_answer": "Снята отметка лучшего ответа",
       "websearch": {
         "fetch_complete": "Выполнено {{count}} поисков..."
-      },
-      "delete_translation": "Удалить перевод",
-      "translate_message": "Перевести сообщение",
-      "delete_message": "Удалить сообщение"
+      }
     },
     "models": {
       "no_models": "Нет доступных моделей",
@@ -207,13 +331,16 @@
       "noContent": "Пока нет контента типа {{type}}"
     },
     "provider": {
+      "302ai": "302.AI",
       "aihubmix": "AiHubMix",
       "alayanew": "Alaya NeW",
       "anthropic": "Anthropic",
+      "aws-bedrock": "AWS Bedrock",
       "azure-openai": "Azure OpenAI",
       "baichuan": "Baichuan",
       "baidu-cloud": "Baidu Cloud",
       "burncloud": "BurnCloud",
+      "cephalon": "Cephalon",
       "copilot": "GitHub Copilot",
       "dashscope": "Alibaba Cloud",
       "deepseek": "DeepSeek",
@@ -230,26 +357,31 @@
       "hyperbolic": "Hyperbolic",
       "infini": "Infini",
       "jina": "Jina",
+      "lanyun": "LANYUN",
       "lmstudio": "LM Studio",
       "minimax": "MiniMax",
       "mistral": "Mistral",
       "modelscope": "ModelScope",
       "moonshot": "Moonshot",
-      "nvidia": "NVIDIA",
+      "new-api": "New API",
+      "nvidia": "Nvidia",
       "o3": "O3",
       "ocoolai": "ocoolAI",
       "ollama": "Ollama",
       "openai": "OpenAI",
       "openrouter": "OpenRouter",
       "perplexity": "Perplexity",
+      "ph8": "PH8",
+      "poe": "Poe",
       "ppio": "PPIO",
-      "qiniu": "Qiniu",
+      "qiniu": "Qiniu AI",
       "qwenlm": "QwenLM",
       "silicon": "SiliconFlow",
       "stepfun": "StepFun",
       "tencent-cloud-ti": "Tencent Cloud TI",
       "together": "Together",
       "tokenflux": "TokenFlux",
+      "vertexai": "Vertex AI",
       "voyageai": "Voyage AI",
       "xirang": "State Cloud Xirang",
       "yi": "Yi",
@@ -287,11 +419,11 @@
           "name": "Помощник по умолчанию"
         },
         "empty": "Пока нет помощников...",
-        "title": "Помощник по умолчанию",
-        "topic_naming_assistant": {
-          "description": "Помощник, используемый при автоматическом именовании новой темы",
-          "name": "Помощник по именованию тем"
+        "quick_assistant": {
+          "description": "Ассистент для выполнения простых задач, таких как наименование тем и извлечение ключевых слов.",
+          "name": "Быстрый помощник"
         },
+        "title": "Помощник по умолчанию",
         "translate_assistant": {
           "description": "Помощник, используемый для службы перевода",
           "name": "Помощник по переводу"
@@ -300,6 +432,7 @@
       "assistant.show.icon": "Показать иконку модели",
       "data": {
         "app_data": "Данные приложения",
+        "app_data_location": "Расположение данных приложения",
         "app_knowledge": "Файлы базы знаний",
         "app_knowledge.remove_all": "Удалить файлы",
         "app_logs": "Журналы приложений",
@@ -318,6 +451,9 @@
           "filename": "Имя файла",
           "scan_qr_code": {
             "description": "Отсканируйте QR-код в Cherry Studio",
+            "grant_permission": "Предоставить права",
+            "permission_denied": "Не удалось получить разрешение на доступ к камере. Пожалуйста, включите разрешение на камеру в настройках устройства для сканирования QR-кода.",
+            "requesting_permission": "Запрашивается разрешение на доступ к камере...",
             "success": "Подключение успешно 🎉",
             "success_description": "Теперь вы можете нажать кнопку \"Отправить\" для восстановления данных!",
             "title": "Отсканируйте QR-код"
@@ -334,6 +470,7 @@
           },
           "title": "Ландроп"
         },
+        "log_location": "Расположение файла журнала",
         "recovery": "Восстановление данных",
         "reset": "Сброс данных",
         "reset_success": "Данные успешно сброшены! Приложение возвращено в исходное состояние.",
@@ -350,11 +487,8 @@
             "success_description": "Восстановление завершено, приятного времяпровождения!"
           },
           "steps": {
-            "restore_assistants": "Восстановить помощников",
-            "restore_llm_providers": "Восстановить поставщиков LLM",
-            "restore_messages_blocks": "Восстановить сообщения и блоки",
-            "restore_topics": "Восстановить темы",
-            "restore_websearch": "Восстановить веб-поиск"
+            "restore_messages": "восстановить сообщение",
+            "restore_settings": "восстановление конфигурации"
           }
         },
         "third_party": "Подключения к сторонним сервисам",
@@ -388,6 +522,12 @@
         "token_placeholder": "Токен авторизации Joplin",
         "url": "URL сервиса Joplin Web Clipper",
         "url_placeholder": "http://127.0.0.1:41184/"
+      },
+      "mcp": {
+        "errors": {
+          "32000": "Ошибка сервера MCP",
+          "toolNotFound": "Инструмент '{{name}}' не найден"
+        }
       },
       "modelAndService": "Модели и сервисы ИИ",
       "models": {
@@ -475,12 +615,22 @@
           "login": "Войти",
           "title": "Сервис {{provider}}"
         },
+        "check_failed": {
+          "api_key_empty": "API-ключ не может быть пустым",
+          "model_api_key_empty": "Модель и API-ключ не могут быть пустыми",
+          "model_empty": "Модель не может быть пустой",
+          "title": "Проверка модели не удалась"
+        },
         "delete.content": "Вы уверены, что хотите удалить этого поставщика?",
         "delete.title": "Удалить поставщика",
+        "edit": {
+          "title": "Редактирование поставщиков услуг"
+        },
         "enabled": "Вкл",
         "list.title": "Список поставщиков",
         "not_found": "Поставщик не найден",
         "not_found_message": "Произошла ошибка при переходе на страницу провайдера.",
+        "provider_deleted": "Поставщик удален",
         "search": "Поисковые системы...",
         "title": "Поставщик моделей"
       },
@@ -555,7 +705,7 @@
         "check_success_message": "API работает правильно",
         "contentLengthLimit": "Ограничение длины контента",
         "empty": "Поставщиков пока нет...",
-        "empty.description": "Нажмите кнопку, чтобы добавить поставщика",
+        "empty.description": "Перейти к добавлению поставщика",
         "overrideSearchService": "Переопределить поисковую службу",
         "provider": {
           "api": {
@@ -586,16 +736,14 @@
         "title": "Конфигурация Yuque",
         "token": "Токен Yuque",
         "token_placeholder": "Пожалуйста, введите токен Yuque"
-      },
-      "mcp": {
-        "errors": {
-          "toolNotFound": "Инструмент '{{name}}' не найден",
-          "32000": "Ошибка сервера MCP"
-        }
       }
     },
     "topics": {
       "new_topic": "Новая тема",
+      "rename": {
+        "title": "Переименовать тему"
+      },
+      "select_assistant": "Выбрать новый ассистент",
       "title": "Тема",
       "title.recent": "Недавние темы"
     }

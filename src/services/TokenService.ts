@@ -1,17 +1,20 @@
 import { approximateTokenSize } from 'tokenx'
 
 import { Assistant, Usage } from '@/types/assistant'
-import { FileType, FileTypes } from '@/types/file'
+import { FileMetadata, FileTypes } from '@/types/file'
 import type { Message } from '@/types/message'
 import { findFileBlocks, getMainTextContent, getThinkingContent } from '@/utils/messageUtils/find'
 
+import { loggerService } from './LoggerService'
+
+const logger = loggerService.withContext('TokenService')
 interface MessageItem {
   name?: string
   role: 'system' | 'user' | 'assistant'
   content: string
 }
 
-async function getFileContent(file: FileType) {
+async function getFileContent(file: FileMetadata) {
   if (!file) {
     return ''
   }
@@ -65,7 +68,7 @@ export function estimateTextTokens(text: string) {
  * @param file - 图片文件对象
  * @returns 返回估算的 token 数量
  */
-export function estimateImageTokens(file: FileType) {
+export function estimateImageTokens(file: FileMetadata) {
   return Math.floor(file.size / 100)
 }
 
@@ -77,7 +80,7 @@ export function estimateImageTokens(file: FileType) {
  *
  * @param {Object} params - 输入参数对象
  * @param {string} [params.content] - 用户输入的文本内容
- * @param {FileType[]} [params.files] - 用户上传的文件列表（支持图片和文本）
+ * @param {FileMetadata[]} [params.files] - 用户上传的文件列表（支持图片和文本）
  * @returns {Promise<Usage>} 返回一个 Usage 对象，包含 prompt_tokens、completion_tokens、total_tokens
  */
 export async function estimateUserPromptUsage({
@@ -85,7 +88,7 @@ export async function estimateUserPromptUsage({
   files
 }: {
   content?: string
-  files?: FileType[]
+  files?: FileMetadata[]
 }): Promise<Usage> {
   let imageTokens = 0
 
@@ -165,6 +168,7 @@ export async function estimateMessagesUsage({
 }
 
 export async function estimateHistoryTokens(assistant: Assistant, msgs: Message[]) {
+  logger.info('assistant', assistant.id, msgs.length)
   // const { contextCount } = getAssistantSettings(assistant)
   // const maxContextCount = contextCount
   // const messages = filterMessages(filterContextMessages(takeRight(msgs, maxContextCount)))

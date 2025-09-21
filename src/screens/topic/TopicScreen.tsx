@@ -1,73 +1,84 @@
-import { useNavigation } from '@react-navigation/native'
-import { PenSquare } from '@tamagui/lucide-icons'
-import { debounce } from 'lodash'
-import React, { useEffect, useState } from 'react'
+import { DrawerActions, useNavigation } from '@react-navigation/native'
+import { ImpactFeedbackStyle } from 'expo-haptics'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 
-import { SettingContainer } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import { GroupedTopicList } from '@/components/topic/GroupTopicList'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { SearchInput } from '@/components/ui/SearchInput'
+import { Menu, MessageSquareDiff } from '@/componentsV2/icons/LucideIcon'
+import { YStack, HeaderBar, TopicList, SafeAreaContainer, DrawerGestureWrapper, SearchInput } from '@/componentsV2'
+
+import { useSearch } from '@/hooks/useSearch'
 import { useTopics } from '@/hooks/useTopic'
 import { getDefaultAssistant } from '@/services/AssistantService'
 import { createNewTopic } from '@/services/TopicService'
-import { NavigationProps } from '@/types/naviagate'
+import { DrawerNavigationProps } from '@/types/naviagate'
+import { haptic } from '@/utils/haptic'
 
 export default function TopicScreen() {
   const { t } = useTranslation()
-  const navigation = useNavigation<NavigationProps>()
-  const [searchText, setSearchText] = useState('')
-  const [debouncedSearchText, setDebouncedSearchText] = useState('')
-
-  // 创建防抖函数，300ms 延迟
-  const debouncedSetSearch = debounce((text: string) => {
-    setDebouncedSearchText(text)
-  }, 300)
-
+  const navigation = useNavigation<DrawerNavigationProps>()
   const { topics, isLoading } = useTopics()
 
-  // 监听 searchText 变化，触发防抖更新
-  useEffect(() => {
-    debouncedSetSearch(searchText)
-
-    // 清理函数，组件卸载时取消防抖
-    return () => {
-      debouncedSetSearch.cancel()
-    }
-  })
-
-  const filteredTopics = topics.filter(topic => topic.name.toLowerCase().includes(debouncedSearchText.toLowerCase()))
+  const {
+    searchText,
+    setSearchText,
+    filteredItems: filteredTopics
+  } = useSearch(
+    topics,
+    useCallback(topic => [topic.name], []),
+    { delay: 300 }
+  )
 
   const handleAddNewTopic = async () => {
     const defaultAssistant = await getDefaultAssistant()
     const newTopic = await createNewTopic(defaultAssistant)
-    navigation.navigate('ChatScreen', { topicId: newTopic.id })
+    navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId: newTopic.id } })
+  }
+
+  const handleMenuPress = () => {
+    haptic(ImpactFeedbackStyle.Medium)
+    navigation.dispatch(DrawerActions.openDrawer())
   }
 
   if (isLoading) {
     return (
-      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
+      <SafeAreaContainer className="items-center justify-center">
+        <DrawerGestureWrapper>
+          <View collapsable={false} className="flex-1 items-center justify-center">
+            <ActivityIndicator />
+          </View>
+        </DrawerGestureWrapper>
       </SafeAreaContainer>
     )
   }
 
   return (
-    <SafeAreaContainer style={{ flex: 1 }}>
-      <HeaderBar
-        title={t('topics.title.recent')}
-        onBackPress={() => navigation.goBack()}
-        rightButton={{
-          icon: <PenSquare size={24} />,
-          onPress: handleAddNewTopic
-        }}
-      />
-      <SettingContainer>
-        <SearchInput placeholder={t('common.search_placeholder')} value={searchText} onChangeText={setSearchText} />
-        <GroupedTopicList topics={filteredTopics} />
-      </SettingContainer>
+    <SafeAreaContainer className="flex-1">
+      <DrawerGestureWrapper>
+        <View collapsable={false} className="flex-1">
+          <HeaderBar
+            title={t('topics.title.recent')}
+            leftButton={{
+              icon: <Menu size={24} />,
+              onPress: handleMenuPress
+            }}
+            rightButton={{
+              icon: <MessageSquareDiff size={24} />,
+              onPress: handleAddNewTopic
+            }}
+          />
+          <YStack className="flex-1 gap-[15px]">
+            <View className="px-5">
+              <SearchInput
+                placeholder={t('common.search_placeholder')}
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+            </View>
+            <TopicList topics={filteredTopics} enableScroll={true} />
+          </YStack>
+        </View>
+      </DrawerGestureWrapper>
     </SafeAreaContainer>
   )
 }

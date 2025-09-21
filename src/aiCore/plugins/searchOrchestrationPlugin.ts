@@ -1,5 +1,14 @@
-import type { AiRequestContext, ModelMessage } from '@cherrystudio/ai-core'
-import { definePlugin } from '@cherrystudio/ai-core'
+/**
+ * 搜索编排插件
+ *
+ * 功能：
+ * 1. onRequestStart: 智能意图识别 - 分析是否需要网络搜索、知识库搜索、记忆搜索
+ * 2. transformParams: 根据意图分析结果动态添加对应的工具
+ * 3. onRequestEnd: 自动记忆存储
+ */
+import { type AiRequestContext, definePlugin } from '@cherrystudio/ai-core'
+// import { generateObject } from '@cherrystudio/ai-core'
+import { generateText, LanguageModel, type ModelMessage } from 'ai'
 import { isEmpty } from 'lodash'
 
 import {
@@ -8,12 +17,15 @@ import {
   SEARCH_SUMMARY_PROMPT_WEB_ONLY
 } from '@/config/prompts'
 import { getDefaultModel } from '@/services/AssistantService'
+import { loggerService } from '@/services/LoggerService'
 import { getProviderByModel } from '@/services/ProviderService'
 import { Assistant } from '@/types/assistant'
 import { ExtractResults } from '@/types/extract'
 import { extractInfoFromXML } from '@/utils/extract'
 
 import { webSearchToolWithPreExtractedKeywords } from '../tools/WebSearchTool'
+
+const logger = loggerService.withContext('SearchOrchestrationPlugin')
 
 const getMessageContent = (message: ModelMessage) => {
   if (typeof message.content === 'string') return message.content
@@ -63,9 +75,8 @@ async function analyzeSearchIntent(
     shouldKnowledgeSearch?: boolean
     shouldMemorySearch?: boolean
     lastAnswer?: ModelMessage
-    context: AiRequestContext & {
-      isAnalyzing?: boolean
-    }
+    context: AiRequestContext
+    topicId: string
   }
 ): Promise<ExtractResults | undefined> {
   const { shouldWebSearch = false, shouldKnowledgeSearch = false, lastAnswer, context } = options
@@ -105,19 +116,33 @@ async function analyzeSearchIntent(
   const provider = getProviderByModel(model)
 
   if (!provider || isEmpty(provider.apiKey)) {
-    console.error('Provider not found or missing API key')
+    logger.error('Provider not found or missing API key')
     return getFallbackResult()
   }
 
   // console.log('formattedPrompt', schema)
   try {
     context.isAnalyzing = true
-    const { text: result } = await context.executor.generateText(model.id, {
-      prompt: formattedPrompt
+    logger.info('Starting intent analysis generateText call', {
+      modelId: model.id,
+      topicId: options.topicId,
+      requestId: context.requestId,
+      hasWebSearch: needWebExtract,
+      hasKnowledgeSearch: needKnowledgeExtract
     })
-    context.isAnalyzing = false
+
+    const { text: result } = await generateText({
+      model: context.model as LanguageModel,
+      prompt: formattedPrompt
+    }).finally(() => {
+      logger.info('Intent analysis generateText call completed', {
+        modelId: model.id,
+        topicId: options.topicId,
+        requestId: context.requestId
+      })
+    })
     const parsedResult = extractInfoFromXML(result)
-    console.log('parsedResult', parsedResult)
+    logger.debug('Intent analysis result', { parsedResult })
 
     // 根据需求过滤结果
     return {
@@ -125,7 +150,7 @@ async function analyzeSearchIntent(
       knowledge: needKnowledgeExtract ? parsedResult?.knowledge : undefined
     }
   } catch (e: any) {
-    console.error('analyze search intent error', e)
+    logger.error('Intent analysis failed', e as Error)
     return getFallbackResult()
   }
 
@@ -146,11 +171,10 @@ async function analyzeSearchIntent(
 /**
  * 🎯 搜索编排插件
  */
-export const searchOrchestrationPlugin = (assistant: Assistant) => {
+export const searchOrchestrationPlugin = (assistant: Assistant, topicId: string) => {
   // 存储意图分析结果
   const intentAnalysisResults: { [requestId: string]: ExtractResults } = {}
   const userMessages: { [requestId: string]: ModelMessage } = {}
-  console.log('searchOrchestrationPlugin', assistant)
 
   return definePlugin({
     name: 'search-orchestration',
@@ -160,15 +184,13 @@ export const searchOrchestrationPlugin = (assistant: Assistant) => {
      * 🔍 Step 1: 意图识别阶段
      */
     onRequestStart: async (context: AiRequestContext) => {
-      console.log('onRequestStart', context.isAnalyzing)
-      if (context.isAnalyzing) return
-      console.log('🧠 [SearchOrchestration] Starting intent analysis...', context.requestId)
+      // 没开启任何搜索则不进行意图分析
+      if (!assistant.webSearchProviderId) return
 
       try {
         const messages = context.originalParams.messages
 
         if (!messages || messages.length === 0) {
-          console.log('🧠 [SearchOrchestration] No messages found, skipping analysis')
           return
         }
 
@@ -180,25 +202,24 @@ export const searchOrchestrationPlugin = (assistant: Assistant) => {
 
         const shouldWebSearch = !!assistant.webSearchProviderId
 
-        console.log('🧠 [SearchOrchestration] Search capabilities:', {
-          shouldWebSearch
-        })
-
         // 执行意图分析
         if (shouldWebSearch) {
           const analysisResult = await analyzeSearchIntent(lastUserMessage, assistant, {
             shouldWebSearch,
+            shouldKnowledgeSearch: false,
+            shouldMemorySearch: false,
             lastAnswer: lastAssistantMessage,
-            context
+            context,
+            topicId
           })
 
           if (analysisResult) {
             intentAnalysisResults[context.requestId] = analysisResult
-            console.log('🧠 [SearchOrchestration] Intent analysis completed:', analysisResult)
+            // logger.info('🧠 Intent analysis completed:', analysisResult)
           }
         }
       } catch (error) {
-        console.error('🧠 [SearchOrchestration] Intent analysis failed:', error)
+        logger.error('🧠 Intent analysis failed:', error as Error)
         // 不抛出错误，让流程继续
       }
     },
@@ -207,13 +228,12 @@ export const searchOrchestrationPlugin = (assistant: Assistant) => {
      * 🔧 Step 2: 工具配置阶段
      */
     transformParams: async (params: any, context: AiRequestContext) => {
-      if (context.isAnalyzing) return params
-      console.log('🔧 [SearchOrchestration] Configuring tools based on intent...', context.requestId)
+      // logger.info('🔧 Configuring tools based on intent...', context.requestId)
 
       try {
         const analysisResult = intentAnalysisResults[context.requestId]
         // if (!analysisResult || !assistant) {
-        //   console.log('🔧 [SearchOrchestration] No analysis result or assistant, skipping tool configuration')
+        //   logger.info('🔧 No analysis result or assistant, skipping tool configuration')
         //   return params
         // }
 
@@ -228,7 +248,7 @@ export const searchOrchestrationPlugin = (assistant: Assistant) => {
 
           if (needsSearch) {
             // onChunk({ type: ChunkType.EXTERNEL_TOOL_IN_PROGRESS })
-            console.log('🌐 [SearchOrchestration] Adding web search tool with pre-extracted keywords')
+            // logger.info('🌐 Adding web search tool with pre-extracted keywords')
             params.tools['builtin_web_search'] = webSearchToolWithPreExtractedKeywords(
               assistant.webSearchProviderId,
               analysisResult.websearch,
@@ -237,10 +257,10 @@ export const searchOrchestrationPlugin = (assistant: Assistant) => {
           }
         }
 
-        console.log('🔧 [SearchOrchestration] Tools configured:', Object.keys(params.tools))
+        // logger.info('🔧 Tools configured:', Object.keys(params.tools))
         return params
       } catch (error) {
-        console.error('🔧 [SearchOrchestration] Tool configuration failed:', error)
+        logger.error('🔧 Tool configuration failed:', error as Error)
         return params
       }
     },
@@ -249,24 +269,17 @@ export const searchOrchestrationPlugin = (assistant: Assistant) => {
      * 💾 Step 3: 记忆存储阶段
      */
 
-    onRequestEnd: async (context: AiRequestContext, result: any) => {
+    onRequestEnd: async (context: AiRequestContext) => {
       // context.isAnalyzing = false
-      console.log('context.isAnalyzing', context, result)
-      console.log('💾 [SearchOrchestration] Starting memory storage...', context.requestId)
-      if (context.isAnalyzing) return
+      // logger.info('context.isAnalyzing', context, result)
+      // logger.info('💾 Starting memory storage...', context.requestId)
 
       try {
-        // const messages = context.originalParams.messages
-
-        // if (messages && assistant) {
-        //   await storeConversationMemory(messages, assistant, context)
-        // }
-
         // 清理缓存
         delete intentAnalysisResults[context.requestId]
         delete userMessages[context.requestId]
       } catch (error) {
-        console.error('💾 [SearchOrchestration] Memory storage failed:', error)
+        logger.error('💾 Memory storage failed:', error as Error)
         // 不抛出错误，避免影响主流程
       }
     }

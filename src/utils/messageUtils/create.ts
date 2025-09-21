@@ -1,6 +1,7 @@
 import { loggerService } from '@/services/LoggerService'
 import { Assistant, Topic } from '@/types/assistant'
-import { FileType, FileTypes } from '@/types/file'
+import { SerializedError } from '@/types/error'
+import { FileMetadata, FileTypes } from '@/types/file'
 import {
   AssistantMessageStatus,
   BaseMessageBlock,
@@ -172,7 +173,7 @@ export function createTranslationBlock(
  */
 export function createFileBlock(
   messageId: string,
-  file: FileType,
+  file: FileMetadata,
   overrides: Partial<Omit<FileMessageBlock, 'id' | 'messageId' | 'type' | 'file'>> = {}
 ): FileMessageBlock {
   if (file.type === FileTypes.IMAGE) {
@@ -194,7 +195,7 @@ export function createFileBlock(
  */
 export function createErrorBlock(
   messageId: string,
-  errorData: Record<string, any>,
+  errorData: SerializedError,
   overrides: Partial<Omit<ErrorMessageBlock, 'id' | 'messageId' | 'type' | 'error'>> = {}
 ): ErrorMessageBlock {
   const baseBlock = createBaseMessageBlock(messageId, MessageBlockType.ERROR, {

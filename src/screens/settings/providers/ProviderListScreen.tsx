@@ -1,64 +1,69 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import { useNavigation } from '@react-navigation/native'
 import { FlashList, ListRenderItemInfo } from '@shopify/flash-list'
-import { Plus } from '@tamagui/lucide-icons'
-import debounce from 'lodash/debounce'
-import React, { useEffect, useRef, useState } from 'react'
+import { Plus } from '@/componentsV2/icons/LucideIcon'
+import React, { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
-import { YStack } from 'tamagui'
-
-import { SettingContainer, SettingGroup } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import { AddProviderSheet } from '@/components/settings/providers/AddProviderSheet'
-import { ProviderItem } from '@/components/settings/providers/ProviderItem'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { SearchInput } from '@/components/ui/SearchInput'
+import { YStack, SafeAreaContainer, Container, Group, HeaderBar, SearchInput } from '@/componentsV2'
 import { useAllProviders } from '@/hooks/useProviders'
+import { useSearch } from '@/hooks/useSearch'
 import { Provider } from '@/types/assistant'
+import { AddProviderSheet } from '@/componentsV2/features/SettingsScreen/AddProviderSheet'
+import { ProviderItem } from '@/componentsV2/features/SettingsScreen/ProviderItem'
 
 export default function ProviderListScreen() {
   const { t } = useTranslation()
-  const navigation = useNavigation()
 
   const bottomSheetRef = useRef<BottomSheetModal>(null)
   const { providers, isLoading } = useAllProviders()
 
-  const [searchText, setSearchText] = useState('')
-  const [debouncedSearchText, setDebouncedSearchText] = useState('')
+  const [sheetMode, setSheetMode] = useState<'add' | 'edit'>('add')
+  const [editingProvider, setEditingProvider] = useState<Provider | undefined>(undefined)
+  // 当编辑provider icon时需要通过refresh key刷新
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  // 创建防抖函数，300ms 延迟
-  const debouncedSetSearch = debounce((text: string) => {
-    setDebouncedSearchText(text)
-  }, 300)
-
-  // 监听 searchText 变化，触发防抖更新
-  useEffect(() => {
-    debouncedSetSearch(searchText)
-
-    // 清理函数，组件卸载时取消防抖
-    return () => {
-      debouncedSetSearch.cancel()
-    }
-  })
-
-  const filteredProviders = providers.filter(
-    p => p.name && p.name.toLowerCase().includes(debouncedSearchText.toLowerCase())
+  const {
+    searchText,
+    setSearchText,
+    filteredItems: filteredProviders
+  } = useSearch(
+    providers,
+    useCallback((provider: Provider) => [provider.name || ''], []),
+    { delay: 300 }
   )
 
   const onAddProvider = () => {
+    setSheetMode('add')
+    setEditingProvider(undefined)
     bottomSheetRef.current?.present()
   }
 
+  const onEditProvider = (provider: Provider) => {
+    setSheetMode('edit')
+    setEditingProvider(provider)
+    bottomSheetRef.current?.present()
+  }
+
+  const handleProviderSave = () => {
+    // Force refresh by clearing and resetting the editing provider
+    setEditingProvider(undefined)
+    // Increment refresh key to force ProviderItem re-render
+    setRefreshKey(prev => prev + 1)
+  }
+
   const renderProviderItem = ({ item }: ListRenderItemInfo<Provider>) => (
-    <ProviderItem key={item.id} provider={item} mode="checked" />
+    <ProviderItem
+      key={`${item.id}-${refreshKey}`}
+      provider={item}
+      mode={item.enabled ? 'enabled' : 'checked'}
+      onEdit={onEditProvider}
+    />
   )
 
   return (
-    <SafeAreaContainer>
+    <SafeAreaContainer style={{ paddingBottom: 0 }}>
       <HeaderBar
         title={t('settings.provider.list.title')}
-        onBackPress={() => navigation.goBack()}
         rightButton={{
           icon: <Plus size={24} />,
           onPress: onAddProvider
@@ -69,25 +74,31 @@ export default function ProviderListScreen() {
           <ActivityIndicator />
         </SafeAreaContainer>
       ) : (
-        <SettingContainer>
+        <Container className="pb-0 gap-4">
           <SearchInput placeholder={t('settings.provider.search')} value={searchText} onChangeText={setSearchText} />
 
-          <YStack flex={1} height="100%">
-            <SettingGroup flex={1}>
+          <YStack className="flex-1" style={{ height: '100%' }}>
+            <Group className="flex-1">
               <FlashList
                 data={filteredProviders}
                 renderItem={renderProviderItem}
                 keyExtractor={item => item.id}
                 estimatedItemSize={60}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 24 }}
+                extraData={providers}
+                contentContainerStyle={{ paddingBottom: 30 }}
               />
-            </SettingGroup>
+            </Group>
           </YStack>
-        </SettingContainer>
+        </Container>
       )}
 
-      <AddProviderSheet ref={bottomSheetRef} />
+      <AddProviderSheet
+        ref={bottomSheetRef}
+        mode={sheetMode}
+        editProvider={editingProvider}
+        onSave={handleProviderSave}
+      />
     </SafeAreaContainer>
   )
 }

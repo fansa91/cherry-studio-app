@@ -1,3 +1,4 @@
+import 'tsx/cjs'
 export default {
   expo: {
     name: 'Cherry Studio',
@@ -11,14 +12,18 @@ export default {
     entryPoint: './src/app.js',
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.anonymous.cherrystudio'
+      bundleIdentifier: 'com.anonymous.cherrystudio',
+      userInterfaceStyle: 'automatic'
     },
     android: {
       adaptiveIcon: {
         foregroundImage: './src/assets/images/adaptive-icon.png',
         backgroundColor: '#F65D5D'
       },
-      package: 'com.anonymous.cherrystudio'
+      edgeToEdgeEnabled: true,
+      package: 'com.anonymous.cherrystudio',
+      userInterfaceStyle: 'automatic',
+      predictiveBackGestureEnabled: true
     },
     plugins: [
       ['expo-build-properties', { ios: { deploymentTarget: '15.5' } }],
@@ -28,7 +33,33 @@ export default {
           image: './src/assets/images/splash-icon.png',
           imageWidth: 200,
           resizeMode: 'contain',
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          dark: {
+            image: './src/assets/images/splash-icon.png',
+            backgroundColor: '#000000'
+          },
+          ios: {
+            splash: {
+              image: './src/assets/images/splash-icon.png',
+              backgroundColor: '#ffffff',
+              resizeMode: 'contain',
+              dark: {
+                image: './src/assets/images/splash-icon.png',
+                backgroundColor: '#000000'
+              }
+            }
+          },
+          android: {
+            splash: {
+              image: './src/assets/images/splash-icon.png',
+              backgroundColor: '#ffffff',
+              resizeMode: 'contain',
+              dark: {
+                image: './src/assets/images/splash-icon.png',
+                backgroundColor: '#000000'
+              }
+            }
+          }
         }
       ],
       'expo-localization',
@@ -60,11 +91,29 @@ export default {
           // microphonePermission: 'Allow Cherry Studio App to access your microphone',
           recordAudioAndroid: true
         }
+      ],
+      [
+        'expo-media-library',
+        {
+          photosPermission: 'Allow Cherry Studio App to save images to your photo library.',
+          savePhotosPermission: 'Allow Cherry Studio App to save images to your photo library.',
+          isAccessMediaLocationEnabled: true
+        }
+      ],
+      ['react-native-compressor'],
+      ["react-native-edge-to-edge",
+        {
+          "android": {
+            "parentTheme": "Material3",
+            "enforceNavigationBarContrast": false
+          }
+        }
       ]
     ],
     experiments: {
       typedRoutes: true,
-      reactCompiler: true
+      reactCompiler: true,
+      tsconfigPaths: true
     },
     extra: {
       eas: {

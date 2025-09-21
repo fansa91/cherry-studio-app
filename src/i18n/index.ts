@@ -1,8 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Localization from 'expo-localization'
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { Platform } from 'react-native'
+
+import { defaultLanguage } from '@/config/languages'
+import { storage } from '@/utils'
 
 import enUS from './locales/en-us.json'
 import jaJP from './locales/ja-jp.json'
@@ -12,17 +14,17 @@ import zhTW from './locales/zh-tw.json'
 
 const resources = {
   'en-US': enUS,
-  'zh-CN': zhCN,
-  'zh-TW': zhTW,
+  'zh-Hans-CN': zhCN,
+  'zh-Hans-TW': zhTW,
   'ja-JP': jaJP,
   'ru-RU': ruRU
 }
 
 export const getLanguage = async () => {
-  let savedLanguage
+  let savedLanguage: string | undefined
 
   if (Platform.OS !== 'web' || (Platform.OS === 'web' && typeof window !== 'undefined')) {
-    savedLanguage = await AsyncStorage.getItem('language')
+    savedLanguage = storage.getString('language')
   }
 
   if (!savedLanguage) {
@@ -41,7 +43,7 @@ const initI18n = async () => {
   i18n.use(initReactI18next).init({
     resources,
     lng: await getLanguage(),
-    fallbackLng: 'en-US',
+    fallbackLng: defaultLanguage,
     interpolation: {
       escapeValue: false
     }

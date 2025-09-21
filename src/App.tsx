@@ -1,22 +1,25 @@
-import 'react-native-reanimated'
 import '@/i18n'
+import 'react-native-reanimated'
+import '../global.css'
+
+import { HeroUINativeProvider } from 'heroui-native'
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
-import { NavigationContainer, ThemeProvider } from '@react-navigation/native'
+import { NavigationContainer } from '@react-navigation/native'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
 import { useFonts } from 'expo-font'
+import * as Localization from 'expo-localization'
 import * as SplashScreen from 'expo-splash-screen'
 import { SQLiteProvider } from 'expo-sqlite'
-import { StatusBar } from 'expo-status-bar'
-import { Suspense, useEffect } from 'react'
-import React from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { ActivityIndicator } from 'react-native'
+import { SystemBars } from 'react-native-edge-to-edge'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { Provider, useSelector } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
-import { PortalProvider, TamaguiProvider } from 'tamagui'
+import { PortalProvider, TamaguiProvider, Theme } from 'tamagui'
 
 import { getDataBackupProviders } from '@/config/backup'
 import { getWebSearchProviders } from '@/config/websearchProviders'
@@ -32,9 +35,12 @@ import { upsertProviders } from '../db/queries/providers.queries'
 import { upsertWebSearchProviders } from '../db/queries/websearchProviders.queries'
 import migrations from '../drizzle/migrations'
 import tamaguiConfig from '../tamagui.config'
-import { getBuiltInAssistants, getSystemAssistants } from './config/assistants'
-import { getSystemProviders } from './config/providers'
-import AppNavigator from './navigators/AppNavigator'
+import { getSystemAssistants } from './config/assistants'
+import { SYSTEM_PROVIDERS } from './config/providers'
+import { DialogProvider } from './hooks/useDialog'
+import { ToastProvider } from './hooks/useToast'
+import MainStackNavigator from './navigators/MainStackNavigator'
+import { storage } from './utils'
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
@@ -58,14 +64,14 @@ function DatabaseInitializer() {
       try {
         logger.info('First launch, initializing app data...')
         const systemAssistants = getSystemAssistants()
-        const builtInAssistants = getBuiltInAssistants()
-        await upsertAssistants([...systemAssistants, ...builtInAssistants])
-        const providers = getSystemProviders()
-        await upsertProviders(providers)
+        // const builtInAssistants = getBuiltInAssistants()
+        await upsertAssistants([...systemAssistants])
+        await upsertProviders(SYSTEM_PROVIDERS)
         const websearchProviders = getWebSearchProviders()
         await upsertWebSearchProviders(websearchProviders)
         const dataBackupProviders = getDataBackupProviders()
         await upsertDataBackupProviders(dataBackupProviders)
+        storage.set('language', Localization.getLocales()[0]?.languageTag)
         dispatch(setInitialized(true))
         logger.info('App data initialized successfully.')
       } catch (e) {
@@ -94,23 +100,29 @@ function DatabaseInitializer() {
 
 // 主题和导航组件
 function ThemedApp() {
-  const { activeTheme, reactNavigationTheme } = useTheme()
+  const { themeSetting, activeTheme, reactNavigationTheme, isDark } = useTheme()
 
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme={activeTheme}>
-      <PortalProvider>
-        <KeyboardProvider>
-          <NavigationContainer theme={reactNavigationTheme}>
-            <ThemeProvider value={reactNavigationTheme}>
-              <BottomSheetModalProvider>
+      <HeroUINativeProvider config={{ colorScheme: themeSetting }}>
+        <PortalProvider>
+          <KeyboardProvider>
+            <NavigationContainer theme={reactNavigationTheme}>
+              <Theme name={isDark ? 'dark' : 'light'}>
+                <SystemBars style={isDark ? 'light' : 'dark'} />
                 <DatabaseInitializer />
-                <AppNavigator />
-                <StatusBar style="auto" />
-              </BottomSheetModalProvider>
-            </ThemeProvider>
-          </NavigationContainer>
-        </KeyboardProvider>
-      </PortalProvider>
+                <DialogProvider>
+                  <ToastProvider>
+                    <BottomSheetModalProvider>
+                      <MainStackNavigator />
+                    </BottomSheetModalProvider>
+                  </ToastProvider>
+                </DialogProvider>
+              </Theme>
+            </NavigationContainer>
+          </KeyboardProvider>
+        </PortalProvider>
+      </HeroUINativeProvider>
     </TamaguiProvider>
   )
 }

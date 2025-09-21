@@ -27,9 +27,16 @@
       "settings.reasoning.high": "高",
       "settings.reasoning.low": "低",
       "settings.reasoning.medium": "中",
+      "settings.reasoning.minimal": "微念",
       "settings.reasoning.off": "關閉",
       "settings.stream_output": "串流輸出",
       "settings.temperature": "溫度",
+      "settings.tooluse": {
+        "empty": "未設定工具調用方式",
+        "function": "函數呼叫",
+        "prompt": "提示詞呼叫",
+        "title": "工具呼叫方式"
+      },
       "settings.top_p": "Top P",
       "sort": {
         "alphabetical": "按字母順序排列的",
@@ -38,6 +45,7 @@
         "title": "排序助理"
       },
       "title": "助手",
+      "title.change": "切換助手",
       "title.create": "建立助理",
       "title.edit": "編輯助理",
       "title.mine": "我的助手",
@@ -45,13 +53,19 @@
     },
     "button": {
       "add": "新增",
+      "best_answer": "最佳回答",
       "checking": "檢查中...",
+      "generate_topic_name": "生成話題名稱",
       "image_generate": "圖像生成",
       "manage": "管理",
+      "multiple": "複選",
       "placeholder": "隨便問些什麼",
       "recents": "最近",
+      "rename_topic_name": "編輯話題名稱",
       "save": "保存",
+      "save_image": "保存到“照片”",
       "select_model": "選擇模型",
+      "share": "分享",
       "sort": "排序",
       "start_check_model": "讓我們開始",
       "success": "成功！",
@@ -87,11 +101,18 @@
       "clear_all": "清除全部",
       "close": "關閉",
       "confirm": "確認",
+      "copied": "已複製",
+      "copy": "複製文本",
+      "delete": "刪除",
+      "delete_translation": "刪除翻譯",
       "description": "描述",
+      "detail": "詳細",
+      "edit": "編輯",
       "enabled": "已啟用",
       "error_occurred": "發生錯誤",
       "file": "檔案",
       "generateImage": "建立圖片",
+      "go_to_settings": "前往設定",
       "language": "語言",
       "last_month": "上個月",
       "last_week": "上週",
@@ -103,26 +124,44 @@
       "older": "較舊",
       "others": "其他人",
       "photo": "相片",
+      "play": "播放",
       "preset": "預設",
       "prompt": "提示詞",
+      "regenerate": "重新生成",
+      "rename": "重新命名",
       "save": "儲存",
+      "saved": "保存",
       "search_placeholder": "搜尋...",
       "see_all": "查看全部",
+      "select_text": "選擇文本",
       "source": "來源",
+      "stop": "停止",
       "this_week": "本週",
       "today": "今天",
       "tool": "工具",
+      "translate": "翻譯",
       "visit": "訪問",
       "websearch": "網路搜尋",
       "yesterday": "昨天"
     },
     "error": {
+      "availableProviders": "可用供應商",
+      "availableTools": "可用工具",
       "backup": {
-        "file_format": "備份檔案格式錯誤"
+        "file_format": "備份檔案格式錯誤",
+        "file_invalid": "備份檔案無效，需在Cherry Studio中透過匯出至行動裝置取得",
+        "title": "備份失敗"
       },
+      "cause": "原因",
       "chat": {
         "response": "出錯了，如果沒有設定 API 金鑰，請前往 設定 > 模型供應商 中設定金鑰"
       },
+      "content": "內容",
+      "data": "資料",
+      "detail": "錯誤詳情",
+      "errors": "錯誤清單",
+      "finishReason": "完成原因",
+      "functionality": "功能",
       "http": {
         "400": "請求錯誤，請檢查請求參數是否正確。如果修改了模型設定，請重設為預設設定",
         "401": "身份驗證失敗，請檢查 API 金鑰是否正確",
@@ -134,19 +173,49 @@
         "503": "服務暫時無法使用，請稍後再試",
         "504": "閘道器逾時，請稍後再試"
       },
+      "lastError": "最後錯誤",
+      "maxEmbeddingsPerCall": "每次呼叫最大嵌入數",
+      "message": "錯誤訊息",
       "missing_user_message": "無法切換模型回應：原始使用者訊息已被刪除。請發送新訊息以取得此模型之回應。",
       "model": {
         "exists": "模型已存在"
       },
+      "modelId": "模型ID",
+      "modelType": "模型類型",
+      "name": "錯誤名稱",
       "no_api_key": "API 金鑰未設定",
+      "originalError": "原始錯誤",
+      "originalMessage": "原始訊息",
+      "parameter": "參數",
       "pause_placeholder": "已中斷",
+      "prompt": "提示詞",
+      "provider": "供應商",
+      "providerId": "供應商ID",
       "provider_disabled": "模型供應商未啟用",
+      "reason": "原因",
       "render": {
         "description": "訊息內容渲染失敗，請檢查訊息內容格式是否正確",
         "title": "渲染錯誤"
       },
+      "requestBodyValues": "請求體",
+      "requestUrl": "請求地址",
+      "response": "回應",
+      "responseBody": "回應體",
+      "responseHeaders": "回應標頭",
+      "responses": "回應",
+      "role": "角色",
+      "stack": "堆疊追蹤",
+      "statusCode": "狀態碼",
+      "statusText": "狀態文本",
+      "text": "文字",
+      "toolInput": "工具輸入",
+      "toolName": "工具名稱",
+      "translate_assistant_model_not_defined": "翻譯助手模型未配置，請前往設定 > 預設助手中配置翻譯助手的模型",
       "unknown": "未知錯誤",
-      "user_message_not_found": "無法找到原始使用者訊息"
+      "usage": "使用情形",
+      "user_message_not_found": "無法找到原始使用者訊息",
+      "value": "值",
+      "values": "值"
     },
     "errors": {
       "cannotOpenLink": "無法打開連結: {{error}}",
@@ -155,12 +224,60 @@
       "error_title": "錯誤",
       "linkErrorTitle": "打開連結錯誤"
     },
+    "export": {
+      "image": "匯出為圖片",
+      "joplin": "匯出到 Joplin",
+      "md": {
+        "label": "匯出為 Markdown",
+        "reason": "匯出為 Markdown (包含思考)"
+      },
+      "notion": "匯出到 Notion",
+      "obsidian": "匯出到 Obsidian",
+      "obsidian_atributes": "配置筆記屬性",
+      "obsidian_btn": "確定",
+      "obsidian_created": "建立時間",
+      "obsidian_created_placeholder": "請選擇建立時間",
+      "obsidian_export_failed": "匯出失敗",
+      "obsidian_export_success": "匯出成功",
+      "obsidian_fetch_error": "獲取 Obsidian 保管庫失敗",
+      "obsidian_fetch_folders_error": "獲取文件夾結構失敗",
+      "obsidian_loading": "加載中...",
+      "obsidian_no_vault_selected": "請先選擇一個保管庫",
+      "obsidian_no_vaults": "未找到 Obsidian 保管庫",
+      "obsidian_operate": "處理方式",
+      "obsidian_operate_append": "追加",
+      "obsidian_operate_new_or_overwrite": "新建（如果存在就覆蓋）",
+      "obsidian_operate_placeholder": "請選擇處理方式",
+      "obsidian_operate_prepend": "前置",
+      "obsidian_path": "路徑",
+      "obsidian_path_placeholder": "請選擇路徑",
+      "obsidian_reasoning": "包含思維鏈",
+      "obsidian_root_directory": "根目錄",
+      "obsidian_select_vault_first": "請先選擇保管庫",
+      "obsidian_source": "來源",
+      "obsidian_source_placeholder": "請輸入來源",
+      "obsidian_tags": "標籤",
+      "obsidian_tags_placeholder": "請輸入標籤名稱，多個標籤用英文逗號分隔",
+      "obsidian_title": "標題",
+      "obsidian_title_placeholder": "請輸入標題",
+      "obsidian_title_required": "標題不能為空",
+      "obsidian_vault": "保管庫",
+      "obsidian_vault_placeholder": "請選擇保管庫名稱",
+      "siyuan": "匯出到思源筆記",
+      "title": "匯出訊息",
+      "title_naming_failed": "標題生成失敗，使用預設標題",
+      "title_naming_success": "標題生成成功",
+      "wait_for_title_naming": "正在生成標題...",
+      "word": "匯出為 Word",
+      "yuque": "匯出到語雀"
+    },
     "history": {
       "search.placeholder": "搜尋主題或訊息...",
       "search.topics.empty": "未找到主題，按 Enter 鍵搜索所有訊息",
       "topics.empty": "未找到主題"
     },
     "inputs": {
+      "mentions": "@ {{number}} 個模型",
       "placeholder": "傳送訊息..."
     },
     "menu": {
@@ -176,13 +293,20 @@
       }
     },
     "message": {
+      "assistant_deleted": "助手已刪除",
+      "delete_message": "刪除訊息",
+      "delete_message_confirmation": "您確定要刪除這條訊息嗎？",
+      "delete_topic": "刪除主題",
+      "delete_topic_confirmation": "您確定要刪除這個主題嗎？",
+      "delete_translation": "刪除翻譯",
+      "marked_as_best_answer": "已標記為最佳回答",
       "searching": "搜尋中...",
+      "topic_deleted": "主題已刪除",
+      "translate_message": "翻譯訊息",
+      "unmarked_as_best_answer": "已取消最佳回答標記",
       "websearch": {
         "fetch_complete": "已完成 {{count}} 次搜尋..."
-      },
-      "delete_translation": "刪除翻譯",
-      "translate_message": "翻譯訊息",
-      "delete_message": "刪除訊息"
+      }
     },
     "models": {
       "no_models": "暫無可用模型",
@@ -207,54 +331,62 @@
       "noContent": "尚未有 {{type}} 內容"
     },
     "provider": {
+      "302ai": "302.AI",
       "aihubmix": "AiHubMix",
       "alayanew": "Alaya NeW",
       "anthropic": "Anthropic",
+      "aws-bedrock": "AWS Bedrock",
       "azure-openai": "Azure OpenAI",
       "baichuan": "百川",
-      "baidu-cloud": "百度智慧雲",
+      "baidu-cloud": "百度雲千帆",
       "burncloud": "BurnCloud",
+      "cephalon": "Cephalon",
       "copilot": "GitHub Copilot",
-      "dashscope": "阿里雲",
-      "deepseek": "DeepSeek",
+      "dashscope": "阿里雲百鍊",
+      "deepseek": "深度求索",
       "dmxapi": "DMXAPI",
       "doubao": "火山引擎",
       "fireworks": "Fireworks",
       "gemini": "Gemini",
-      "gitee-ai": "Gitee AI",
-      "github": "GitHub 模型",
+      "gitee-ai": "模力方舟",
+      "github": "GitHub Models",
       "gpustack": "GPUStack",
       "grok": "Grok",
       "groq": "Groq",
       "hunyuan": "騰訊混元",
       "hyperbolic": "Hyperbolic",
-      "infini": "Infini",
+      "infini": "無問芯穹",
       "jina": "Jina",
+      "lanyun": "藍耘",
       "lmstudio": "LM Studio",
       "minimax": "MiniMax",
       "mistral": "Mistral",
-      "modelscope": "ModelScope",
-      "moonshot": "Moonshot",
-      "nvidia": "英偉達",
+      "modelscope": "ModelScope 魔搭",
+      "moonshot": "月之暗面",
+      "new-api": "New API",
+      "nvidia": "輝達",
       "o3": "O3",
       "ocoolai": "ocoolAI",
       "ollama": "Ollama",
       "openai": "OpenAI",
       "openrouter": "OpenRouter",
       "perplexity": "Perplexity",
-      "ppio": "PPIO",
-      "qiniu": "七牛雲",
-      "qwenlm": "通義千問",
+      "ph8": "PH8 大模型開放平台",
+      "poe": "Poe",
+      "ppio": "PPIO 派歐雲",
+      "qiniu": "七牛雲 AI 推理",
+      "qwenlm": "QwenLM",
       "silicon": "SiliconFlow",
       "stepfun": "StepFun",
       "tencent-cloud-ti": "騰訊雲 TI",
       "together": "Together",
       "tokenflux": "TokenFlux",
+      "vertexai": "Vertex AI",
       "voyageai": "Voyage AI",
-      "xirang": "國雲羲朗",
-      "yi": "Yi",
-      "zhinao": "360智腦",
-      "zhipu": "智谱 AI"
+      "xirang": "天翼雲息壤",
+      "yi": "零一萬物",
+      "zhinao": "360 智腦",
+      "zhipu": "智譜 AI"
     },
     "settings": {
       "about": {
@@ -287,11 +419,11 @@
           "name": "預設助理"
         },
         "empty": "還沒有助理...",
-        "title": "預設助理",
-        "topic_naming_assistant": {
-          "description": "自動命名新主題時使用的助理",
-          "name": "主題命名助理"
+        "quick_assistant": {
+          "description": "用於簡單任務的助手，例如主題命名和關鍵字提取",
+          "name": "快速幫手"
         },
+        "title": "預設助理",
         "translate_assistant": {
           "description": "用於翻譯服務的助理",
           "name": "翻譯助理"
@@ -300,6 +432,7 @@
       "assistant.show.icon": "顯示模型圖示",
       "data": {
         "app_data": "App 資料",
+        "app_data_location": "應用程式資料位置",
         "app_knowledge": "知識庫文件",
         "app_knowledge.remove_all": "移除檔案",
         "app_logs": "App Logs",
@@ -318,6 +451,9 @@
           "filename": "檔名",
           "scan_qr_code": {
             "description": "從Cherry Studio掃描QR碼",
+            "grant_permission": "授與權限",
+            "permission_denied": "未取得相機權限。請在裝置設定中啟用相機權限以掃描QR碼。",
+            "requesting_permission": "正在請求相機權限...",
             "success": "連接成功 🎉",
             "success_description": "您現在可以點擊發送按鈕來恢復資料！",
             "title": "掃描QR碼"
@@ -334,6 +470,7 @@
           },
           "title": "Landrop"
         },
+        "log_location": "記錄檔位置",
         "recovery": "資料恢復",
         "reset": "資料重置",
         "reset_success": "資料重置成功！應用程式已恢復至初始狀態。",
@@ -350,11 +487,8 @@
             "success_description": "恢復成功，祝您使用愉快！"
           },
           "steps": {
-            "restore_assistants": "還原助理",
-            "restore_llm_providers": "恢復LLM供應商",
-            "restore_messages_blocks": "恢復訊息與封鎖",
-            "restore_topics": "恢復主題",
-            "restore_websearch": "恢復網路搜尋"
+            "restore_messages": "恢復訊息",
+            "restore_settings": "恢復設定"
           }
         },
         "third_party": "第三方連接",
@@ -388,6 +522,12 @@
         "token_placeholder": "Joplin 授權令牌",
         "url": "Joplin Web 剪藏服務 URL",
         "url_placeholder": "http://127.0.0.1:41184/"
+      },
+      "mcp": {
+        "errors": {
+          "32000": "MCP 伺服器錯誤",
+          "toolNotFound": "工具 '{{name}}' 未找到"
+        }
       },
       "modelAndService": "AI 模型與服務",
       "models": {
@@ -475,12 +615,22 @@
           "login": "登入",
           "title": "{{provider}} 服務"
         },
+        "check_failed": {
+          "api_key_empty": "API金鑰不能為空",
+          "model_api_key_empty": "模型和API金鑰不能為空",
+          "model_empty": "模型不能為空",
+          "title": "模型檢查失敗"
+        },
         "delete.content": "您確定要刪除這個提供者嗎？",
         "delete.title": "刪除提供者",
+        "edit": {
+          "title": "編輯服務供應商"
+        },
         "enabled": "開啟",
         "list.title": "提供商列表",
         "not_found": "找不到提供商",
         "not_found_message": "導航到提供商頁面時發生錯誤",
+        "provider_deleted": "提供者已刪除",
         "search": "搜尋提供者...",
         "title": "模型提供者"
       },
@@ -555,7 +705,7 @@
         "check_success_message": "API 運作正常",
         "contentLengthLimit": "內容長度限制",
         "empty": "尚未提供者...",
-        "empty.description": "點擊按鈕以新增供應商",
+        "empty.description": "前往新增供應商",
         "overrideSearchService": "覆蓋搜尋服務",
         "provider": {
           "api": {
@@ -586,16 +736,14 @@
         "title": "語雀配置",
         "token": "語雀 Token",
         "token_placeholder": "請輸入語雀 Token"
-      },
-      "mcp": {
-        "errors": {
-          "toolNotFound": "工具 '{{name}}' 未找到",
-          "32000": "MCP 伺服器錯誤"
-        }
       }
     },
     "topics": {
       "new_topic": "新主題",
+      "rename": {
+        "title": "重新命名主題"
+      },
+      "select_assistant": "選擇新對話助手",
       "title": "主題",
       "title.recent": "最近的主題"
     }

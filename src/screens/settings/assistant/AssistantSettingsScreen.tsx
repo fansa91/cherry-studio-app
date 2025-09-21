@@ -1,51 +1,57 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
-import { ChevronRight, Settings2 } from '@tamagui/lucide-icons'
+import { StackNavigationProp } from '@react-navigation/stack'
+import { ChevronDown, Languages, MessageSquareMore, Rocket, Settings2 } from '@/componentsV2/icons/LucideIcon'
 import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
-import { Button, Text, XStack, YStack } from 'tamagui'
+import { Button } from 'heroui-native'
 
-import { SettingContainer, SettingHelpText } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import ModelSheet from '@/components/sheets/ModelSheet'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
+import { Container, HeaderBar, Image, SafeAreaContainer, Text, XStack, YStack, IconButton } from '@/componentsV2'
 import { useAssistant } from '@/hooks/useAssistant'
+import { useTheme } from '@/hooks/useTheme'
+import { AssistantSettingsStackParamList } from '@/navigators/settings/AssistantSettingsStackNavigator'
 import { Assistant, Model } from '@/types/assistant'
-import { NavigationProps } from '@/types/naviagate'
-import { useIsDark } from '@/utils'
+import { getModelOrProviderIcon } from '@/utils/icons'
+import { getBaseModelName } from '@/utils/naming'
+import ModelSheet from '@/componentsV2/features/Sheet/ModelSheet'
 
 function ModelPicker({ assistant, onPress }: { assistant: Assistant; onPress: () => void }) {
   const { t } = useTranslation()
-  const isDark = useIsDark()
-  const model = assistant?.model
+  const { isDark } = useTheme()
+  const model = assistant?.defaultModel
 
   return (
     <Button
-      chromeless
-      width="100%"
-      height="100%"
-      paddingHorizontal={16}
-      paddingVertical={15}
-      onPress={onPress}
-      iconAfter={<ChevronRight size={16} />}
-      backgroundColor="$uiCardBackground">
-      <XStack flex={1} alignItems="center" overflow="hidden" justifyContent="space-between">
-        {model ? (
-          <XStack flex={1} justifyContent="space-between">
-            <Text flexShrink={1} numberOfLines={1} ellipsizeMode="tail" fontWeight="bold">
-              {t(`provider.${model.provider}`)}
+      variant="ghost"
+      className="w-full   bg-ui-card-background dark:bg-ui-card-background-dark px-3  justify-between"
+      onPress={onPress}>
+      <Button.LabelContent>
+        <XStack className="flex-1 items-center gap-2 overflow-hidden">
+          {model ? (
+            <>
+              <Image
+                className="h-[18px] w-[18px] rounded-full"
+                source={getModelOrProviderIcon(model.id, model.provider, isDark)}
+              />
+              <Text numberOfLines={1} className="shrink-0 max-w-[60%] font-medium">
+                {getBaseModelName(model.name)}
+              </Text>
+              <Text className="opacity-45 font-semibold">|</Text>
+              <Text numberOfLines={1} className="shrink font-semibold opacity-45">
+                {t(`provider.${model.provider}`)}
+              </Text>
+            </>
+          ) : (
+            <Text numberOfLines={1} className="flex-1">
+              {t('settings.models.empty')}
             </Text>
-            <Text flexShrink={0} numberOfLines={1} maxWidth="60%" ellipsizeMode="tail" fontSize={12}>
-              {model.name}
-            </Text>
-          </XStack>
-        ) : (
-          <Text flex={1} numberOfLines={1} ellipsizeMode="tail">
-            {t('settings.models.empty')}
-          </Text>
-        )}
-      </XStack>
+          )}
+        </XStack>
+      </Button.LabelContent>
+      <Button.EndContent>
+        <ChevronDown size={18} className="text-text-secondary dark:text-text-secondary-dark opacity-90" />
+      </Button.EndContent>
     </Button>
   )
 }
@@ -56,6 +62,7 @@ interface AssistantSettingItemProps {
   descriptionKey: string
   assistant: Assistant
   updateAssistant: (assistant: Assistant) => Promise<void>
+  icon?: React.ReactElement
 }
 
 function AssistantSettingItem({
@@ -63,38 +70,40 @@ function AssistantSettingItem({
   titleKey,
   descriptionKey,
   assistant,
-  updateAssistant
+  updateAssistant,
+  icon
 }: AssistantSettingItemProps) {
   const { t } = useTranslation()
-  const navigation = useNavigation<NavigationProps>()
+  const navigation = useNavigation<StackNavigationProp<AssistantSettingsStackParamList>>()
   const sheetRef = useRef<BottomSheetModal>(null)
 
   const handleModelChange = async (models: Model[]) => {
     const newModel = models[0]
-    await updateAssistant({ ...assistant, model: newModel })
+    await updateAssistant({ ...assistant, model: newModel, defaultModel: newModel })
   }
 
   return (
     <>
-      <YStack gap={8}>
-        <XStack justifyContent="space-between" height={20}>
-          <Text>{t(titleKey)}</Text>
-          <Button
-            size={14}
-            icon={<Settings2 size={14} color="$textLink" />}
-            backgroundColor="$colorTransparent"
+      <YStack className="gap-2">
+        <XStack className="items-center justify-between px-[10px]">
+          <XStack className="items-center gap-2">
+            {icon}
+            <Text className="font-semibold text-text-secondary dark:text-text-secondary-dark">{t(titleKey)}</Text>
+          </XStack>
+          <IconButton
+            icon={<Settings2 size={16} className="text-text-link" />}
             onPress={() => navigation.navigate('AssistantDetailScreen', { assistantId })}
           />
         </XStack>
-        <XStack>
-          <ModelPicker assistant={assistant} onPress={() => sheetRef.current?.present()} />
-        </XStack>
-        <SettingHelpText>{t(descriptionKey)}</SettingHelpText>
+        <ModelPicker assistant={assistant} onPress={() => sheetRef.current?.present()} />
+        <Text size="sm" className="px-[10px] text-text-secondary dark:text-text-secondary-dark opacity-70">
+          {t(descriptionKey)}
+        </Text>
       </YStack>
 
       <ModelSheet
         ref={sheetRef}
-        mentions={assistant.model ? [assistant.model] : []}
+        mentions={assistant.defaultModel ? [assistant.defaultModel] : []}
         setMentions={handleModelChange}
         multiple={false}
       />
@@ -104,17 +113,16 @@ function AssistantSettingItem({
 
 export default function AssistantSettingsScreen() {
   const { t } = useTranslation()
-  const navigation = useNavigation<NavigationProps>()
 
   const { assistant: defaultAssistant, updateAssistant: updateDefaultAssistant } = useAssistant('default')
-  const { assistant: topicNamingAssistant, updateAssistant: updateTopicNamingAssistant } = useAssistant('topic_naming')
+  const { assistant: quickAssistant, updateAssistant: updateQuickAssistant } = useAssistant('quick')
   const { assistant: translateAssistant, updateAssistant: updateTranslateAssistant } = useAssistant('translate')
 
-  const isLoading = !defaultAssistant || !topicNamingAssistant || !translateAssistant
+  const isLoading = !defaultAssistant || !quickAssistant || !translateAssistant
 
   if (isLoading) {
     return (
-      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaContainer className="items-center justify-center">
         <ActivityIndicator />
       </SafeAreaContainer>
     )
@@ -126,28 +134,31 @@ export default function AssistantSettingsScreen() {
       titleKey: 'settings.assistant.default_assistant.name',
       descriptionKey: 'settings.assistant.default_assistant.description',
       assistant: defaultAssistant,
-      updateAssistant: updateDefaultAssistant
+      updateAssistant: updateDefaultAssistant,
+      icon: <MessageSquareMore size={16} className="text-text-secondary dark:text-text-secondary-dark" />
     },
     {
-      id: 'topic_naming',
-      titleKey: 'settings.assistant.topic_naming_assistant.name',
-      descriptionKey: 'settings.assistant.topic_naming_assistant.description',
-      assistant: topicNamingAssistant,
-      updateAssistant: updateTopicNamingAssistant
+      id: 'quick',
+      titleKey: 'settings.assistant.quick_assistant.name',
+      descriptionKey: 'settings.assistant.quick_assistant.description',
+      assistant: quickAssistant,
+      updateAssistant: updateQuickAssistant,
+      icon: <Rocket size={16} className="text-text-secondary dark:text-text-secondary-dark" />
     },
     {
       id: 'translate',
       titleKey: 'settings.assistant.translate_assistant.name',
       descriptionKey: 'settings.assistant.translate_assistant.description',
       assistant: translateAssistant,
-      updateAssistant: updateTranslateAssistant
+      updateAssistant: updateTranslateAssistant,
+      icon: <Languages size={16} className="text-text-secondary dark:text-text-secondary-dark" />
     }
   ]
 
   return (
     <SafeAreaContainer>
-      <HeaderBar title={t('settings.assistant.title')} onBackPress={() => navigation.goBack()} />
-      <SettingContainer>
+      <HeaderBar title={t('settings.assistant.title')} />
+      <Container>
         {assistantItems.map(item => (
           <AssistantSettingItem
             key={item.id}
@@ -156,9 +167,10 @@ export default function AssistantSettingsScreen() {
             descriptionKey={item.descriptionKey}
             assistant={item.assistant}
             updateAssistant={item.updateAssistant}
+            icon={item.icon}
           />
         ))}
-      </SettingContainer>
+      </Container>
     </SafeAreaContainer>
   )
 }

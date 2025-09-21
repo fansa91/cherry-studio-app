@@ -1,108 +1,141 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import { useNavigation } from '@react-navigation/native'
+import { DrawerActions, useNavigation } from '@react-navigation/native'
 import { FlashList } from '@shopify/flash-list'
-import { debounce } from 'lodash'
-import React, { useEffect, useRef, useState } from 'react'
+import { ImpactFeedbackStyle } from 'expo-haptics'
+import React, { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
-import { Text, YStack } from 'tamagui'
+import { View } from 'react-native'
 
-import AssistantItem from '@/components/assistant/AssistantItem'
-import AssistantItemSheet from '@/components/assistant/market/AssistantItemSheet'
-import { UnionPlusIcon } from '@/components/icons/UnionPlusIcon'
-import { SettingContainer } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
-import { SearchInput } from '@/components/ui/SearchInput'
+import { UnionPlusIcon } from '@/componentsV2/icons'
+import {
+  DrawerGestureWrapper,
+  SafeAreaContainer,
+  Container,
+  HeaderBar,
+  Text,
+  YStack,
+  SearchInput
+} from '@/componentsV2'
+import { Menu } from '@/componentsV2/icons/LucideIcon'
 import { useExternalAssistants } from '@/hooks/useAssistant'
+import { useSearch } from '@/hooks/useSearch'
 import { useTopics } from '@/hooks/useTopic'
 import { createAssistant } from '@/services/AssistantService'
 import { Assistant } from '@/types/assistant'
-import { NavigationProps } from '@/types/naviagate'
+import { DrawerNavigationProps } from '@/types/naviagate'
 import { getAssistantWithTopic } from '@/utils/assistants'
+import { haptic } from '@/utils/haptic'
+import AssistantItemSkeleton from '@/componentsV2/features/Assistant/AssistantItemSkeleton'
+import AssistantItem from '@/componentsV2/features/Assistant/AssistantItem'
+import AssistantItemSheet from '@/componentsV2/features/Assistant/AssistantItemSheet'
 
 export default function AssistantScreen() {
   const { t } = useTranslation()
-  const navigation = useNavigation<NavigationProps>()
-
-  // 搜索状态
-  const [searchText, setSearchText] = useState('')
-  const [debouncedSearchText, setDebouncedSearchText] = useState('')
-
-  // 创建防抖函数，300ms 延迟
-  const debouncedSetSearch = debounce((text: string) => {
-    setDebouncedSearchText(text)
-  }, 300)
+  const navigation = useNavigation<DrawerNavigationProps>()
 
   const { topics } = useTopics()
   const { assistants, isLoading } = useExternalAssistants()
   const assistantWithTopics = getAssistantWithTopic(assistants, topics)
 
-  // 监听 searchText 变化，触发防抖更新
-  useEffect(() => {
-    debouncedSetSearch(searchText)
-
-    // 清理函数，组件卸载时取消防抖
-    return () => {
-      debouncedSetSearch.cancel()
-    }
-  })
-
-  const filteredAssistants = assistantWithTopics.filter(
-    assistant =>
-      assistant.name.toLowerCase().includes(debouncedSearchText.toLowerCase()) ||
-      assistant.description?.toLowerCase().includes(debouncedSearchText.toLowerCase())
+  const {
+    searchText,
+    setSearchText,
+    filteredItems: filteredAssistants
+  } = useSearch(
+    assistantWithTopics,
+    useCallback((assistant: Assistant) => [assistant.name, assistant.description || ''], []),
+    { delay: 300 }
   )
 
   const bottomSheetRef = useRef<BottomSheetModal>(null)
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null)
 
   const handleAssistantItemPress = (assistant: Assistant) => {
+    haptic(ImpactFeedbackStyle.Medium)
     setSelectedAssistant(assistant)
     bottomSheetRef.current?.present()
   }
 
   const onAddAssistant = async () => {
+    haptic(ImpactFeedbackStyle.Medium)
     const newAssistant = await createAssistant()
-    navigation.navigate('AssistantDetailScreen', { assistantId: newAssistant.id })
+    navigation.navigate('Assistant', { screen: 'AssistantDetailScreen', params: { assistantId: newAssistant.id } })
   }
 
-  if (isLoading) {
-    return (
-      <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
-      </SafeAreaContainer>
-    )
+  const handleMenuPress = () => {
+    haptic(ImpactFeedbackStyle.Medium)
+    navigation.dispatch(DrawerActions.openDrawer())
+  }
+
+  const handleEditAssistant = (assistantId: string) => {
+    navigation.navigate('Assistant', { screen: 'AssistantDetailScreen', params: { assistantId } })
+  }
+
+  const onChatNavigation = async (topicId: string) => {
+    navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId } })
   }
 
   return (
-    <SafeAreaContainer>
-      <HeaderBar
-        title={t('assistants.title.mine')}
-        onBackPress={() => navigation.goBack()}
-        rightButton={{
-          icon: <UnionPlusIcon size={24} />,
-          onPress: onAddAssistant
-        }}
-      />
-      <SettingContainer>
-        <SearchInput placeholder={t('common.search_placeholder')} value={searchText} onChangeText={setSearchText} />
+    <SafeAreaContainer className="pb-0">
+      <DrawerGestureWrapper>
+        <View collapsable={false} className="flex-1">
+          <HeaderBar
+            title={t('assistants.title.mine')}
+            leftButton={{
+              icon: <Menu size={24} />,
+              onPress: handleMenuPress
+            }}
+            rightButton={{
+              icon: <UnionPlusIcon size={20} />,
+              onPress: onAddAssistant
+            }}
+          />
+          <Container className="p-0 gap-2.5">
+            <View className="px-4">
+              <SearchInput
+                placeholder={t('common.search_placeholder')}
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+            </View>
 
-        <FlashList
-          showsVerticalScrollIndicator={false}
-          data={filteredAssistants}
-          renderItem={({ item }) => <AssistantItem assistant={item} onAssistantPress={handleAssistantItemPress} />}
-          keyExtractor={item => item.id}
-          estimatedItemSize={80}
-          ItemSeparatorComponent={() => <YStack height={16} />}
-          ListEmptyComponent={
-            <YStack flex={1} justifyContent="center" alignItems="center" paddingTop="$8">
-              <Text>{t('settings.assistant.empty')}</Text>
-            </YStack>
-          }
-        />
-      </SettingContainer>
-      <AssistantItemSheet ref={bottomSheetRef} assistant={selectedAssistant} />
+            {isLoading ? (
+              <FlashList
+                data={Array.from({ length: 5 })}
+                renderItem={() => <AssistantItemSkeleton />}
+                keyExtractor={(_, index) => `skeleton-${index}`}
+                estimatedItemSize={80}
+                ItemSeparatorComponent={() => <YStack className="h-2.5" />}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 30 }}
+              />
+            ) : (
+              <FlashList
+                showsVerticalScrollIndicator={false}
+                data={filteredAssistants}
+                renderItem={({ item }) => (
+                  <AssistantItem assistant={item} onAssistantPress={handleAssistantItemPress} />
+                )}
+                keyExtractor={item => item.id}
+                estimatedItemSize={80}
+                ItemSeparatorComponent={() => <YStack className="h-2.5" />}
+                ListEmptyComponent={
+                  <YStack className="flex-1 justify-center items-center pt-8">
+                    <Text>{t('settings.assistant.empty')}</Text>
+                  </YStack>
+                }
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 30 }}
+              />
+            )}
+          </Container>
+          <AssistantItemSheet
+            ref={bottomSheetRef}
+            assistant={selectedAssistant}
+            source="external"
+            onEdit={handleEditAssistant}
+            onChatNavigation={onChatNavigation}
+          />
+        </View>
+      </DrawerGestureWrapper>
     </SafeAreaContainer>
   )
 }

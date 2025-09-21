@@ -1,16 +1,15 @@
 import { isEmpty } from 'lodash'
-import { FC, memo } from 'react'
-import React from 'react'
+import React, { FC, memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import Markdown from 'react-native-markdown-display'
-import { View } from 'tamagui'
+import Markdown from 'react-native-marked'
+import { View } from 'react-native'
 
+import { useTheme } from '@/hooks/useTheme'
 import { MainTextMessageBlock, ThinkingMessageBlock, TranslationMessageBlock } from '@/types/message'
-import { useIsDark } from '@/utils'
 import { escapeBrackets, removeSvgEmptyLines } from '@/utils/formats'
 
-import { createMarkdownStyles } from './MarkdownStyles'
-import { useMarkdownRenderer } from './useMarkdownRenderer'
+import { markdownColors } from './MarkdownStyles'
+import { useMarkedRenderer } from './useMarkedRenderer'
 
 interface Props {
   block: MainTextMessageBlock | TranslationMessageBlock | ThinkingMessageBlock
@@ -18,7 +17,7 @@ interface Props {
 
 const ReactNativeMarkdown: FC<Props> = ({ block }) => {
   const { t } = useTranslation()
-  const isDark = useIsDark()
+  const { isDark } = useTheme()
 
   const getMessageContent = (block: MainTextMessageBlock | TranslationMessageBlock | ThinkingMessageBlock) => {
     const empty = isEmpty(block.content)
@@ -28,16 +27,34 @@ const ReactNativeMarkdown: FC<Props> = ({ block }) => {
   }
 
   const messageContent = getMessageContent(block)
+  const colors = isDark ? markdownColors.dark : markdownColors.light
 
-  const styles = createMarkdownStyles(isDark)
-
-  const { markdownItInstance, rules } = useMarkdownRenderer(isDark)
+  const { renderer, tokenizer } = useMarkedRenderer(isDark)
 
   return (
     <View>
-      <Markdown rules={rules} markdownit={markdownItInstance} style={styles}>
-        {messageContent}
-      </Markdown>
+      <Markdown
+        theme={{
+          colors: {
+            code: colors.codeBg,
+            link: colors.link,
+            text: colors.text,
+            border: colors.border
+          }
+        }}
+        value={messageContent}
+        renderer={renderer}
+        tokenizer={tokenizer}
+        flatListProps={{
+          initialNumToRender: 8,
+          showsVerticalScrollIndicator: false,
+          style: {
+            backgroundColor: 'transparent'
+          },
+          scrollEnabled: false,
+          nestedScrollEnabled: false
+        }}
+      />
     </View>
   )
 }

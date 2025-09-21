@@ -1,13 +1,20 @@
 import { useNavigation } from '@react-navigation/native'
-import { ChevronRight, CloudUpload, FolderSearch2, Wifi } from '@tamagui/lucide-icons'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, Text, useTheme, XStack, YStack } from 'tamagui'
 
-import { SettingContainer, SettingGroup, SettingGroupTitle, SettingRow } from '@/components/settings'
-import { HeaderBar } from '@/components/settings/HeaderBar'
-import { DataBackupIcon } from '@/components/ui/DatabackupIcon'
-import SafeAreaContainer from '@/components/ui/SafeAreaContainer'
+import {
+  Container,
+  Group,
+  GroupTitle,
+  HeaderBar,
+  PressableRow,
+  RowRightArrow,
+  SafeAreaContainer,
+  Text,
+  XStack,
+  YStack
+} from '@/componentsV2'
+import { FolderSearch2, Wifi } from '@/componentsV2/icons/LucideIcon'
 import { NavigationProps } from '@/types/naviagate'
 
 interface SettingItemConfig {
@@ -22,8 +29,6 @@ interface SettingGroupConfig {
 }
 
 export default function DataSettingsScreen() {
-  const theme = useTheme()
-  const navigation = useNavigation<NavigationProps>()
   const { t } = useTranslation()
 
   const settingsItems: SettingGroupConfig[] = [
@@ -41,80 +46,80 @@ export default function DataSettingsScreen() {
           icon: <Wifi size={24} />
         }
       ]
-    },
-    {
-      title: t('settings.data.cloud_backup'),
-      items: [
-        {
-          title: 'WebDAV',
-          screen: 'WebDavScreen',
-          icon: <CloudUpload size={24} />
-        },
-        {
-          title: t('settings.nutstore.config'),
-          screen: 'NutstoreLoginScreen',
-          icon: <DataBackupIcon provider="nutstore" />
-        }
-      ]
-    },
-    {
-      title: t('settings.data.third_party'),
-      items: [
-        {
-          title: 'Notion',
-          screen: 'NotionSettingsScreen',
-          icon: <DataBackupIcon provider="notion" />
-        },
-        {
-          title: 'Yuque',
-          screen: 'YuqueSettingsScreen',
-          icon: <DataBackupIcon provider="yuque" />
-        },
-        {
-          title: 'Joplin',
-          screen: 'JoplinSettingsScreen',
-          icon: <DataBackupIcon provider="joplin" />
-        },
-        {
-          title: 'Obsidian',
-          screen: 'ObsidianSettingsScreen',
-          icon: <DataBackupIcon provider="obsidian" />
-        },
-        {
-          title: 'SiYuan Note',
-          screen: 'SiyuanSettingsScreen',
-          icon: <DataBackupIcon provider="siyuan" />
-        }
-      ]
     }
+    // {
+    //   title: t('settings.data.cloud_backup'),
+    //   items: [
+    //     {
+    //       title: 'WebDAV',
+    //       screen: 'WebDavScreen',
+    //       icon: <CloudUpload size={24} />
+    //     },
+    //     {
+    //       title: t('settings.nutstore.config'),
+    //       screen: 'NutstoreLoginScreen',
+    //       icon: <DataBackupIcon provider="nutstore" />
+    //     }
+    //   ]
+    // },
+    // {
+    //   title: t('settings.data.third_party'),
+    //   items: [
+    //     {
+    //       title: 'Notion',
+    //       screen: 'NotionSettingsScreen',
+    //       icon: <DataBackupIcon provider="notion" />
+    //     },
+    //     {
+    //       title: 'Yuque',
+    //       screen: 'YuqueSettingsScreen',
+    //       icon: <DataBackupIcon provider="yuque" />
+    //     },
+    //     {
+    //       title: 'Joplin',
+    //       screen: 'JoplinSettingsScreen',
+    //       icon: <DataBackupIcon provider="joplin" />
+    //     },
+    //     {
+    //       title: 'Obsidian',
+    //       screen: 'ObsidianSettingsScreen',
+    //       icon: <DataBackupIcon provider="obsidian" />
+    //     },
+    //     {
+    //       title: 'SiYuan Note',
+    //       screen: 'SiyuanSettingsScreen',
+    //       icon: <DataBackupIcon provider="siyuan" />
+    //     }
+    //   ]
+    // }
   ]
 
   return (
     <SafeAreaContainer style={{ flex: 1 }}>
-      <HeaderBar title={t('settings.data.title')} onBackPress={() => navigation.goBack()} />
+      <HeaderBar title={t('settings.data.title')} />
 
-      <ScrollView flex={1} backgroundColor="$background">
-        <SettingContainer>
-          <YStack gap={24} flex={1}>
+      <YStack className="flex-1">
+        <Container>
+          <YStack className="gap-6 flex-1">
             {settingsItems.map(group => (
-              <Group key={group.title} title={group.title}>
+              <GroupContainer key={group.title} title={group.title}>
                 {group.items.map(item => (
                   <SettingItem key={item.title} title={item.title} screen={item.screen} icon={item.icon} />
                 ))}
-              </Group>
+              </GroupContainer>
             ))}
           </YStack>
-        </SettingContainer>
-      </ScrollView>
+        </Container>
+      </YStack>
     </SafeAreaContainer>
   )
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function GroupContainer({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <YStack gap={8}>
-      {title.trim() !== '' && <SettingGroupTitle>{title}</SettingGroupTitle>}
-      <SettingGroup>{children}</SettingGroup>
+    <YStack className="gap-2">
+      {title.trim() !== '' && <GroupTitle>{title}</GroupTitle>}
+      <Group>{children}</Group>
     </YStack>
   )
 }
@@ -122,13 +127,13 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 function SettingItem({ title, screen, icon }: SettingItemProps) {
   const navigation = useNavigation<NavigationProps>()
   return (
-    <SettingRow onPress={() => navigation.navigate(screen as any)}>
-      <XStack alignItems="center" gap={12}>
+    <PressableRow onPress={() => navigation.navigate(screen as any)}>
+      <XStack className="items-center gap-3">
         {icon}
-        <Text fontSize="$5">{title}</Text>
+        <Text>{title}</Text>
       </XStack>
-      <ChevronRight size={24} color="$colorFocus" />
-    </SettingRow>
+      <RowRightArrow />
+    </PressableRow>
   )
 }
 

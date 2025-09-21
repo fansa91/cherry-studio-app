@@ -1,41 +1,47 @@
 import * as FileSystem from 'expo-file-system'
 import { Directory, File, Paths } from 'expo-file-system/next'
+import * as Sharing from 'expo-sharing'
 
+import { DEFAULT_DOCUMENTS_STORAGE, DEFAULT_IMAGES_STORAGE, DEFAULT_STORAGE } from '@/constants/storage'
 import { loggerService } from '@/services/LoggerService'
-import { FileType, FileTypes } from '@/types/file'
+import { FileMetadata, FileTypes } from '@/types/file'
 import { uuid } from '@/utils'
 
 import { deleteFileById, getAllFiles, getFileById, upsertFiles } from '../../db/queries/files.queries'
+
+export interface ShareFileResult {
+  success: boolean
+  message: string
+}
+
 const logger = loggerService.withContext('File Service')
 
-const fileStorageDir = new Directory(Paths.cache, 'Files')
-
 // 辅助函数，确保目录存在
-async function ensureDirExists() {
-  const dirInfo = await FileSystem.getInfoAsync(fileStorageDir.uri)
+async function ensureDirExists(dir: Directory) {
+  const dirInfo = await FileSystem.getInfoAsync(dir.uri)
 
   if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(fileStorageDir.uri, { intermediates: true })
+    await FileSystem.makeDirectoryAsync(dir.uri, { intermediates: true })
   }
 }
 
-export function readFile(file: FileType): string {
+export function readFile(file: FileMetadata): string {
   return new File(file.path).text()
 }
 
-export function readBase64File(file: FileType): string {
+export function readBase64File(file: FileMetadata): string {
   return new File(file.path).base64()
 }
 
-export async function writeBase64File(data: string): Promise<FileType> {
-  if (!fileStorageDir.exists) {
-    fileStorageDir.create({ intermediates: true, overwrite: true })
+export async function writeBase64File(data: string): Promise<FileMetadata> {
+  if (!DEFAULT_IMAGES_STORAGE.exists) {
+    DEFAULT_IMAGES_STORAGE.create({ intermediates: true, overwrite: true })
   }
 
   const cleanedBase64 = data.includes('data:image') ? data.split(',')[1] : data
 
   const fileName = uuid()
-  const fileUri = fileStorageDir.uri + `${fileName}.png`
+  const fileUri = DEFAULT_IMAGES_STORAGE.uri + `${fileName}.png`
 
   await FileSystem.writeAsStringAsync(fileUri, cleanedBase64, {
     encoding: FileSystem.EncodingType.Base64
@@ -49,28 +55,34 @@ export async function writeBase64File(data: string): Promise<FileType> {
     size: 0,
     ext: '.png',
     type: FileTypes.IMAGE,
-    mime_type: 'image/png',
     created_at: '',
-    count: 1,
-    md5: ''
+    count: 1
   }
 }
 
-export function readBinaryFile(file: FileType): Blob {
+export function readBinaryFile(file: FileMetadata): Blob {
   return new File(file.path).blob()
 }
 
-export function readStreamFile(file: FileType): ReadableStream {
+export function readStreamFile(file: FileMetadata): ReadableStream {
   return new File(file.path).readableStream()
 }
 
-export async function uploadFiles(files: Omit<FileType, 'md5'>[]): Promise<FileType[]> {
-  await ensureDirExists()
+export async function uploadFiles(
+  files: Omit<FileMetadata, 'md5'>[],
+  uploadedDir?: Directory
+): Promise<FileMetadata[]> {
   const filePromises = files.map(async file => {
     try {
+      const storageDir = uploadedDir
+        ? uploadedDir
+        : file.type === FileTypes.IMAGE
+          ? DEFAULT_IMAGES_STORAGE
+          : DEFAULT_DOCUMENTS_STORAGE
+      await ensureDirExists(storageDir)
       const sourceUri = file.path
-      const destinationUri = `${fileStorageDir.uri}${file.id}.${file.ext}`
-
+      // ios upload image will be .JPG
+      const destinationUri = `${storageDir.uri}${file.id}.${file.ext.toLowerCase()}`
       await FileSystem.copyAsync({
         from: sourceUri,
         to: destinationUri
@@ -85,12 +97,12 @@ export async function uploadFiles(files: Omit<FileType, 'md5'>[]): Promise<FileT
         throw new Error('Failed to copy file or get info.')
       }
 
-      const finalFile: FileType = {
+      const finalFile: FileMetadata = {
         ...file,
         path: destinationUri,
-        size: fileInfo.size,
-        md5: fileInfo.md5 || ''
+        size: fileInfo.size
       }
+      console.log('finalFile', finalFile)
       upsertFiles([finalFile])
       return finalFile
     } catch (error) {
@@ -121,17 +133,14 @@ async function deleteFile(id: string, force: boolean = false): Promise<void> {
   }
 }
 
-export async function deleteFiles(files: FileType[]): Promise<void> {
+export async function deleteFiles(files: FileMetadata[]): Promise<void> {
   await Promise.all(files.map(file => deleteFile(file.id)))
 }
 
 export async function resetCacheDirectory() {
   try {
-    // Delete Files directory
-    const filesDirectory = new Directory(Paths.cache, 'Files')
-
-    if (filesDirectory.exists) {
-      filesDirectory.delete()
+    if (DEFAULT_STORAGE.exists) {
+      DEFAULT_STORAGE.delete()
     }
 
     // Delete ImagePicker directory
@@ -149,7 +158,7 @@ export async function resetCacheDirectory() {
     }
 
     // Recreate Files directory
-    await FileSystem.makeDirectoryAsync(fileStorageDir.uri, { intermediates: true })
+    await FileSystem.makeDirectoryAsync(DEFAULT_STORAGE.uri, { intermediates: true })
   } catch (error) {
     logger.error('resetCacheDirectory', error)
   }
@@ -176,7 +185,7 @@ export async function getDirectorySizeAsync(directoryUri: string): Promise<numbe
 
     return totalSize
   } catch (error) {
-    console.error('无法计算目录大小:', error)
+    console.error('Cannot get directory size:', error)
     return 0
   }
 }
@@ -188,16 +197,52 @@ export async function getDirectorySizeAsync(directoryUri: string): Promise<numbe
 export async function getCacheDirectorySize() {
   // imagePicker and documentPicker will copy files to File, so size will double compututaion
   // this is not equal to ios system cache storage
-  const filesDirectory = new Directory(Paths.cache, 'Files')
+
   // const imagePickerDirectory = new Directory(Paths.cache, 'ImagePicker')
   // const documentPickerDirectory = new Directory(Paths.cache, 'DocumentPicker')
 
-  const filesSize = await getDirectorySizeAsync(filesDirectory.uri)
+  const filesSize = await getDirectorySizeAsync(DEFAULT_STORAGE.uri)
   // const imageSize = await getDirectorySizeAsync(imagePickerDirectory.uri)
   // const documentSize = await getDirectorySizeAsync(documentPickerDirectory.uri)
 
   // return filesSize + imageSize + documentSize
   return filesSize
+}
+
+export async function shareFile(uri: string): Promise<ShareFileResult> {
+  try {
+    if (!(await Sharing.isAvailableAsync())) {
+      logger.warn('Sharing is not available on this device')
+      return {
+        success: false,
+        message: 'Sharing is not available on this device.'
+      }
+    }
+
+    const fileInfo = await FileSystem.getInfoAsync(uri)
+
+    if (!fileInfo.exists) {
+      logger.error('File not found:', uri)
+      return {
+        success: false,
+        message: 'File not found.'
+      }
+    }
+
+    await Sharing.shareAsync(uri)
+
+    logger.info('File shared successfully')
+    return {
+      success: true,
+      message: 'File shared successfully.'
+    }
+  } catch (error) {
+    logger.error('Error sharing file:', error)
+    return {
+      success: false,
+      message: 'Failed to share file. Please try again.'
+    }
+  }
 }
 
 export default {
@@ -211,5 +256,6 @@ export default {
   deleteFiles,
   resetCacheDirectory,
   getDirectorySizeAsync,
-  getCacheDirectorySize
+  getCacheDirectorySize,
+  shareFile
 }
