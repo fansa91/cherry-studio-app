@@ -43,6 +43,7 @@ jobs:
           # ./gradlew clean assembleRelease --no-daemon
           ./gradlew clean
           ./gradlew bundleRelease
+          cd -
           java -jar bundletool.jar build-apks \
           --bundle=app/build/outputs/bundle/release/app-release.aab \
           --output=cherry_studio.apks
