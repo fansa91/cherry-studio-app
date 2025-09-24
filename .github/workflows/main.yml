@@ -42,7 +42,7 @@ jobs:
         run: npx expo prebuild
       - name: Download bundletool
         run: |
-          curl -L -o android/bundletool.jar https://github.com/google/bundletool/releases/download/1.15.6/bundletool-all-1.15.6.jar
+          curl -L -o bundletool.jar https://github.com/google/bundletool/releases/download/1.15.6/bundletool-all-1.15.6.jar
       - name: Build Packages
         shell: bash
         run: |
