@@ -10,7 +10,55 @@ on:
             required: true
 
 jobs:
-  build:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      # 1. 检出代码
+      - uses: actions/checkout@v4
+
+      # 2. 设置 Node.js 环境（Expo/React Native）
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. 安装依赖
+      - name: Install dependencies
+        run: |
+          npm install -g expo-cli
+          npm install
+
+      # 4. 生成 ios 工程
+      - name: Expo prebuild
+        run: npx expo prebuild
+
+      # 5. 编译 iOS APP (不签名)
+      - name: Build iOS app
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace *.xcworkspace \
+            -scheme $(ls | grep .xcodeproj | sed 's/.xcodeproj//') \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+
+      # 6. 打包 ipa
+      - name: Package IPA
+        run: |
+          cd ios/build/Build/Products/Release-iphoneos
+          mkdir Payload
+          cp -r *.app Payload/
+          zip -r app-unsigned.ipa Payload
+
+      # 7. 上传 ipa 作为 artifact
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-ipa
+          path: ios/build/Build/Products/Release-iphoneos/app-unsigned.ipa
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
