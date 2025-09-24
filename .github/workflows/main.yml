@@ -51,7 +51,7 @@ jobs:
           KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ vars.STORE_PASSWORD }}
           KEY_ALIAS: ${{ vars.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ vars.KEY_PASSWORD }}
         shell: bash
         run: |
           cd android
@@ -59,7 +59,7 @@ jobs:
           # ./gradlew bundleRelease
           # ./gradlew clean assembleRelease --no-daemon
           ./gradlew clean
-          ./gradlew bundleRelease  # --ks ${{ steps.android_keystore.outputs.filePath }} --ks-key-alias ${{ vars.KEY_ALIAS }} --ks-store-password ${{ vars.STORE_PASSWORD }} --ks-key-password ${{ vars.KEY_ALIAS }}
+          ./gradlew bundleRelease  # --ks ${{ steps.android_keystore.outputs.filePath }} --ks-key-alias ${{ vars.KEY_ALIAS }} --ks-store-password ${{ vars.STORE_PASSWORD }} --ks-key-password ${{ vars.KEY_PASSWORD }}
           cd -
           java -jar bundletool.jar build-apks \
           --bundle=android/app/build/outputs/bundle/release/app-release.aab \
