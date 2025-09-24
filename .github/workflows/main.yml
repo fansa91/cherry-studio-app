@@ -1,4 +1,4 @@
-name: Gradle Android Build
+name: Gradle Android and ios Build
 
 on:
   workflow_dispatch:
