@@ -52,7 +52,7 @@ jobs:
           # ./gradlew bundleRelease
           # ./gradlew clean assembleRelease --no-daemon
           ./gradlew clean
-          ./gradlew bundleRelease --ks ${{ steps.android_keystore.outputs.filePath }} --ks-key-alias ${{ vars.KEY_ALIAS }} --ks-store-password ${{ vars.STORE_PASSWORD }} --ks-key-password ${{ vars.KEY_ALIAS }}
+          ./gradlew bundleRelease  # --ks ${{ steps.android_keystore.outputs.filePath }} --ks-key-alias ${{ vars.KEY_ALIAS }} --ks-store-password ${{ vars.STORE_PASSWORD }} --ks-key-password ${{ vars.KEY_ALIAS }}
           cd -
           java -jar bundletool.jar build-apks \
           --bundle=android/app/build/outputs/bundle/release/app-release.aab \
