@@ -59,6 +59,7 @@ jobs:
         shell: bash
         run: |
           cd android
+          echo "org.gradle.version=8.13" >> gradle.properties
           ./gradlew clean
           ./gradlew assembleRelease
           
