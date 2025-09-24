@@ -29,12 +29,6 @@ jobs:
         with:
           fileName: keystore.jks
           encodedString: ${{ vars.KEYSTORE_BASE64 }}
-      - name: Create key.properties
-        run: |
-          echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > cherry-studio-app/android/key.properties
-          echo "storePassword=${{ vars.STORE_PASSWORD }}" >> cherry-studio-app/android/key.properties
-          echo "keyPassword=${{ vars.KEY_PASSWORD }}" >> cherry-studio-app/android/key.properties
-          echo "keyAlias=${{ vars.KEY_ALIAS }}" >> cherry-studio-app/android/key.properties
 
       - name: Activate Yarn 4.9.1
         run: corepack prepare yarn@4.9.1 --activate
