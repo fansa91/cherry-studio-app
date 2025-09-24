@@ -45,6 +45,11 @@ jobs:
         run: |
           curl -L -o bundletool.jar https://github.com/google/bundletool/releases/download/1.15.6/bundletool-all-1.15.6.jar
       - name: Build Packages
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ vars.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ vars.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         shell: bash
         run: |
           cd android
@@ -56,7 +61,12 @@ jobs:
           cd -
           java -jar bundletool.jar build-apks \
           --bundle=android/app/build/outputs/bundle/release/app-release.aab \
-          --output=cherry_studio.apks
+          --output=cherry_studio.apks \
+          --ks="$KEYSTORE_FILE" \
+          --ks-pass="pass:$KEYSTORE_PASSWORD" \
+          --ks-key-alias="$KEY_ALIAS" \
+          --key-pass="pass:$KEY_PASSWORD"
+          
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
