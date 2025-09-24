@@ -21,15 +21,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'yarn'  # 启用 Yarn 缓存
           
-      - name: Activate Yarn 4.9.1
-        run: corepack prepare yarn@4.9.1 --activate
+      - name: Install Yarn (if not pre-installed)
+        run: npm install -g yarn
 
       - name: Verify Yarn version
         run: yarn --version
       # 3. 安装依赖
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
       # 4. 生成 ios 工程
       - name: Expo prebuild
