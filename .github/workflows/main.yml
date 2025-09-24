@@ -21,7 +21,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'yarn'  # 启用 Yarn 缓存
           
       - name: Install Yarn (if not pre-installed)
         run: npm install -g yarn
