@@ -37,6 +37,9 @@ jobs:
         run: yarn --version
       - name: Install dependencies
         run: yarn install
+      - name: Build with Gradle
+        uses: gradle/actions@v4.4.3
+          
 
       - name: Run Expo Prebuild (optional)
         run: npx expo prebuild
