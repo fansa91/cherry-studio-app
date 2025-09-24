@@ -2,8 +2,12 @@ name: Gradle Android Build
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
+    inputs:
+          tag:
+            description: 'Release Tag (e.g., v1.0.0)'
+            required: true
 
 jobs:
   build:
@@ -78,6 +82,22 @@ jobs:
           name: app-release.apk
           path: |
            # cherry_studio.apks
-           # android/app/build/outputs/apk/release/*.apk
+           android/app/build/outputs/apk/release/*.apk
            # android/app/build/outputs/apk/**/release/*.apk
            # android/app/build/outputs/bundle/release/*.aab
+      #上传至Release
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: "${{ github.event.inputs.tag }}"
+          # body: "${{ fromJson(steps.version.outputs.content).version_desc }}"
+          # prerelease: ${{ fromJson(steps.version.outputs.content).prerelease }}
+          # token: ${{ vars.TOKEN }}
+          # overwrite: true
+          files: |
+            android/app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
