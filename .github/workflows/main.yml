@@ -58,6 +58,22 @@ jobs:
         with:
           name: unsigned-ipa
           path: ios/build/Build/Products/Release-iphoneos/app-unsigned.ipa
+      #上传至Release
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: "${{ github.event.inputs.tag }}"
+          # body: "${{ fromJson(steps.version.outputs.content).version_desc }}"
+          # prerelease: ${{ fromJson(steps.version.outputs.content).prerelease }}
+          # token: ${{ vars.TOKEN }}
+          # overwrite: true
+          files: |
+            ios/build/Build/Products/Release-iphoneos/*.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
   build-android:
     runs-on: ubuntu-latest
 
