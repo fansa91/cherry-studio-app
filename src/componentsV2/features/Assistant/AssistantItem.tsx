@@ -5,12 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
 
 import { Trash2 } from '@/componentsV2/icons/LucideIcon'
-import { useTheme } from '@/hooks/useTheme'
+import { useTheme } from 'heroui-native'
 import { useToast } from '@/hooks/useToast'
 import { getCurrentTopicId } from '@/hooks/useTopic'
-import { deleteAssistantById } from '@/services/AssistantService'
 import { loggerService } from '@/services/LoggerService'
-import { deleteTopicsByAssistantId, isTopicOwnedByAssistant } from '@/services/TopicService'
 import { Assistant } from '@/types/assistant'
 import { HomeNavigationProps } from '@/types/naviagate'
 import { haptic } from '@/utils/haptic'
@@ -18,7 +16,9 @@ import EmojiAvatar from './EmojiAvatar'
 import XStack from '@/componentsV2/layout/XStack'
 import YStack from '@/componentsV2/layout/YStack'
 import Text from '@/componentsV2/base/Text'
-import { ContextMenu, ContextMenuListProps } from '@/componentsV2/base/ContextMenu'
+import ContextMenu, { ContextMenuListProps } from '@/componentsV2/base/ContextMenu'
+import { assistantService } from '@/services/AssistantService'
+import { topicService } from '@/services/TopicService'
 
 const logger = loggerService.withContext('Assistant Item')
 
@@ -40,12 +40,14 @@ const AssistantItem: FC<AssistantItemProps> = ({ assistant, onAssistantPress }) 
 
   const handleDelete = async () => {
     try {
-      if (await isTopicOwnedByAssistant(assistant.id, getCurrentTopicId())) {
+      const isTopicOwnedByAssistant = await topicService.isTopicOwnedByAssistant(assistant.id, getCurrentTopicId())
+
+      if (isTopicOwnedByAssistant) {
         navigation.navigate('ChatScreen', { topicId: 'new' })
       }
 
-      await deleteAssistantById(assistant.id)
-      await deleteTopicsByAssistantId(assistant.id)
+      await assistantService.deleteAssistant(assistant.id)
+      await topicService.deleteTopicsByAssistantId(assistant.id)
       toast.show(t('message.assistant_deleted'))
     } catch (error) {
       logger.error('Delete Assistant error', error)
@@ -66,7 +68,7 @@ const AssistantItem: FC<AssistantItemProps> = ({ assistant, onAssistantPress }) 
   return (
     <ContextMenu borderRadius={16} list={contextMenuItems} onPress={handlePress}>
       <View className="py-2.5 px-2.5 justify-between items-center rounded-2xl bg-ui-card-background dark:bg-ui-card-background-dark">
-        <XStack className="gap-3.5 flex-1">
+        <XStack className="gap-3.5">
           <EmojiAvatar
             emoji={assistant.emoji}
             size={46}

@@ -7,14 +7,12 @@ import { View } from 'react-native'
 
 import { Edit3, Sparkles, Trash2 } from '../../icons/LucideIcon'
 
-import { useTheme } from '@/hooks/useTheme'
+import { useTheme } from 'heroui-native'
 import { useToast } from '@/hooks/useToast'
+import { useAssistant } from '@/hooks/useAssistant'
 import i18n from '@/i18n'
 import { fetchTopicNaming } from '@/services/ApiService'
-import { getAssistantById } from '@/services/AssistantService'
-import { useAppDispatch, useAppSelector } from '@/store'
-import { setCurrentTopicId } from '@/store/topic'
-import { Assistant, Topic } from '@/types/assistant'
+import { Topic } from '@/types/assistant'
 import { DrawerNavigationProps } from '@/types/naviagate'
 import { storage } from '@/utils'
 import { haptic } from '@/utils/haptic'
@@ -24,7 +22,7 @@ import XStack from '@/componentsV2/layout/XStack'
 import YStack from '@/componentsV2/layout/YStack'
 import Text from '@/componentsV2/base/Text'
 import TextField from '@/componentsV2/base/TextField'
-import { ContextMenu } from '@/componentsV2/base/ContextMenu'
+import ContextMenu from '@/componentsV2/base/ContextMenu'
 
 type TimeFormat = 'time' | 'date'
 
@@ -51,6 +49,8 @@ interface TopicItemProps {
   timeFormat?: TimeFormat
   onDelete?: (topicId: string) => Promise<void>
   onRename?: (topicId: string, newName: string) => Promise<void>
+  currentTopicId: string
+  switchTopic: (topicId: string) => Promise<void>
   handleNavigateChatScreen?: (topicId: string) => void
 }
 
@@ -59,28 +59,28 @@ export const TopicItem: FC<TopicItemProps> = ({
   timeFormat = 'time',
   onDelete,
   onRename,
+  currentTopicId,
+  switchTopic,
   handleNavigateChatScreen
 }) => {
   const { t } = useTranslation()
   const [currentLanguage, setCurrentLanguage] = useState<string>(i18n.language)
-  const dispatch = useAppDispatch()
   const navigation = useNavigation<DrawerNavigationProps>()
-  const [assistant, setAssistant] = useState<Assistant>()
+  const { assistant } = useAssistant(topic.assistantId)
   const [isGeneratingName, setIsGeneratingName] = useState(false)
   const dialog = useDialog()
   const { isDark } = useTheme()
-  const isActive = useAppSelector(state => state.topic.currentTopicId === topic.id)
+  const isActive = currentTopicId === topic.id
   const toast = useToast()
 
   const openTopic = () => {
-    dispatch(setCurrentTopicId(topic.id))
-
     if (handleNavigateChatScreen) {
       handleNavigateChatScreen(topic.id)
     } else {
       haptic(ImpactFeedbackStyle.Medium)
       navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId: topic.id } })
     }
+    switchTopic(topic.id).catch(console.error)
   }
 
   const date = new Date(topic.updatedAt)
@@ -105,13 +105,8 @@ export const TopicItem: FC<TopicItemProps> = ({
       }
     }
 
-    const fetchAssistant = async () => {
-      setAssistant(await getAssistantById(topic.assistantId))
-    }
-
     fetchCurrentLanguage()
-    fetchAssistant()
-  }, [topic.assistantId])
+  }, [])
 
   const tempNameRef = useRef(topic.name)
 
@@ -203,8 +198,10 @@ export const TopicItem: FC<TopicItemProps> = ({
           borderColor={isDark ? '#444444' : '#ffffff'}
         />
         <YStack className="flex-1 gap-0.5">
-          <XStack className="justify-between">
-            <Text className="text-md leading-[18px] font-bold ">{assistant?.name}</Text>
+          <XStack className="justify-between items-center gap-2">
+            <Text className="flex-1 text-base font-bold" numberOfLines={1} ellipsizeMode="tail">
+              {assistant?.name}
+            </Text>
             <Text className="text-xs text-text-secondary dark:text-text-secondary-dark shrink-0 text-wrap-none">
               {displayTime}
             </Text>

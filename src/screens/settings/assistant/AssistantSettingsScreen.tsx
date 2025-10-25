@@ -5,11 +5,10 @@ import { ChevronDown, Languages, MessageSquareMore, Rocket, Settings2 } from '@/
 import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
-import { Button } from 'heroui-native'
+import { Button, useTheme } from 'heroui-native'
 
 import { Container, HeaderBar, Image, SafeAreaContainer, Text, XStack, YStack, IconButton } from '@/componentsV2'
 import { useAssistant } from '@/hooks/useAssistant'
-import { useTheme } from '@/hooks/useTheme'
 import { AssistantSettingsStackParamList } from '@/navigators/settings/AssistantSettingsStackNavigator'
 import { Assistant, Model } from '@/types/assistant'
 import { getModelOrProviderIcon } from '@/utils/icons'
@@ -26,7 +25,7 @@ function ModelPicker({ assistant, onPress }: { assistant: Assistant; onPress: ()
       variant="ghost"
       className="w-full   bg-ui-card-background dark:bg-ui-card-background-dark px-3  justify-between"
       onPress={onPress}>
-      <Button.LabelContent>
+      <Button.Label>
         <XStack className="flex-1 items-center gap-2 overflow-hidden">
           {model ? (
             <>
@@ -44,14 +43,12 @@ function ModelPicker({ assistant, onPress }: { assistant: Assistant; onPress: ()
             </>
           ) : (
             <Text numberOfLines={1} className="flex-1">
-              {t('settings.models.empty')}
+              {t('settings.models.empty.label')}
             </Text>
           )}
         </XStack>
-      </Button.LabelContent>
-      <Button.EndContent>
-        <ChevronDown size={18} className="text-text-secondary dark:text-text-secondary-dark opacity-90" />
-      </Button.EndContent>
+      </Button.Label>
+      <ChevronDown size={18} className="text-text-secondary dark:text-text-secondary-dark opacity-90" />
     </Button>
   )
 }
@@ -96,7 +93,7 @@ function AssistantSettingItem({
           />
         </XStack>
         <ModelPicker assistant={assistant} onPress={() => sheetRef.current?.present()} />
-        <Text size="sm" className="px-[10px] text-text-secondary dark:text-text-secondary-dark opacity-70">
+        <Text className="px-[10px] text-text-secondary dark:text-text-secondary-dark opacity-70">
           {t(descriptionKey)}
         </Text>
       </YStack>

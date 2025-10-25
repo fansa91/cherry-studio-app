@@ -13,6 +13,7 @@ import XStack from '@/componentsV2/layout/XStack'
 import RowRightArrow from '@/componentsV2/layout/Row/RowRightArrow'
 import { WebsearchSheet } from '../Sheet/WebsearchSheet'
 import { ToolUseSheet } from '../Sheet/ToolUseSheet'
+import { McpServerSheet } from '../Sheet/McpServerSheet'
 
 interface ToolTabContentProps {
   assistant: Assistant
@@ -23,6 +24,7 @@ export function ToolTabContent({ assistant, updateAssistant }: ToolTabContentPro
   const { t } = useTranslation()
   const toolUseSheetRef = useRef<BottomSheetModal>(null)
   const websearchSheetRef = useRef<BottomSheetModal>(null)
+  const mcpServerSheetRef = useRef<BottomSheetModal>(null)
   const { apiProviders } = useWebsearchProviders()
 
   const handleToolUsePress = () => {
@@ -31,6 +33,10 @@ export function ToolTabContent({ assistant, updateAssistant }: ToolTabContentPro
 
   const handleWebsearchPress = () => {
     websearchSheetRef.current?.present()
+  }
+
+  const handleMcpServerPress = () => {
+    mcpServerSheetRef.current?.present()
   }
 
   const provider = apiProviders.find(p => p.id === assistant.webSearchProviderId)
@@ -54,7 +60,7 @@ export function ToolTabContent({ assistant, updateAssistant }: ToolTabContentPro
 
     return {
       icon: null,
-      text: t('settings.websearch.empty'),
+      text: t('settings.websearch.empty.label'),
       isActive: false
     }
   }
@@ -85,13 +91,13 @@ export function ToolTabContent({ assistant, updateAssistant }: ToolTabContentPro
               {assistant.settings?.toolUseMode ? (
                 <XStack className="flex-1 items-center gap-2">
                   {assistant.settings.toolUseMode === 'function' ? <SquareFunction size={20} /> : <Wrench size={20} />}
-                  <Text className="flex-1 text-sm" numberOfLines={1} ellipsizeMode="tail">
+                  <Text className="flex-1 text-base" numberOfLines={1} ellipsizeMode="tail">
                     {t(`assistants.settings.tooluse.${assistant.settings?.toolUseMode}`)}
                   </Text>
                 </XStack>
               ) : (
                 <Text
-                  className="flex-1 text-sm text-text-secondary dark:text-text-secondary"
+                  className="flex-1 text-base text-text-secondary dark:text-text-secondary"
                   numberOfLines={1}
                   ellipsizeMode="tail">
                   {t('assistants.settings.tooluse.empty')}
@@ -112,19 +118,40 @@ export function ToolTabContent({ assistant, updateAssistant }: ToolTabContentPro
             <XStack className="flex-1 items-center gap-2">
               {websearchContent.isActive ? (
                 <XStack className="flex-1 items-center gap-2 max-w-[80%]">
-                  <XStack className="items-center justify-center">
-                    {websearchContent.icon}
-                  </XStack>
-                  <Text className="flex-1 text-sm" numberOfLines={1} ellipsizeMode="tail">
+                  <XStack className="items-center justify-center">{websearchContent.icon}</XStack>
+                  <Text className="flex-1 text-base" numberOfLines={1} ellipsizeMode="tail">
                     {websearchContent.text}
                   </Text>
                 </XStack>
               ) : (
                 <Text
-                  className="flex-1 text-sm text-text-secondary dark:text-text-secondary"
+                  className="flex-1 text-base text-text-secondary dark:text-text-secondary"
                   numberOfLines={1}
                   ellipsizeMode="tail">
                   {websearchContent.text}
+                </Text>
+              )}
+            </XStack>
+            <RowRightArrow />
+          </Pressable>
+        </YStack>
+
+        <YStack className="w-full gap-2">
+          <Text className="text-sm font-medium text-text-secondary dark:text-text-secondary">
+            {t('mcp.server.title')}
+          </Text>
+          <Pressable
+            onPress={handleMcpServerPress}
+            className="flex-row items-center justify-between rounded-lg bg-ui-card-background dark:bg-ui-card-background-dark px-3 py-3 active:opacity-80">
+            <XStack className="flex-1 items-center gap-2">
+              {assistant.mcpServers && assistant.mcpServers.length > 0 ? (
+                <Text>{t('mcp.server.selected', { num: assistant.mcpServers.length })}</Text>
+              ) : (
+                <Text
+                  className="flex-1 text-base text-text-secondary dark:text-text-secondary"
+                  numberOfLines={1}
+                  ellipsizeMode="tail">
+                  {t('mcp.server.empty')}
                 </Text>
               )}
             </XStack>
@@ -139,6 +166,7 @@ export function ToolTabContent({ assistant, updateAssistant }: ToolTabContentPro
         updateAssistant={updateAssistant}
         providers={apiProviders.filter(p => p.apiKey)}
       />
+      <McpServerSheet ref={mcpServerSheetRef} assistant={assistant} updateAssistant={updateAssistant} />
     </MotiView>
   )
 }

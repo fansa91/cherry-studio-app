@@ -1,10 +1,11 @@
 import { RouteProp, useRoute } from '@react-navigation/native'
 import React from 'react'
+import { ActivityIndicator } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
-import { YStack } from '@/componentsV2'
+import { YStack, SafeAreaContainer } from '@/componentsV2'
 import { useAssistant } from '@/hooks/useAssistant'
-import { useTheme } from '@/hooks/useTheme'
+import { useTheme } from 'heroui-native'
 import { AssistantDetailTabParamList } from '@/navigators/AssistantDetailTabNavigator'
 import { ModelTabContent } from '@/componentsV2/features/Assistant/ModelTabContent'
 
@@ -16,7 +17,13 @@ export default function ModelTabScreen() {
   const { assistant: _assistant } = route.params
   const { assistant, updateAssistant } = useAssistant(_assistant.id)
 
-  if (!assistant) return null
+  if (!assistant) {
+    return (
+      <SafeAreaContainer className="items-center justify-center">
+        <ActivityIndicator />
+      </SafeAreaContainer>
+    )
+  }
 
   return (
     <KeyboardAwareScrollView

@@ -2,9 +2,8 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/
 import React, { forwardRef, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BackHandler, View } from 'react-native'
-import { Button, Spinner } from 'heroui-native'
+import { Button, Spinner, useTheme } from 'heroui-native'
 
-import { useTheme } from '@/hooks/useTheme'
 import { ApiStatus } from '@/types/assistant'
 import { ChevronsRight } from '@/componentsV2/icons'
 import YStack from '@/componentsV2/layout/YStack'
@@ -65,7 +64,7 @@ export const WebSearchApiCheckSheet = forwardRef<BottomSheetModal, WebSearchApiC
                 className="h-11 w-1/2 rounded-lg bg-green-10 border-green-20 dark:bg-green-dark-10 dark:border-green-dark-20"
                 isDisabled={checkApiStatus === 'processing'}
                 onPress={onStartModelCheck}>
-                <Button.LabelContent>
+                <Button.Label>
                   {checkApiStatus === 'processing' && (
                     <View>
                       <XStack className="gap-2.5 w-full items-center justify-center">
@@ -97,7 +96,7 @@ export const WebSearchApiCheckSheet = forwardRef<BottomSheetModal, WebSearchApiC
                       </XStack>
                     </View>
                   )}
-                </Button.LabelContent>
+                </Button.Label>
               </Button>
             </XStack>
           </YStack>

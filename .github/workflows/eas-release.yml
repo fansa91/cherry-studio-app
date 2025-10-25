@@ -1,0 +1,218 @@
+name: EAS Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    name: Build with EAS and Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      # Step 3: Enable Corepack for Yarn 4
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.10.3 --activate
+
+      # Step 4: Setup Expo and EAS
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
+
+      # Step 5: Install dependencies
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Step 6: Get version tag
+      - name: Get version tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 7: Build Android (without auto-submit)
+      - name: Build Android on EAS
+        id: build_android
+        run: |
+          echo "Building Android APK..."
+          eas build --platform android --profile production --non-interactive --no-wait --json > android_build.json
+          BUILD_ID=$(cat android_build.json | jq -r '.[0].id')
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+          echo "🤖 Android Build ID: $BUILD_ID"
+          echo "🔗 View Android build: https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/$BUILD_ID"
+
+      # Step 8: Build iOS (with auto-submit)
+      - name: Build and Submit iOS on EAS
+        id: build_ios
+        run: |
+          echo "Building and submitting iOS..."
+          eas build --platform ios --profile production --auto-submit --non-interactive --no-wait --json > ios_build.json
+          BUILD_ID=$(cat ios_build.json | jq -r '.[0].id')
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+          echo "🍎 iOS Build ID: $BUILD_ID"
+          echo "📱 iOS build will auto-submit to App Store Connect when complete"
+          echo "🔗 View iOS build: https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/$BUILD_ID"
+
+      # Step 9: Wait for Android build to complete
+      - name: Wait for Android build
+        run: |
+          echo "Waiting for Android build to complete..."
+          BUILD_ID="${{ steps.build_android.outputs.build_id }}"
+
+          # Poll build status until complete
+          while true; do
+            # Get build status and convert to lowercase for comparison
+            STATUS=$(eas build:view $BUILD_ID --json | jq -r '.status')
+            STATUS_LOWER=$(echo "$STATUS" | tr '[:upper:]' '[:lower:]')
+
+            echo "Current status: $STATUS"
+
+            if [ "$STATUS_LOWER" == "finished" ]; then
+              echo "✅ Build completed successfully!"
+              break
+            elif [ "$STATUS_LOWER" == "errored" ] || [ "$STATUS_LOWER" == "canceled" ]; then
+              echo "❌ Build failed with status: $STATUS"
+              echo "View build details at: https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/$BUILD_ID"
+              exit 1
+            elif [ -z "$STATUS" ]; then
+              echo "⚠️ Failed to get build status, retrying..."
+              sleep 10
+              continue
+            fi
+
+            echo "⏳ Build still in progress, waiting 60 seconds..."
+            sleep 60
+          done
+
+      # Step 10: Download Android APK
+      - name: Download Android APK
+        run: |
+          BUILD_ID="${{ steps.build_android.outputs.build_id }}"
+          echo "Downloading APK from build: $BUILD_ID"
+
+          # Get artifact URL
+          ARTIFACT_URL=$(eas build:view $BUILD_ID --json | jq -r '.artifacts.buildUrl')
+          echo "Artifact URL: $ARTIFACT_URL"
+
+          # Download APK
+          curl -L -o Cherry-Studio-${{ steps.version.outputs.tag }}.apk "$ARTIFACT_URL"
+
+          # Verify file exists and size
+          ls -lh Cherry-Studio-${{ steps.version.outputs.tag }}.apk
+
+      # Step 11: Create GitHub Release
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Cherry Studio ${{ steps.version.outputs.tag }}
+          body: |
+            ## Cherry Studio ${{ steps.version.outputs.tag }}
+
+            ### 🤖 Android
+            - Built with EAS Build (production profile)
+            - APK available for download below
+            - **Build ID**: `${{ steps.build_android.outputs.build_id }}`
+            - [View Build Details on Expo](https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/${{ steps.build_android.outputs.build_id }})
+
+            ### 🍎 iOS
+            - Built with EAS Build (production profile)
+            - Automatically submitted to App Store Connect
+            - **Build ID**: `${{ steps.build_ios.outputs.build_id }}`
+            - [View Build Details on Expo](https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/${{ steps.build_ios.outputs.build_id }})
+
+            ---
+
+            📝 **Note**: This is a draft release. Review the builds and publish when ready.
+
+            🤖 Automatically generated by GitHub Actions
+          files: |
+            Cherry-Studio-${{ steps.version.outputs.tag }}.apk
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 12: Summary
+      - name: Build Summary
+        if: success()
+        run: |
+          echo "## Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🤖 Android" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build ID**: \`${{ steps.build_android.outputs.build_id }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ APK uploaded to GitHub Release" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Details**: [View on Expo](https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/${{ steps.build_android.outputs.build_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🍎 iOS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build ID**: \`${{ steps.build_ios.outputs.build_id }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: 🚀 Submitted to App Store Connect" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Details**: [View on Expo](https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/${{ steps.build_ios.outputs.build_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Release" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: \`${{ steps.version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: 📝 Draft (not published yet)" >> $GITHUB_STEP_SUMMARY
+          echo "- **GitHub Release**: ${{ steps.create_release.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the draft release on GitHub" >> $GITHUB_STEP_SUMMARY
+          echo "2. Test the APK if needed" >> $GITHUB_STEP_SUMMARY
+          echo "3. Edit the release notes if necessary" >> $GITHUB_STEP_SUMMARY
+          echo "4. Click **Publish release** when ready" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "_Note: Replace [your-account] with your Expo account name in the links above_" >> $GITHUB_STEP_SUMMARY
+
+      # Step 13: Failure Summary
+      - name: Build Failure Summary
+        if: failure()
+        run: |
+          echo "## Build Failed ❌" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The build process encountered an error. Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "${{ steps.build_android.outputs.build_id }}" ]; then
+            echo "### 🤖 Android Build" >> $GITHUB_STEP_SUMMARY
+            echo "- **Build ID**: \`${{ steps.build_android.outputs.build_id }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **View Details**: [Expo Dashboard](https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/${{ steps.build_android.outputs.build_id }})" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -n "${{ steps.build_ios.outputs.build_id }}" ]; then
+            echo "### 🍎 iOS Build" >> $GITHUB_STEP_SUMMARY
+            echo "- **Build ID**: \`${{ steps.build_ios.outputs.build_id }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **View Details**: [Expo Dashboard](https://expo.dev/accounts/[your-account]/projects/cherry-studio/builds/${{ steps.build_ios.outputs.build_id }})" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "### 🔍 Troubleshooting" >> $GITHUB_STEP_SUMMARY
+          echo "- Check the [EAS Build documentation](https://docs.expo.dev/build/introduction/)" >> $GITHUB_STEP_SUMMARY
+          echo "- Review the build logs on Expo dashboard for detailed error messages" >> $GITHUB_STEP_SUMMARY
+          echo "- Ensure all credentials and secrets are properly configured" >> $GITHUB_STEP_SUMMARY

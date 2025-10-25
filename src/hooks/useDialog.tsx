@@ -4,9 +4,8 @@ import React, { createContext, useContext, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable } from 'react-native'
 
-import { useTheme } from '@/hooks/useTheme'
+import { useTheme, Button, cn } from 'heroui-native'
 import { haptic } from '@/utils/haptic'
-import { Button, cn } from 'heroui-native'
 import YStack from '@/componentsV2/layout/YStack'
 import Text from '@/componentsV2/base/Text'
 import XStack from '@/componentsV2/layout/XStack'
@@ -141,9 +140,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                     options?.cancelStyle?.toString() || ''
                   )}
                   onPress={cancel}>
-                  <Button.LabelContent>
+                  <Button.Label>
                     <Text className="text-gray-80 dark:text-gray-80 text-[17px]">{cancelText}</Text>
-                  </Button.LabelContent>
+                  </Button.Label>
                 </Button>
               )}
               <Button
@@ -153,9 +152,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                   options?.confirmStyle?.toString() || ''
                 )}
                 onPress={confirm}>
-                <Button.LabelContent>
+                <Button.Label>
                   <Text className={cn(confirmTextClassName, 'text-[17px]')}>{confirmText}</Text>
-                </Button.LabelContent>
+                </Button.Label>
               </Button>
             </XStack>
           </YStack>

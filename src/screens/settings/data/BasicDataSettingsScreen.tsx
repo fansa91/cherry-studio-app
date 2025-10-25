@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native'
 import { reloadAppAsync } from 'expo'
 import * as DocumentPicker from 'expo-document-picker'
-import { Paths } from 'expo-file-system/next'
+import { Paths } from 'expo-file-system'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Sharing from 'expo-sharing'
 import React, { useEffect, useState } from 'react'
@@ -21,16 +21,17 @@ import {
   XStack,
   YStack
 } from '@/componentsV2'
-import { FileText, Folder, FolderOpen, RotateCcw, Trash2 } from '@/componentsV2/icons/LucideIcon'
+import { FileText, Folder, FolderOpen, RotateCcw, Save, Trash2 } from '@/componentsV2/icons/LucideIcon'
 import { useDialog } from '@/hooks/useDialog'
 import { DEFAULT_RESTORE_STEPS, useRestore } from '@/hooks/useRestore'
-import { getCacheDirectorySize, resetCacheDirectory } from '@/services/FileService'
+import { getCacheDirectorySize, resetCacheDirectory, shareFile } from '@/services/FileService'
 import { loggerService } from '@/services/LoggerService'
 import { persistor } from '@/store'
 import { NavigationProps } from '@/types/naviagate'
 import { formatFileSize } from '@/utils/file'
 
-import { resetDatabase } from '../../../../db/queries/reset.queries'
+import { databaseMaintenance } from '@database'
+import { backup } from '@/services/BackupService'
 const logger = loggerService.withContext('BasicDataSettingsScreen')
 
 interface SettingItemConfig {
@@ -52,6 +53,7 @@ export default function BasicDataSettingsScreen() {
   const { t } = useTranslation()
   const dialog = useDialog()
   const [isResetting, setIsResetting] = useState(false)
+  const [isBackup, setIsBackup] = useState(false)
   const [cacheSize, setCacheSize] = useState<string>('--')
   const { isModalOpen, restoreSteps, overallStatus, startRestore, closeModal } = useRestore({
     stepConfigs: DEFAULT_RESTORE_STEPS
@@ -69,7 +71,18 @@ export default function BasicDataSettingsScreen() {
 
   useEffect(() => {
     loadCacheSize()
-  }, [])
+  }, [isBackup])
+
+  const handleBackup = async () => {
+    try {
+      setIsBackup(true)
+      const backupUri = await backup()
+      setIsBackup(false)
+      await shareFile(backupUri)
+    } catch (error) {
+      logger.error('handleBackup', error as Error)
+    }
+  }
 
   const handleRestore = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: 'application/zip' })
@@ -97,7 +110,7 @@ export default function BasicDataSettingsScreen() {
         setIsResetting(true)
 
         try {
-          await resetDatabase() // reset sqlite
+          await databaseMaintenance.resetDatabase() // reset sqlite
           await persistor.purge() // reset redux
           await resetCacheDirectory() // reset cache
         } catch (error) {
@@ -120,8 +133,8 @@ export default function BasicDataSettingsScreen() {
 
     dialog.open({
       type: 'warning',
-      title: t('settings.data.reset'),
-      content: t('settings.data.reset_warning'),
+      title: t('settings.data.clear_cache.title'),
+      content: t('settings.data.clear_cache.warning'),
       confirmText: t('common.confirm'),
       cancelText: t('common.cancel'),
       onConFirm: async () => {
@@ -134,7 +147,7 @@ export default function BasicDataSettingsScreen() {
           dialog.open({
             type: 'error',
             title: t('common.error'),
-            content: t('settings.data.data_reset.error')
+            content: t('settings.data.clear_cache.error')
           })
           logger.error('handleDataReset', error as Error)
         } finally {
@@ -198,14 +211,13 @@ export default function BasicDataSettingsScreen() {
     {
       title: t('settings.data.title'),
       items: [
-        // todo
-        // {
-        //   title: t('settings.data.backup'),
-        //   icon: <Save size={24} />,
-        //   onPress: () => {}
-        // },
         {
-          title: t('settings.data.recovery'),
+          title: t('settings.data.backup'),
+          icon: <Save size={24} />,
+          onPress: handleBackup
+        },
+        {
+          title: t('settings.data.restore.title'),
           icon: <Folder size={24} />,
           onPress: handleRestore
         },
@@ -295,7 +307,7 @@ function SettingItem({ title, screen, icon, subtitle, danger, onPress, disabled 
         {icon}
         <YStack>
           <Text className={danger ? 'text-red-500 dark:text-red-500' : ''}>{title}</Text>
-          {subtitle && <Text size="sm">{subtitle}</Text>}
+          {subtitle && <Text className="text-sm">{subtitle}</Text>}
         </YStack>
       </XStack>
       {screen && <RowRightArrow />}

@@ -1,12 +1,7 @@
-import { throttle } from 'lodash'
-import { LRUCache } from 'lru-cache'
-
 import ModernAiProvider from '@/aiCore/index_new'
 import { AiSdkMiddlewareConfig } from '@/aiCore/middleware/AiSdkMiddlewareBuilder'
 import { buildStreamTextParams, convertMessagesToSdkMessages } from '@/aiCore/prepareParams'
 import { loggerService } from '@/services/LoggerService'
-import { AppDispatch } from '@/store'
-import { newMessagesActions } from '@/store/newMessage'
 import { Assistant, Model, Topic, Usage } from '@/types/assistant'
 import { ChunkType } from '@/types/chunk'
 import { FileMetadata, FileTypes } from '@/types/file'
@@ -24,34 +19,19 @@ import {
 } from '@/utils/messageUtils/create'
 import { getTopicQueue } from '@/utils/queue'
 
-import {
-  deleteBlocksByMessageId,
-  deleteBlocksByTopicId,
-  getBlockById,
-  removeManyBlocks,
-  updateOneBlock,
-  upsertBlocks
-} from '../../db/queries/messageBlocks.queries'
-import {
-  deleteMessageById as _deleteMessageById,
-  deleteMessagesByTopicId as _deleteMessagesByTopicId,
-  getMessageById,
-  getMessagesByTopicId,
-  updateMessageById,
-  upsertMessages
-} from '../../db/queries/messages.queries'
-import { getTopicById, updateTopicMessages } from '../../db/queries/topics.queries'
+import { messageBlockDatabase, messageDatabase } from '@database'
 import { fetchTopicNaming } from './ApiService'
-import { getAssistantById, getDefaultModel } from './AssistantService'
+import { assistantService, getDefaultModel } from './AssistantService'
 import { BlockManager, createCallbacks } from './messageStreaming'
 import { transformMessagesAndFetch } from './OrchestrationService'
 import { getAssistantProvider } from './ProviderService'
 import { createStreamProcessor, StreamProcessorCallbacks } from './StreamProcessingService'
+import { topicService } from './TopicService'
 
 const logger = loggerService.withContext('Messages Service')
 
 const finishTopicLoading = async (topicId: string) => {
-  store.dispatch(newMessagesActions.setTopicLoading({ topicId, loading: false }))
+  await topicService.updateTopic(topicId, { isLoading: false })
 }
 
 /**
@@ -141,16 +121,9 @@ export async function sendMessage(
   userMessage: Message,
   userMessageBlocks: MessageBlock[],
   assistant: Assistant,
-  topicId: Topic['id'],
-  dispatch: AppDispatch
+  topicId: Topic['id']
 ) {
   try {
-    // mock mentions model
-    // userMessage.mentions = [
-    //   { id: 'deepseek-ai/DeepSeek-V3', name: 'deepseek-ai/DeepSeek-V3', provider: 'silicon', group: 'deepseek-ai' },
-    //   { id: 'deepseek-ai/DeepSeek-R1', name: 'deepseek-ai/DeepSeek-R1', provider: 'silicon', group: 'deepseek-ai' }
-    // ]
-
     if (userMessage.blocks.length === 0) {
       logger.warn('sendMessage: No blocks in the provided message.')
       return
@@ -158,38 +131,31 @@ export async function sendMessage(
 
     // add message to database
     await saveMessageAndBlocksToDB(userMessage, userMessageBlocks)
-    await upsertMessages(userMessage)
 
     const mentionedModels = userMessage.mentions
 
     if (mentionedModels && mentionedModels.length > 0) {
-      await multiModelResponses(topicId, assistant, userMessage, mentionedModels, dispatch)
+      await multiModelResponses(topicId, assistant, userMessage, mentionedModels)
     } else {
       const assistantMessage = createAssistantMessage(assistant.id, topicId, {
         askId: userMessage.id,
         model: assistant.model
       })
       await saveMessageAndBlocksToDB(assistantMessage, [])
-      await upsertMessages(assistantMessage)
-      await fetchAndProcessAssistantResponseImpl(topicId, assistant, assistantMessage, dispatch)
+      await fetchAndProcessAssistantResponseImpl(topicId, assistant, assistantMessage)
     }
   } catch (error) {
     logger.error('Error in sendMessage:', error)
-  } finally {
-    finishTopicLoading(topicId)
+    await finishTopicLoading(topicId)
   }
 }
 
-export async function regenerateAssistantMessage(
-  assistantMessage: Message,
-  assistant: Assistant,
-  dispatch: AppDispatch
-) {
+export async function regenerateAssistantMessage(assistantMessage: Message, assistant: Assistant) {
   const topicId = assistantMessage.topicId
 
   try {
     // 1. Use selector to get all messages for the topic
-    const allMessagesForTopic = await getMessagesByTopicId(topicId)
+    const allMessagesForTopic = await messageDatabase.getMessagesByTopicId(topicId)
 
     // 2. Find the original user query (Restored Logic)
     const originalUserQuery = allMessagesForTopic.find(m => m.id === assistantMessage.askId)
@@ -202,7 +168,7 @@ export async function regenerateAssistantMessage(
     }
 
     // 3. Verify the assistant message itself exists in entities
-    const messageToResetEntity = await getMessageById(assistantMessage.id)
+    const messageToResetEntity = await messageDatabase.getMessageById(assistantMessage.id)
 
     if (!messageToResetEntity) {
       // No need to check topicId again as selector implicitly handles it
@@ -222,23 +188,23 @@ export async function regenerateAssistantMessage(
       assistantMessage.mentions
         ? {
             status: AssistantMessageStatus.PENDING,
-            updatedAt: new Date().toISOString()
+            updatedAt: Date.now()
           }
         : {
             status: AssistantMessageStatus.PENDING,
-            updatedAt: new Date().toISOString(),
+            updatedAt: Date.now(),
             model: assistant.model
           }
     )
 
-    await upsertMessages(resetAssistantMsg)
+    await messageDatabase.upsertMessages(resetAssistantMsg)
     // 6. Remove old blocks from Database
     await cleanupMultipleBlocks(blockIdsToDelete)
 
     // // 7. Update DB: Save the reset message state within the topic and delete old blocks
     // // Fetch the current state *after* Database updates to get the latest message list
     // // Use the selector to get the final ordered list of messages for the topic
-    // const finalMessagesToSave = await getMessagesByTopicId(topicId)
+    // const finalMessagesToSave = await messageDatabase.getMessagesByTopicId(topicId)
 
     // 7. Add fetch/process call to the queue
     const assistantConfigForRegen = {
@@ -247,87 +213,143 @@ export async function regenerateAssistantMessage(
     }
 
     // Add the fetch/process call to the queue
-    await fetchAndProcessAssistantResponseImpl(topicId, assistantConfigForRegen, resetAssistantMsg, dispatch)
+    await fetchAndProcessAssistantResponseImpl(topicId, assistantConfigForRegen, resetAssistantMsg)
   } catch (error) {
     logger.error('Error in regenerateAssistantMessage:', error)
   } finally {
-    finishTopicLoading(topicId)
+    await finishTopicLoading(topicId)
   }
 }
 
-/**
- * 消息块节流器。
- * 每个消息块有独立节流器，并发更新时不会互相影响
- */
-const blockUpdateThrottlers = new LRUCache<string, ReturnType<typeof throttle>>({
-  max: 100,
-  ttl: 1000 * 60 * 5,
-  updateAgeOnGet: true
-})
+const BLOCK_UPDATE_BATCH_INTERVAL = 180
+type BlockUpdatePayload = Partial<MessageBlock>
 
-/**
- * 消息块 RAF 缓存。
- * 用于管理 RAF 请求创建和取消。
- */
-const blockUpdateRafs = new LRUCache<string, number>({
-  max: 100,
-  ttl: 1000 * 60 * 5,
-  updateAgeOnGet: true
-})
+const pendingBlockUpdates = new Map<string, BlockUpdatePayload>()
+let blockFlushTimer: ReturnType<typeof setTimeout> | null = null
+let blockFlushInFlight: Promise<void> | null = null
 
-/**
- * 获取或创建消息块专用的节流函数。
- */
-const getBlockThrottler = async (id: string) => {
-  if (!blockUpdateThrottlers.has(id)) {
-    const throttler = throttle(async (blockUpdate: any) => {
-      const existingRAF = blockUpdateRafs.get(id)
-
-      if (existingRAF) {
-        cancelAnimationFrame(existingRAF)
-      }
-
-      const rafId = requestAnimationFrame(async () => {
-        await updateOneBlock({ id, changes: blockUpdate })
-        blockUpdateRafs.delete(id)
-      })
-
-      blockUpdateRafs.set(id, rafId)
-      await updateOneBlock({ id, changes: blockUpdate })
-    }, 150)
-
-    blockUpdateThrottlers.set(id, throttler)
+const mergeBlockUpdates = (
+  existing: BlockUpdatePayload | undefined,
+  incoming: BlockUpdatePayload
+): BlockUpdatePayload => {
+  if (!existing) {
+    return { ...incoming } as BlockUpdatePayload
   }
 
-  return blockUpdateThrottlers.get(id)!
+  return { ...existing, ...incoming } as BlockUpdatePayload
+}
+
+const waitForCurrentBlockFlush = async () => {
+  if (!blockFlushInFlight) return
+
+  try {
+    await blockFlushInFlight
+  } catch (error) {
+    console.error('[BlockBatch] Pending flush failed:', error)
+  }
+}
+
+const flushPendingBlockUpdates = async (ids?: string[]): Promise<void> => {
+  const targetIds = ids?.length ? ids : Array.from(pendingBlockUpdates.keys())
+
+  if (targetIds.length === 0) {
+    return
+  }
+
+  const updates: { id: string; changes: BlockUpdatePayload }[] = []
+
+  for (const id of targetIds) {
+    const payload = pendingBlockUpdates.get(id)
+
+    if (!payload) {
+      continue
+    }
+
+    updates.push({ id, changes: payload })
+    pendingBlockUpdates.delete(id)
+  }
+
+  if (updates.length === 0) {
+    return
+  }
+
+  try {
+    for (const { id, changes } of updates) {
+      await messageBlockDatabase.updateOneBlock({ id, changes })
+    }
+  } catch (error) {
+    for (const { id, changes } of updates) {
+      const existing = pendingBlockUpdates.get(id)
+      pendingBlockUpdates.set(id, mergeBlockUpdates(existing, changes))
+    }
+
+    console.error('[BlockBatch] Failed to persist block updates:', error)
+    throw error
+  }
+}
+
+const executeBlockFlush = async (ids?: string[]) => {
+  await waitForCurrentBlockFlush()
+
+  const flushPromise = flushPendingBlockUpdates(ids)
+  blockFlushInFlight = flushPromise
+
+  try {
+    await flushPromise
+  } finally {
+    if (blockFlushInFlight === flushPromise) {
+      blockFlushInFlight = null
+    }
+  }
+}
+
+const scheduleBlockFlush = () => {
+  if (blockFlushTimer) {
+    return
+  }
+
+  blockFlushTimer = setTimeout(() => {
+    blockFlushTimer = null
+    void executeBlockFlush()
+  }, BLOCK_UPDATE_BATCH_INTERVAL)
+}
+
+const flushSpecificBlocks = async (ids: string[]) => {
+  if (!ids.length) {
+    return
+  }
+
+  const hasPending = ids.some(id => pendingBlockUpdates.has(id))
+
+  if (!hasPending) {
+    await waitForCurrentBlockFlush()
+    return
+  }
+
+  await executeBlockFlush(ids)
 }
 
 /**
- * 更新单个消息块。
+ * 更新单个消息块，使用批量缓冲策略。
  */
-export const throttledBlockUpdate = async (id: string, blockUpdate: any) => {
-  const throttler = await getBlockThrottler(id)
-  // store.dispatch(updateOneBlock({ id, changes: blockUpdate }))
-  throttler(blockUpdate)
+export const throttledBlockUpdate = async (id: string, blockUpdate: BlockUpdatePayload) => {
+  const merged = mergeBlockUpdates(pendingBlockUpdates.get(id), blockUpdate)
+  pendingBlockUpdates.set(id, merged)
+  scheduleBlockFlush()
 }
 
 /**
- * 取消单个块的节流更新，移除节流器和 RAF。
+ * 取消单个块的批量更新，并等待当前写操作完成。
  */
-export const cancelThrottledBlockUpdate = (id: string) => {
-  const rafId = blockUpdateRafs.get(id)
+export const cancelThrottledBlockUpdate = async (id: string) => {
+  pendingBlockUpdates.delete(id)
 
-  if (rafId) {
-    cancelAnimationFrame(rafId)
-    blockUpdateRafs.delete(id)
+  if (pendingBlockUpdates.size === 0 && blockFlushTimer) {
+    clearTimeout(blockFlushTimer)
+    blockFlushTimer = null
   }
 
-  const throttler = blockUpdateThrottlers.get(id)
-
-  if (throttler) {
-    throttler.cancel()
-    blockUpdateThrottlers.delete(id)
-  }
+  await waitForCurrentBlockFlush()
 }
 
 export const saveUpdatesToDB = async (
@@ -353,8 +375,8 @@ const updateExistingMessageAndBlocksInDB = async (
   updatedBlocks: MessageBlock[]
 ) => {
   try {
-    await updateMessageById(updatedMessage.id, updatedMessage)
-    await upsertBlocks(updatedBlocks)
+    await messageDatabase.updateMessageById(updatedMessage.id, updatedMessage)
+    await messageBlockDatabase.upsertBlocks(updatedBlocks)
   } catch (error) {
     console.error(`[updateExistingMsg] Failed to update message ${updatedMessage.id}:`, error)
   }
@@ -367,7 +389,9 @@ export const saveUpdatedBlockToDB = async (blockId: string | null, messageId: st
     return
   }
 
-  const blockToSave = await getBlockById(blockId)
+  await flushSpecificBlocks([blockId])
+
+  const blockToSave = await messageBlockDatabase.getBlockById(blockId)
 
   if (blockToSave) {
     await saveUpdatesToDB(messageId, topicId, {}, [blockToSave]) // Pass messageId, topicId, empty message updates, and the block
@@ -376,36 +400,16 @@ export const saveUpdatedBlockToDB = async (blockId: string | null, messageId: st
   }
 }
 
-export async function saveMessageAndBlocksToDB(message: Message, blocks: MessageBlock[], messageIndex: number = -1) {
+export async function saveMessageAndBlocksToDB(message: Message, blocks: MessageBlock[]) {
   try {
+    await messageDatabase.upsertMessages(message)
+
     if (blocks.length > 0) {
-      await upsertBlocks(blocks)
-    }
-
-    // get topic from database
-    const topic = await getTopicById(message.topicId)
-    logger.info('saveMessageAndBlocksToDB topic:', topic)
-
-    if (topic) {
-      const _messageIndex = topic.messages.findIndex(m => m.id === message.id)
-      const updatedMessages = [...topic.messages]
-
-      if (_messageIndex !== -1) {
-        updatedMessages[_messageIndex] = message
-      } else {
-        if (messageIndex !== -1) {
-          updatedMessages.splice(messageIndex, 0, message)
-        } else {
-          updatedMessages.push(message)
-        }
-      }
-
-      await updateTopicMessages(topic.id, updatedMessages)
-    } else {
-      logger.error(`[saveMessageAndBlocksToDB] Topic ${message.topicId} not found.`)
+      await messageBlockDatabase.upsertBlocks(blocks)
     }
   } catch (error) {
     logger.error('Error saving message blocks:', error)
+    throw error
   }
 }
 
@@ -413,14 +417,13 @@ export async function saveMessageAndBlocksToDB(message: Message, blocks: Message
 export async function fetchAndProcessAssistantResponseImpl(
   topicId: string,
   assistant: Assistant,
-  assistantMessage: Message,
-  dispatch: AppDispatch
+  assistantMessage: Message
 ) {
   const assistantMsgId = assistantMessage.id
   let callbacks: StreamProcessorCallbacks = {}
 
   try {
-    dispatch(newMessagesActions.setTopicLoading({ topicId, loading: true }))
+    await topicService.updateTopic(topicId, { isLoading: true })
 
     // 创建 BlockManager 实例
     const blockManager = new BlockManager({
@@ -432,7 +435,7 @@ export async function fetchAndProcessAssistantResponseImpl(
       cancelThrottledBlockUpdate
     })
 
-    const allMessagesForTopic = await getMessagesByTopicId(topicId)
+    const allMessagesForTopic = await messageDatabase.getMessagesByTopicId(topicId)
     let messagesForContext: Message[] = []
     const userMessageId = assistantMessage.askId
     const userMessageIndex = allMessagesForTopic.findIndex(m => m?.id === userMessageId)
@@ -486,9 +489,10 @@ export async function fetchAndProcessAssistantResponseImpl(
       logger.error('Error in onError callback:', callbackError as Error)
     } finally {
       // 确保无论如何都设置 loading 为 false（onError 回调中已设置，这里是保险）
-      dispatch(newMessagesActions.setTopicLoading({ topicId, loading: false }))
+      await topicService.updateTopic(topicId, { isLoading: false })
     }
   } finally {
+    await finishTopicLoading(topicId)
     await fetchTopicNaming(topicId)
   }
 }
@@ -499,8 +503,7 @@ export async function multiModelResponses(
   topicId: string,
   assistant: Assistant,
   triggeringMessage: Message, // userMessage or messageToResend
-  mentionedModels: Model[],
-  dispatch: AppDispatch
+  mentionedModels: Model[]
 ) {
   logger.info('multiModelResponses')
   const assistantMessageStubs: Message[] = []
@@ -513,18 +516,19 @@ export async function multiModelResponses(
       model: mentionedModel,
       modelId: mentionedModel.id
     })
-    await upsertMessages(assistantMessage)
+    await messageDatabase.upsertMessages(assistantMessage)
     assistantMessageStubs.push(assistantMessage)
     tasksToQueue.push({ assistantConfig: assistantForThisMention, messageStub: assistantMessage })
   }
 
   const queue = getTopicQueue(topicId)
-
-  for (const task of tasksToQueue) {
+  const queuedTasks = tasksToQueue.map(task =>
     queue.add(async () => {
-      await fetchAndProcessAssistantResponseImpl(topicId, task.assistantConfig, task.messageStub, dispatch)
+      await fetchAndProcessAssistantResponseImpl(topicId, task.assistantConfig, task.messageStub)
     })
-  }
+  )
+
+  await Promise.all(queuedTasks)
 }
 // --- End Helper Function ---
 
@@ -537,7 +541,7 @@ export async function cleanupMultipleBlocks(blockIds: string[]) {
   // })
 
   // const getBlocksFiles = async (blockIds: string[]) => {
-  //   const blocks = await Promise.all(blockIds.map(id => getBlockById(id)))
+  //   const blocks = await Promise.all(blockIds.map(id => messageBlockDatabase.getBlockById(id)))
 
   //   const files = blocks
   //     .filter((block): block is MessageBlock => block !== null)
@@ -554,14 +558,13 @@ export async function cleanupMultipleBlocks(blockIds: string[]) {
   // getBlocksFiles(blockIds).then(cleanupFiles)
 
   if (blockIds.length > 0) {
-    await removeManyBlocks(blockIds)
+    await messageBlockDatabase.removeManyBlocks(blockIds)
   }
 }
 
 export async function deleteMessagesByTopicId(topicId: string): Promise<void> {
   try {
-    await deleteBlocksByTopicId(topicId)
-    await _deleteMessagesByTopicId(topicId)
+    return messageDatabase.deleteMessagesByTopicId(topicId)
   } catch (error) {
     logger.error('Error in deleteMessagesByTopicId:', error)
     throw error
@@ -570,8 +573,8 @@ export async function deleteMessagesByTopicId(topicId: string): Promise<void> {
 
 export async function deleteMessageById(messageId: string): Promise<void> {
   try {
-    await deleteBlocksByMessageId(messageId)
-    await _deleteMessageById(messageId)
+    // await deleteBlocksByMessageId(messageId)
+    return messageDatabase.deleteMessageById(messageId)
   } catch (error) {
     logger.error('Error in deleteMessageById:', error)
     throw error
@@ -580,7 +583,11 @@ export async function deleteMessageById(messageId: string): Promise<void> {
 
 export async function fetchTranslateThunk(assistantMessageId: string, message: Message) {
   let callbacks: StreamProcessorCallbacks = {}
-  const translateAssistant = await getAssistantById('translate')
+  const translateAssistant = await assistantService.getAssistant('translate')
+
+  if (!translateAssistant) {
+    throw new Error('Translate assistant not found')
+  }
 
   const newBlock = createTranslationBlock(assistantMessageId, '', {
     status: MessageBlockStatus.STREAMING

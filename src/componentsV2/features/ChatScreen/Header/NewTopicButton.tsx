@@ -9,15 +9,14 @@ import { Text, YStack, SelectionSheet } from '@/componentsV2'
 import { MessageSquareDiff } from '@/componentsV2/icons/LucideIcon'
 import EmojiAvatar from '@/componentsV2/features/Assistant/EmojiAvatar'
 import { useExternalAssistants } from '@/hooks/useAssistant'
-import { useTheme } from '@/hooks/useTheme'
-import { useTopics } from '@/hooks/useTopic'
-import { createNewTopic, getNewestTopic } from '@/services/TopicService'
-import { useAppDispatch } from '@/store'
-import { setCurrentTopicId } from '@/store/topic'
-import { Assistant } from '@/types/assistant'
+import { useCurrentTopic } from '@/hooks/useTopic'
+import { useTheme } from 'heroui-native'
+import { topicService } from '@/services/TopicService'
+import type { Assistant } from '@/types/assistant'
 import { DrawerNavigationProps } from '@/types/naviagate'
-import { getAssistantWithTopic } from '@/utils/assistants'
 import { haptic } from '@/utils/haptic'
+import { isEmpty } from 'lodash'
+import { messageDatabase } from '@database'
 
 interface NewTopicButtonProps {
   assistant: Assistant
@@ -26,26 +25,33 @@ interface NewTopicButtonProps {
 export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => {
   const { t } = useTranslation()
   const navigation = useNavigation<DrawerNavigationProps>()
-  const dispatch = useAppDispatch()
-  const { topics } = useTopics()
+  const { switchTopic } = useCurrentTopic()
   const { assistants, isLoading } = useExternalAssistants()
-  const assistantWithTopics = getAssistantWithTopic(assistants, topics)
   const selectionSheetRef = useRef<BottomSheetModal | null>(null)
   const { isDark } = useTheme()
 
   const handleAddNewTopic = async (selectedAssistant?: Assistant) => {
     haptic(ImpactFeedbackStyle.Medium)
     const targetAssistant = selectedAssistant || assistant
-    const newestTopic = await getNewestTopic()
 
-    if (newestTopic && newestTopic.assistantId === targetAssistant.id && newestTopic.messages.length === 0) {
-      newestTopic.assistantId = targetAssistant.id
-      dispatch(setCurrentTopicId(newestTopic.id))
-      navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId: newestTopic.id } })
-    } else {
-      const newTopic = await createNewTopic(targetAssistant)
-      dispatch(setCurrentTopicId(newTopic.id))
+    // Check if the newest topic has messages
+    const newestTopic = await topicService.getNewestTopic()
+    const hasMessages = await messageDatabase.getHasMessagesWithTopicId(newestTopic?.id ?? '')
+
+    if (hasMessages || !newestTopic) {
+      // Create new topic (optimistic - UI updates immediately)
+      const newTopic = await topicService.createTopic(targetAssistant)
+      await switchTopic(newTopic.id)
       navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId: newTopic.id } })
+    } else {
+      // Reuse the newest topic (update assistant if different)
+      if (newestTopic.assistantId !== targetAssistant.id) {
+        await topicService.updateTopic(newestTopic.id, {
+          assistantId: targetAssistant.id
+        })
+      }
+      await switchTopic(newestTopic.id)
+      navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId: newestTopic.id } })
     }
   }
 
@@ -64,26 +70,23 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
   }
 
   const selectionItems = React.useMemo(() => {
-    if (isLoading || !assistantWithTopics.length) {
+    if (isLoading || !assistants.length) {
       return []
     }
 
-    return assistantWithTopics.map(assistantItem => ({
+    return assistants.map(assistantItem => ({
       key: assistantItem.id,
       label: (
-        <YStack className="gap-0.5">
-          <Text
-            className="text-base leading-[18px] text-text-primary dark:text-text-primary-dark"
-            ellipsizeMode="tail"
-            numberOfLines={1}>
-            {assistantItem.name}
+        <YStack className="gap-1 flex-1 justify-center">
+          <Text className="text-sm font-bold" numberOfLines={1} ellipsizeMode="tail">
+            {assistant.name}
           </Text>
-          {assistantItem.description && (
+          {!isEmpty(assistant.prompt) && (
             <Text
-              className="text-xs text-text-secondary dark:text-text-secondary-dark opacity-70"
               ellipsizeMode="tail"
-              numberOfLines={1}>
-              {assistantItem.description}
+              numberOfLines={1}
+              className="text-xs  text-text-secondary dark:text-text-secondary-dark">
+              {assistant.prompt}
             </Text>
           )}
         </YStack>
@@ -99,7 +102,7 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
       ),
       onSelect: () => handleSelectAssistant(assistantItem)
     }))
-  }, [assistantWithTopics, isLoading, isDark, handleSelectAssistant])
+  }, [isLoading, assistants, assistant.name, assistant.prompt, isDark, handleSelectAssistant])
 
   return (
     <>
@@ -107,7 +110,7 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
         onPress={() => handleAddNewTopic()}
         onLongPress={openAssistantSelection}
         unstable_pressDelay={50}
-        delayLongPress={350}
+        delayLongPress={150}
         className="active:opacity-20"
         disabled={isLoading}>
         <MessageSquareDiff size={24} />

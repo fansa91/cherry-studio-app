@@ -46,7 +46,7 @@ export default function WebSearchProviderSettingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaContainer className="items-center justify-center">
+      <SafeAreaContainer className="flex-1 items-center justify-center">
         <ActivityIndicator />
       </SafeAreaContainer>
     )
@@ -127,11 +127,11 @@ export default function WebSearchProviderSettingsScreen() {
         {provider.type === 'api' && (
           <YStack className="gap-2">
             <XStack className="justify-between items-center">
-              <GroupTitle>{t('settings.websearch.api_key')}</GroupTitle>
+              <GroupTitle>{t('settings.websearch.api_key.label')}</GroupTitle>
               <Button size="sm" isIconOnly variant="ghost" onPress={handleOpenBottomSheet}>
-                <Button.LabelContent>
+                <Button.Label>
                   <ShieldCheck size={16} className="text-blue-500" />
-                </Button.LabelContent>
+                </Button.Label>
               </Button>
             </XStack>
 
@@ -145,9 +145,9 @@ export default function WebSearchProviderSettingsScreen() {
                   onChangeText={text => handleProviderConfigChange('apiKey', text)}>
                   <TextField.InputEndContent>
                     <Button size="sm" variant="ghost" isIconOnly onPress={toggleApiKeyVisibility}>
-                      <Button.LabelContent>
+                      <Button.Label>
                         {showApiKey ? <EyeOff className="text-white" size={16} /> : <Eye size={16} />}
-                      </Button.LabelContent>
+                      </Button.Label>
                     </Button>
                   </TextField.InputEndContent>
                 </TextField.Input>
@@ -164,7 +164,7 @@ export default function WebSearchProviderSettingsScreen() {
         {/* API Host 配置 */}
         <YStack className="gap-2">
           <XStack className="pr-3 justify-between items-center">
-            <GroupTitle>{t('settings.websearch.api_host')}</GroupTitle>
+            <GroupTitle>{t('settings.websearch.api_host.label')}</GroupTitle>
           </XStack>
           <TextField>
             <TextField.Input

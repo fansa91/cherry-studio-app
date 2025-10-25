@@ -14,6 +14,7 @@ import { getThinkModelType, MODEL_SUPPORTED_OPTIONS, isDoubaoThinkingAutoModel }
 import { Assistant, Model, ThinkingOption } from '@/types/assistant'
 import { View } from 'react-native'
 import SelectionSheet, { SelectionSheetItem } from '@/componentsV2/base/SelectionSheet'
+import { delay } from 'lodash'
 
 interface ReasoningSheetProps {
   model: Model
@@ -62,11 +63,11 @@ export const ReasoningSheet: FC<ReasoningSheetProps> = ({ model, assistant, upda
     return MODEL_SUPPORTED_OPTIONS[modelType]
   }, [model, modelType])
 
-  const onValueChange = (option?: ThinkingOption) => {
+  const onValueChange = async (option?: ThinkingOption) => {
     const isEnabled = option !== undefined && option !== 'off'
 
     if (!isEnabled) {
-      updateAssistant({
+      await updateAssistant({
         ...assistant,
         settings: {
           ...assistant.settings,
@@ -76,7 +77,7 @@ export const ReasoningSheet: FC<ReasoningSheetProps> = ({ model, assistant, upda
         }
       })
     } else {
-      updateAssistant({
+      await updateAssistant({
         ...assistant,
         settings: {
           ...assistant.settings,
@@ -86,8 +87,7 @@ export const ReasoningSheet: FC<ReasoningSheetProps> = ({ model, assistant, upda
         }
       })
     }
-
-    ref.current?.dismiss()
+    delay(() => ref.current?.dismiss(), 50)
   }
 
   const sheetOptions: SelectionSheetItem[] = supportedOptions.map(option => ({

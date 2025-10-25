@@ -1,9 +1,8 @@
 import { BlurView } from 'expo-blur'
 import React from 'react'
 import { Platform, View } from 'react-native'
-import { cn } from 'heroui-native'
+import { cn, useTheme } from 'heroui-native'
 
-import { useTheme } from '@/hooks/useTheme'
 import { formateEmoji } from '@/utils/formats'
 import YStack from '@/componentsV2/layout/YStack'
 import Text from '@/componentsV2/base/Text'
@@ -60,7 +59,7 @@ const EmojiAvatar = ({
         }}
       />
       {/* 前景清晰emoji */}
-      <Text style={{ fontSize: size * 0.5 }}>{formateEmoji(emoji)}</Text>
+      <Text style={{ fontSize: size * 0.5, lineHeight: size * 0.8 }}>{formateEmoji(emoji)}</Text>
     </View>
   )
 }

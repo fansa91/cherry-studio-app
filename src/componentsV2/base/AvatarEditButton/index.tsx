@@ -3,7 +3,7 @@ import EmojiPicker, { EmojiType } from 'rn-emoji-keyboard'
 import { TouchableOpacity } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 
-import { useTheme } from '@/hooks/useTheme'
+import { useTheme } from 'heroui-native'
 import YStack from '@/componentsV2/layout/YStack'
 import Text from '../Text'
 
@@ -53,7 +53,9 @@ export function AvatarEditButton({
           })
         }}>
         {isEmoji ? (
-          <Text style={{ fontSize: size * 0.58 }} className="text-text-primary dark:text-text-primary-dark">
+          <Text
+            style={{ fontSize: size * 0.5, lineHeight: size * 0.5 }}
+            className="text-text-primary dark:text-text-primary-dark">
             {content}
           </Text>
         ) : (

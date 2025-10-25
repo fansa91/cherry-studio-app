@@ -5,21 +5,19 @@ import React, { forwardRef, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BackHandler, Platform, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Button, Divider } from 'heroui-native'
+import { Button, Divider, useTheme } from 'heroui-native'
 
 import { Text, XStack, YStack } from '@/componentsV2'
 import { UnionPlusIcon, ModelIcon } from '@/componentsV2/icons'
 import { Settings2, X } from '@/componentsV2/icons/LucideIcon'
-import { useTheme as useCustomTheme } from '@/hooks/useTheme'
 import { useToast } from '@/hooks/useToast'
-import { saveAssistant } from '@/services/AssistantService'
-import { createNewTopic } from '@/services/TopicService'
-import { Assistant } from '@/types/assistant'
+import { useCurrentTopic } from '@/hooks/useTopic'
+import { topicService } from '@/services/TopicService'
+import type { Assistant } from '@/types/assistant'
 import { uuid } from '@/utils'
 import { formateEmoji } from '@/utils/formats'
 import { haptic } from '@/utils/haptic'
-import { setCurrentTopicId } from '@/store/topic'
-import { useAppDispatch } from '@/store'
+import { assistantService } from '@/services/AssistantService'
 
 import EmojiAvatar from './EmojiAvatar'
 import GroupTag from './GroupTag'
@@ -38,9 +36,9 @@ interface AssistantItemSheetProps {
 const AssistantItemSheet = forwardRef<BottomSheetModal, AssistantItemSheetProps>(
   ({ assistant, source, onEdit, onChatNavigation, actionButton }, ref) => {
     const { t } = useTranslation()
-    const { isDark } = useCustomTheme()
+    const { isDark } = useTheme()
     const { bottom } = useSafeAreaInsets()
-    const dispatch = useAppDispatch()
+    const { switchTopic } = useCurrentTopic()
     const toast = useToast()
     const [isVisible, setIsVisible] = useState(false)
 
@@ -75,18 +73,18 @@ const AssistantItemSheet = forwardRef<BottomSheetModal, AssistantItemSheetProps>
           id: uuid(),
           type: 'external'
         }
-        await saveAssistant(newAssistant)
+        await assistantService.createAssistant(newAssistant)
       }
 
-      const topic = await createNewTopic(newAssistant)
-      dispatch(setCurrentTopicId(topic.id))
+      const topic = await topicService.createTopic(newAssistant)
+      await switchTopic(topic.id)
       await onChatNavigation(topic.id)
       ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
     }
 
     const handleAddAssistant = async () => {
       if (assistant) {
-        await saveAssistant({
+        await assistantService.createAssistant({
           ...assistant,
           id: uuid(),
           type: 'external'
@@ -233,26 +231,26 @@ const AssistantItemSheet = forwardRef<BottomSheetModal, AssistantItemSheetProps>
             <XStack className="px-6 justify-between items-center gap-4 flex-shrink-0" style={{ bottom }}>
               {source === 'builtIn' && (
                 <Button variant="ghost" isIconOnly onPress={handleAddAssistant}>
-                  <Button.LabelContent>
+                  <Button.Label>
                     <UnionPlusIcon size={30} />
-                  </Button.LabelContent>
+                  </Button.Label>
                 </Button>
               )}
               {source === 'external' && (
                 <Button variant="ghost" isIconOnly onPress={handleEditAssistant}>
-                  <Button.LabelContent>
+                  <Button.Label>
                     <Settings2 size={30} />
-                  </Button.LabelContent>
+                  </Button.Label>
                 </Button>
               )}
               <Button
                 className="bg-green-10 dark:bg-green-dark-10 border-green-20 dark:border-green-dark-20 rounded-[30px] py-2.5 px-5 flex-1"
                 onPress={actionButton?.onPress || handleChatPress}>
-                <Button.LabelContent>
+                <Button.Label>
                   <Text className="text-green-100 dark:text-green-dark-100 text-[17px] font-bold">
                     {actionButton?.text || t('assistants.market.button.chat')}
                   </Text>
-                </Button.LabelContent>
+                </Button.Label>
               </Button>
             </XStack>
           </YStack>

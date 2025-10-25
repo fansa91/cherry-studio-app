@@ -2,21 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react' // 引入 useMemo
 import { useTranslation } from 'react-i18next'
 
 import { useToast } from '@/hooks/useToast'
-import { getCurrentTopicId } from '@/hooks/useTopic'
+import { useCurrentTopic } from '@/hooks/useTopic'
 import { getDefaultAssistant } from '@/services/AssistantService'
 import { loggerService } from '@/services/LoggerService'
 import { deleteMessagesByTopicId } from '@/services/MessagesService'
-import { createNewTopic, deleteTopicById, renameTopic } from '@/services/TopicService'
-import { useAppDispatch } from '@/store'
-import { newMessagesActions } from '@/store/newMessage'
-import { setCurrentTopicId } from '@/store/topic'
-import { Topic } from '@/types/assistant'
+import { topicService } from '@/services/TopicService'
+import type { Topic } from '@/types/assistant'
 import { DateGroupKey, getTimeFormatForGroup, groupItemsByDate, TimeFormat } from '@/utils/date'
 import { TopicItem } from '../TopicItem'
 import Text from '@/componentsV2/base/Text'
 import YStack from '@/componentsV2/layout/YStack'
 import { useDialog } from '@/hooks/useDialog'
-import { LegendList } from '@legendapp/list'
+import { FlashList } from '@shopify/flash-list'
 
 const logger = loggerService.withContext('GroupTopicList')
 
@@ -32,7 +29,7 @@ type ListItem = { type: 'header'; title: string } | { type: 'topic'; topic: Topi
 export function TopicList({ topics, enableScroll, handleNavigateChatScreen }: GroupedTopicListProps) {
   const { t } = useTranslation()
   const [localTopics, setLocalTopics] = useState<Topic[]>([])
-  const dispatch = useAppDispatch()
+  const { currentTopicId, switchTopic } = useCurrentTopic()
   const toast = useToast()
   const dialog = useDialog()
 
@@ -81,35 +78,42 @@ export function TopicList({ topics, enableScroll, handleNavigateChatScreen }: Gr
       cancelText: t('common.cancel'),
       onConFirm: async () => {
         try {
+          // Optimistically update local state
           const updatedTopics = localTopics.filter(topic => topic.id !== topicId)
           setLocalTopics(updatedTopics)
 
+          // Delete messages associated with the topic
           await deleteMessagesByTopicId(topicId)
-          await deleteTopicById(topicId)
-          dispatch(newMessagesActions.deleteTopicLoading({ topicId }))
+
+          // Delete topic (optimistic - handled by TopicService)
+          await topicService.deleteTopic(topicId)
 
           toast.show(t('message.topic_deleted'))
 
-          if (topicId === getCurrentTopicId()) {
+          // If deleted topic was current, switch to next or create new
+          if (topicId === currentTopicId) {
             const nextTopic =
               updatedTopics.length > 0
                 ? updatedTopics.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
                 : null
 
             if (nextTopic) {
-              dispatch(setCurrentTopicId(nextTopic.id))
+              await switchTopic(nextTopic.id)
               handleNavigateChatScreen?.(nextTopic.id)
-              logger.info('navigateToChatScreen after delete', nextTopic)
+              logger.info('Switched to next topic after delete', nextTopic)
             } else {
               const defaultAssistant = await getDefaultAssistant()
-              const newTopic = await createNewTopic(defaultAssistant)
-              dispatch(setCurrentTopicId(newTopic.id))
+              const newTopic = await topicService.createTopic(defaultAssistant)
+              await switchTopic(newTopic.id)
               handleNavigateChatScreen?.(newTopic.id)
-              logger.info('navigateToChatScreen with new topic', newTopic)
+              logger.info('Created new topic after deleting last topic', newTopic)
             }
           }
         } catch (error) {
           logger.error('Error deleting topic:', error)
+          // Rollback local state on error
+          setLocalTopics(topics)
+          toast.show(t('message.error_deleting_topic'))
         }
       }
     })
@@ -117,16 +121,21 @@ export function TopicList({ topics, enableScroll, handleNavigateChatScreen }: Gr
 
   const handleRename = async (topicId: string, newName: string) => {
     try {
-      await renameTopic(topicId, newName)
-
+      // Optimistically update local state
       const updatedTopics = localTopics.map(topic =>
-        topic.id === topicId ? { ...topic, name: newName, updatedAt: new Date().toISOString() } : topic
+        topic.id === topicId ? { ...topic, name: newName, updatedAt: Date.now() } : topic
       )
       setLocalTopics(updatedTopics)
+
+      // Rename topic (optimistic - handled by TopicService)
+      await topicService.renameTopic(topicId, newName)
 
       logger.info('Topic renamed successfully', topicId, newName)
     } catch (error) {
       logger.error('Error renaming topic:', error)
+      // Rollback local state on error
+      setLocalTopics(topics)
+      toast.show(t('message.error_renaming_topic'))
       throw error
     }
   }
@@ -148,6 +157,8 @@ export function TopicList({ topics, enableScroll, handleNavigateChatScreen }: Gr
             timeFormat={item.timeFormat}
             onDelete={handleDelete}
             onRename={handleRename}
+            currentTopicId={currentTopicId}
+            switchTopic={switchTopic}
             handleNavigateChatScreen={handleNavigateChatScreen}
           />
         )
@@ -157,7 +168,7 @@ export function TopicList({ topics, enableScroll, handleNavigateChatScreen }: Gr
   }
 
   return (
-    <LegendList
+    <FlashList
       data={listData}
       renderItem={renderItem}
       showsVerticalScrollIndicator={false}
@@ -169,14 +180,8 @@ export function TopicList({ topics, enableScroll, handleNavigateChatScreen }: Gr
 
         return item.topic.id
       }}
-      getItemType={item => {
-        return item.type
-      }}
-      estimatedItemSize={40}
       ItemSeparatorComponent={() => <YStack className="h-2.5" />}
       contentContainerStyle={{ paddingHorizontal: 20 }}
-      drawDistance={2000}
-      recycleItems
     />
   )
 }

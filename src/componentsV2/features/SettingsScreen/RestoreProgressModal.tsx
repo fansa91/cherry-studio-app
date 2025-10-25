@@ -7,8 +7,7 @@ import { Modal, Pressable, View } from 'react-native'
 import XStack from '@/componentsV2/layout/XStack'
 import YStack from '@/componentsV2/layout/YStack'
 import { RestoreStepId, StepStatus } from '@/services/BackupService'
-import { useTheme } from '@/hooks/useTheme'
-import { Button, cn, ErrorView, Spinner } from 'heroui-native'
+import { useTheme, Button, cn, ErrorView, Spinner } from 'heroui-native'
 import Text from '@/componentsV2/base/Text'
 
 export interface RestoreStep {
@@ -85,7 +84,7 @@ export function RestoreProgressModal({ isOpen, steps, overallStatus, onClose }: 
             <Text className="text-lg text-text-secondary dark:text-text-secondary-dark">{description}</Text>
           </YStack>
 
-          <XStack className="gap-3 justify-center items-center">
+          <YStack className="gap-3 justify-start items-start">
             {steps.map(step => (
               <ErrorView key={step.id} isInvalid={true}>
                 <View className="flex-row items-center gap-2">
@@ -94,7 +93,7 @@ export function RestoreProgressModal({ isOpen, steps, overallStatus, onClose }: 
                 </View>
               </ErrorView>
             ))}
-          </XStack>
+          </YStack>
 
           <XStack className="justify-center items-center">
             <Button
@@ -107,9 +106,9 @@ export function RestoreProgressModal({ isOpen, steps, overallStatus, onClose }: 
                     ? 'bg-green-20 border-green-20 dark:bg-green-dark-20 dark:border-green-dark-20'
                     : 'bg-yellow-20 border-yellow-20 dark:bg-yellow-dark-20 dark:border-yellow-dark-20'
               )}
-              disabled={!isDone}
+              isDisabled={!isDone}
               onPress={onClose}>
-              <Button.LabelContent>
+              <Button.Label>
                 <Text
                   className={cn(
                     overallStatus === 'error' && 'text-red-100 dark:text-red-100',
@@ -118,7 +117,7 @@ export function RestoreProgressModal({ isOpen, steps, overallStatus, onClose }: 
                   )}>
                   {isDone ? t('common.close') : t('settings.data.restore.progress.pending')}
                 </Text>
-              </Button.LabelContent>
+              </Button.Label>
             </Button>
           </XStack>
         </YStack>
