@@ -1,5 +1,4 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import { ImpactFeedbackStyle } from 'expo-haptics'
 import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { View } from 'react-native'
@@ -12,13 +11,13 @@ import {
   Copy,
   MoreHorizontal,
   RefreshCw,
+  Share,
   ThumbsUp,
   Trash2
 } from '@/componentsV2/icons/LucideIcon'
 import { useMessageActions } from '@/hooks/useMessageActions'
 import { Assistant } from '@/types/assistant'
 import { Message } from '@/types/message'
-import { haptic } from '@/utils/haptic'
 
 interface MessageFooterProps {
   assistant: Assistant
@@ -37,7 +36,8 @@ const MessageFooter = ({ message, assistant, isMultiModel = false }: MessageFoot
     handleBestAnswer,
     handleDeleteTranslation,
     handleTranslate,
-    handleDelete
+    handleDelete,
+    handleShare
   } = useMessageActions({
     message,
     assistant
@@ -88,6 +88,7 @@ const MessageFooter = ({ message, assistant, isMultiModel = false }: MessageFoot
           icon={<RefreshCw size={18} className="text-text-secondary dark:text-text-secondary-dark" />}
           onPress={handleRegenerate}
         />
+
         <IconButton icon={getAudioIcon()} onPress={handlePlay} />
         {message.role === 'assistant' && isMultiModel && (
           <IconButton
@@ -102,9 +103,12 @@ const MessageFooter = ({ message, assistant, isMultiModel = false }: MessageFoot
           />
         )}
         <IconButton
+          icon={<Share size={18} className="text-text-secondary dark:text-text-secondary-dark" />}
+          onPress={handleShare}
+        />
+        <IconButton
           icon={<MoreHorizontal size={18} className="text-text-secondary dark:text-text-secondary-dark" />}
           onPress={() => {
-            haptic(ImpactFeedbackStyle.Medium)
             bottomSheetModalRef.current?.present()
           }}
         />

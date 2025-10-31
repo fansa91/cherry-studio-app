@@ -3,8 +3,6 @@ import 'react-native-reanimated'
 import '../global.css'
 
 import { HeroUINativeProvider, useTheme as useHerouiTheme } from 'heroui-native'
-import { createTamagui, TamaguiProvider } from 'tamagui'
-import { defaultConfig } from '@tamagui/config/v4'
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native'
@@ -22,7 +20,6 @@ import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 
 import { useTheme } from '@/hooks/useTheme'
-import { useAppState } from '@/hooks/useAppState'
 import { loggerService } from '@/services/LoggerService'
 import store, { persistor } from '@/store'
 
@@ -38,12 +35,11 @@ SplashScreen.preventAutoHideAsync()
 const initializationLogger = loggerService.withContext('AppInitialization')
 
 // 数据库初始化组件
-function DatabaseInitializer() {
+function DatabaseInitializer({ children }: { children: React.ReactNode }) {
   const { success, error } = useMigrations(db, migrations)
   const [loaded] = useFonts({
     JetbrainMono: require('./assets/fonts/JetBrainsMono-Regular.ttf')
   })
-  const { initialized } = useAppState()
 
   useDrizzleStudio(expoDb)
 
@@ -72,39 +68,45 @@ function DatabaseInitializer() {
   }, [success, loaded])
 
   useEffect(() => {
-    if (loaded && initialized) {
+    if (loaded) {
       SplashScreen.hideAsync()
     }
-  }, [loaded, initialized])
+  }, [loaded])
 
-  return null
+  // 如果迁移失败，显示错误界面
+  if (error) {
+    return <ActivityIndicator size="large" color="red" />
+  }
+
+  // 如果迁移还未完成或字体未加载，显示加载指示器
+  if (!success || !loaded) {
+    return <ActivityIndicator size="large" />
+  }
+
+  // 迁移成功且字体已加载，渲染子组件
+  return <>{children}</>
 }
 
 // 主题和导航组件
 function ThemedApp() {
-  const { themeSetting, activeTheme } = useTheme()
+  const { themeSetting } = useTheme()
   const { isDark } = useHerouiTheme()
 
-  const config = createTamagui(defaultConfig)
-
   return (
-    <TamaguiProvider config={config} defaultTheme={activeTheme}>
-      <HeroUINativeProvider config={{ colorScheme: themeSetting }}>
-        <KeyboardProvider>
-          <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
-            <SystemBars style={isDark ? 'dark' : 'light'} />
-            <DatabaseInitializer />
-            <DialogProvider>
-              <ToastProvider>
-                <BottomSheetModalProvider>
-                  <MainStackNavigator />
-                </BottomSheetModalProvider>
-              </ToastProvider>
-            </DialogProvider>
-          </NavigationContainer>
-        </KeyboardProvider>
-      </HeroUINativeProvider>
-    </TamaguiProvider>
+    <HeroUINativeProvider config={{ colorScheme: themeSetting }}>
+      <KeyboardProvider>
+        <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
+          <SystemBars style={isDark ? 'dark' : 'light'} />
+          <DialogProvider>
+            <ToastProvider>
+              <BottomSheetModalProvider>
+                <MainStackNavigator />
+              </BottomSheetModalProvider>
+            </ToastProvider>
+          </DialogProvider>
+        </NavigationContainer>
+      </KeyboardProvider>
+    </HeroUINativeProvider>
   )
 }
 
@@ -113,7 +115,9 @@ function AppWithRedux() {
   return (
     <Provider store={store}>
       <PersistGate loading={<ActivityIndicator size="large" />} persistor={persistor}>
-        <ThemedApp />
+        <DatabaseInitializer>
+          <ThemedApp />
+        </DatabaseInitializer>
       </PersistGate>
     </Provider>
   )

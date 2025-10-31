@@ -160,8 +160,8 @@
       "visit": "Visit",
       "websearch": "Web Search",
       "welcome": {
-        "message1": "Welcome to Cherry Studio",
-        "message2": "Start create and explore endless possibilities!"
+        "message1": "Welcome to Cherry Studio 🎉",
+        "message2": "Start creating and enjoying"
       },
       "yesterday": "Yesterday"
     },
@@ -357,6 +357,7 @@
       "delete_translation": "Remove Translation",
       "marked_as_best_answer": "Marked as best answer",
       "searching": "Searching...",
+      "share_message": "Share news",
       "topic_deleted": "Topic deleted",
       "translate_message": "Translate Message",
       "unmarked_as_best_answer": "Unmarked as best answer",
@@ -551,6 +552,7 @@
             "success_description": "Restore Successful, Enjoy your time!"
           },
           "steps": {
+            "receive_file": "Receive file",
             "restore_messages": "Restore messages",
             "restore_settings": "Restore configuration"
           },

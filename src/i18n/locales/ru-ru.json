@@ -357,6 +357,7 @@
       "delete_translation": "Удалить перевод",
       "marked_as_best_answer": "Отмечено как лучший ответ",
       "searching": "Поиск...",
+      "share_message": "Поделиться новостью",
       "topic_deleted": "Тема удалена",
       "translate_message": "Перевести сообщение",
       "unmarked_as_best_answer": "Снята отметка лучшего ответа",
@@ -551,6 +552,7 @@
             "success_description": "Восстановление завершено, приятного времяпровождения!"
           },
           "steps": {
+            "receive_file": "получить файл",
             "restore_messages": "восстановить сообщение",
             "restore_settings": "восстановление конфигурации"
           },

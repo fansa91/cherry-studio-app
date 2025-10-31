@@ -1,9 +1,14 @@
 import 'tsx/cjs'
+import packageJson from './package.json'
+
+// Read version from environment variable (set during build) or fallback to package.json
+const appVersion = process.env.APP_VERSION || packageJson.version
+
 export default {
   expo: {
     name: 'Cherry Studio',
     slug: 'cherry-studio',
-    version: '1.0.0',
+    version: appVersion,
     orientation: 'portrait',
     icon: './src/assets/images/favicon.png',
     scheme: 'cherry-studio',
@@ -29,7 +34,7 @@ export default {
       edgeToEdgeEnabled: true,
       package: 'com.cherry_ai.cherry_studio_app',
       userInterfaceStyle: 'automatic',
-      predictiveBackGestureEnabled: true
+      predictiveBackGestureEnabled: false
     },
     plugins: [
       [
@@ -37,8 +42,6 @@ export default {
         {
           ios: { deploymentTarget: '15.5' },
           android: {
-            kotlinVersion: '2.1.20',
-            kspVersion: '2.1.20-1.0.29',
             buildToolsVersion: '35.0.0',
             compileSdkVersion: 35,
             targetSdkVersion: 35,
@@ -138,6 +141,14 @@ export default {
             enforceNavigationBarContrast: false
           }
         }
+      ],
+      [
+        'react-native-share',
+        {
+          ios: ['fb', 'instagram', 'twitter', 'tiktoksharesdk'],
+          android: ['com.facebook.katana', 'com.instagram.android', 'com.twitter.android', 'com.zhiliaoapp.musically'],
+          enableBase64ShareAndroid: true
+        }
       ]
     ],
     experiments: {
@@ -148,7 +159,8 @@ export default {
     extra: {
       eas: {
         projectId: '80096eaf-3ad0-4b87-a466-15f04da1bacc'
-      }
+      },
+      appVersion
     }
   }
 }

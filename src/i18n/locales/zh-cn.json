@@ -160,7 +160,7 @@
       "visit": "访问",
       "websearch": "网络搜索",
       "welcome": {
-        "message1": "欢迎使用Cherry Studio",
+        "message1": "欢迎使用Cherry Studio 🎉",
         "message2": "开始创作，享受无限可能！"
       },
       "yesterday": "昨天"
@@ -357,6 +357,7 @@
       "delete_translation": "删除翻译",
       "marked_as_best_answer": "已标记为最佳回复",
       "searching": "正在搜索...",
+      "share_message": "分享消息",
       "topic_deleted": "话题已删除",
       "translate_message": "翻译消息",
       "unmarked_as_best_answer": "已取消最佳回复标记",
@@ -551,6 +552,7 @@
             "success_description": "恢复成功，祝您使用愉快！"
           },
           "steps": {
+            "receive_file": "接收文件",
             "restore_messages": "恢复消息",
             "restore_settings": "恢复配置"
           },

@@ -1,6 +1,5 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
-import { ImpactFeedbackStyle } from 'expo-haptics'
 import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable } from 'react-native'
@@ -14,7 +13,6 @@ import { useTheme } from 'heroui-native'
 import { topicService } from '@/services/TopicService'
 import type { Assistant } from '@/types/assistant'
 import { DrawerNavigationProps } from '@/types/naviagate'
-import { haptic } from '@/utils/haptic'
 import { isEmpty } from 'lodash'
 import { messageDatabase } from '@database'
 
@@ -27,11 +25,11 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
   const navigation = useNavigation<DrawerNavigationProps>()
   const { switchTopic } = useCurrentTopic()
   const { assistants, isLoading } = useExternalAssistants()
+
   const selectionSheetRef = useRef<BottomSheetModal | null>(null)
   const { isDark } = useTheme()
 
   const handleAddNewTopic = async (selectedAssistant?: Assistant) => {
-    haptic(ImpactFeedbackStyle.Medium)
     const targetAssistant = selectedAssistant || assistant
 
     // Check if the newest topic has messages
@@ -56,7 +54,6 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
   }
 
   const openAssistantSelection = () => {
-    haptic(ImpactFeedbackStyle.Medium)
     selectionSheetRef.current?.present()
   }
 
@@ -79,14 +76,14 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
       label: (
         <YStack className="gap-1 flex-1 justify-center">
           <Text className="text-sm font-bold" numberOfLines={1} ellipsizeMode="tail">
-            {assistant.name}
+            {assistantItem.name}
           </Text>
-          {!isEmpty(assistant.prompt) && (
+          {!isEmpty(assistantItem.prompt) && (
             <Text
               ellipsizeMode="tail"
               numberOfLines={1}
               className="text-xs  text-text-secondary dark:text-text-secondary-dark">
-              {assistant.prompt}
+              {assistantItem.prompt}
             </Text>
           )}
         </YStack>
@@ -102,7 +99,7 @@ export const NewTopicButton: React.FC<NewTopicButtonProps> = ({ assistant }) => 
       ),
       onSelect: () => handleSelectAssistant(assistantItem)
     }))
-  }, [isLoading, assistants, assistant.name, assistant.prompt, isDark, handleSelectAssistant])
+  }, [isLoading, assistants, isDark, handleSelectAssistant])
 
   return (
     <>

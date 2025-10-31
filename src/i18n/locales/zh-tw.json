@@ -357,6 +357,7 @@
       "delete_translation": "刪除翻譯",
       "marked_as_best_answer": "已標記為最佳回答",
       "searching": "搜尋中...",
+      "share_message": "分享訊息",
       "topic_deleted": "主題已刪除",
       "translate_message": "翻譯訊息",
       "unmarked_as_best_answer": "已取消最佳回答標記",
@@ -551,6 +552,7 @@
             "success_description": "恢復成功，祝您使用愉快！"
           },
           "steps": {
+            "receive_file": "接收檔案",
             "restore_messages": "恢復訊息",
             "restore_settings": "恢復設定"
           },
