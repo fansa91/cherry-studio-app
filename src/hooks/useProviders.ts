@@ -1,43 +1,105 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 
+import { CHERRYAI_PROVIDER } from '@/config/providers'
 import { loggerService } from '@/services/LoggerService'
 import { providerService } from '@/services/ProviderService'
 import type { Provider } from '@/types/assistant'
 
-import { db } from '@db'
-import { transformDbToProvider } from '@db/mappers'
-import { providers as providersSchema } from '@db/schema'
-
 const logger = loggerService.withContext('useProvider')
 
 /**
- * Fetch all providers from the database.
+ * React Hook for getting all providers
+ *
+ * Uses ProviderService with caching for optimal performance.
+ *
+ * @example
+ * ```typescript
+ * function ProviderList() {
+ *   const { providers, isLoading, updateProviders } = useAllProviders()
+ *
+ *   if (isLoading) return <Loading />
+ *
+ *   return (
+ *     <ul>
+ *       {providers.map(p => <li key={p.id}>{p.name}</li>)}
+ *     </ul>
+ *   )
+ * }
+ * ```
  */
 export function useAllProviders() {
-  const query = db.select().from(providersSchema)
-  const { data: rawProviders, updatedAt } = useLiveQuery(query)
+  const [providers, setProviders] = useState<Provider[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const processedProviders = useMemo(() => {
-    if (!rawProviders || rawProviders.length === 0) return []
-    const transformed = rawProviders.map(provider => transformDbToProvider(provider))
-    // Sort by enabled: true first, then false
-    return transformed.sort((a, b) => {
-      if (a.enabled === b.enabled) return 0
-      return a.enabled ? -1 : 1
+  /**
+   * Subscribe to changes
+   */
+  const subscribe = useCallback((callback: () => void) => {
+    logger.verbose('Subscribing to all providers changes')
+    return providerService.subscribeAllProviders(callback)
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = subscribe(() => {
+      // Reload when any provider changes
+      loadAllProviders()
     })
-  }, [rawProviders])
 
-  if (!updatedAt || !rawProviders || rawProviders.length === 0) {
-    return {
-      providers: [],
-      isLoading: true
+    loadAllProviders()
+
+    return unsubscribe
+  }, [subscribe])
+
+  const loadAllProviders = async () => {
+    try {
+      setIsLoading(true)
+      const allProviders = await providerService.getAllProviders()
+
+      // Sort by: 1. enabled first, 2. has API key second, 3. user-added before system
+      const sortedProviders = allProviders.sort((a, b) => {
+        // 1. Enabled providers first
+        if (a.enabled !== b.enabled) {
+          return a.enabled ? -1 : 1
+        }
+        // 2. Providers with API key second
+        const aHasKey = Boolean(a.apiKey?.trim())
+        const bHasKey = Boolean(b.apiKey?.trim())
+        if (aHasKey !== bHasKey) {
+          return aHasKey ? -1 : 1
+        }
+        // 3. User-added providers before system providers
+        if (a.isSystem !== b.isSystem) {
+          return a.isSystem ? 1 : -1
+        }
+        return 0
+      })
+
+      // If no providers exist, return CHERRYAI_PROVIDER
+      // Otherwise, always add CHERRYAI_PROVIDER at the end
+      if (sortedProviders.length === 0) {
+        setProviders([CHERRYAI_PROVIDER])
+      } else {
+        setProviders([...sortedProviders, CHERRYAI_PROVIDER])
+      }
+    } catch (error) {
+      logger.error('Failed to load all providers:', error as Error)
+      // On error, still return CHERRYAI_PROVIDER
+      setProviders([CHERRYAI_PROVIDER])
+    } finally {
+      setIsLoading(false)
     }
   }
 
+  const updateProviders = useCallback(async (updates: Provider[]) => {
+    for (const provider of updates) {
+      await providerService.updateProvider(provider.id, provider)
+    }
+  }, [])
+
   return {
-    providers: processedProviders,
-    isLoading: false
+    providers,
+    isLoading,
+    updateProviders
   }
 }
 
@@ -154,6 +216,14 @@ export function useProvider(providerId: string) {
   )
 
   // ==================== Return API ====================
+
+  if (providerId === 'cherryai') {
+    return {
+      provider: CHERRYAI_PROVIDER,
+      isLoading: false,
+      updateProvider: async (_updates: Partial<Omit<Provider, 'id'>>) => {}
+    }
+  }
 
   return {
     provider,

@@ -1,10 +1,11 @@
-import OpenAI from 'openai'
+import type OpenAI from '@cherrystudio/openai'
+import * as z from 'zod'
 
-import { StreamTextParams } from './aiCoretypes'
-import { Chunk } from './chunk'
-import { Message } from './message'
-import { WebSearchProvider } from './websearch'
-import { MCPServer } from './mcp'
+import type { StreamTextParams } from './aiCoretypes'
+import type { Chunk } from './chunk'
+import type { MCPServer } from './mcp'
+import type { Message } from './message'
+import type { WebSearchProvider } from './websearch'
 
 export type Assistant = {
   id: string
@@ -32,21 +33,28 @@ export type Assistant = {
 const ThinkModelTypes = [
   'default',
   'o',
+  'openai_deep_research',
   'gpt5',
+  'gpt5pro',
+  'gpt5_codex',
+  'gpt5_1',
+  'gpt5_1_codex',
   'grok',
+  'grok4_fast',
   'gemini',
   'gemini_pro',
   'qwen',
   'qwen_thinking',
   'doubao',
   'doubao_no_auto',
+  'doubao_after_251015',
   'hunyuan',
   'zhipu',
   'perplexity',
   'deepseek_hybrid'
 ] as const
 
-export type ReasoningEffortOption = NonNullable<OpenAI.ReasoningEffort> | 'auto'
+export type ReasoningEffortOption = NonNullable<OpenAI.ReasoningEffort> | 'auto' | 'none'
 export type ThinkingOption = ReasoningEffortOption | 'off'
 export type ThinkingModelType = (typeof ThinkModelTypes)[number]
 export type ThinkingOptionConfig = Record<ThinkingModelType, ThinkingOption[]>
@@ -58,13 +66,14 @@ export function isThinkModelType(type: string): type is ThinkingModelType {
 }
 
 export const EFFORT_RATIO: EffortRatio = {
+  none: 0.01,
   minimal: 0.05,
   low: 0.05,
   medium: 0.5,
   high: 0.8,
+  xhigh: 0.9,
   auto: 2
 }
-
 export type AssistantSettings = {
   maxTokens?: number
   enableMaxTokens?: boolean
@@ -136,6 +145,16 @@ export type Model = {
   supported_text_delta?: boolean
 }
 
+export type ModelHealthStatus = 'testing' | 'healthy' | 'unhealthy' | 'idle'
+
+export type ModelHealth = {
+  modelId: string
+  status: ModelHealthStatus
+  latency?: number // Response time in seconds
+  lastChecked?: number
+  error?: string
+}
+
 export type ModelType = 'text' | 'vision' | 'embedding' | 'reasoning' | 'function_calling' | 'web_search' | 'rerank'
 
 export type Usage = OpenAI.Completions.CompletionUsage & {
@@ -171,8 +190,9 @@ export type ProviderApiOptions = {
   isSupportServiceTier?: boolean
   /** 是否不支持 enable_thinking 参数 */
   isNotSupportEnableThinking?: boolean
+  /** 是否不支持 APIVersion */
+  isNotSupportAPIVersion?: boolean
 }
-
 export type OpenAIVerbosity = 'high' | 'medium' | 'low'
 
 export type OpenAISummaryText = 'auto' | 'concise' | 'detailed' | 'off'
@@ -216,6 +236,8 @@ export type Provider = {
   name: string
   apiKey: string
   apiHost: string
+  anthropicApiHost?: string
+  isAnthropicModel?: (m: Model) => boolean
   apiVersion?: string
   models: Model[]
   enabled?: boolean
@@ -242,16 +264,21 @@ export type Provider = {
   extra_headers?: Record<string, string>
 }
 
-export type ProviderType =
-  | 'openai'
-  | 'openai-response'
-  | 'anthropic'
-  | 'gemini'
-  | 'qwenlm'
-  | 'azure-openai'
-  | 'vertexai'
-  | 'mistral'
-  | 'aws-bedrock'
+export const ProviderTypeSchema = z.enum([
+  'openai',
+  'openai-response',
+  'anthropic',
+  'gemini',
+  'azure-openai',
+  'vertexai',
+  'mistral',
+  'aws-bedrock',
+  'vertex-anthropic',
+  'new-api',
+  'ai-gateway'
+])
+
+export type ProviderType = z.infer<typeof ProviderTypeSchema>
 
 export type ApiStatus = 'idle' | 'processing' | 'success' | 'error'
 
@@ -273,15 +300,17 @@ export const SystemProviderIds = {
   cephalon: 'cephalon',
   lanyun: 'lanyun',
   ph8: 'ph8',
+  sophnet: 'sophnet',
   openrouter: 'openrouter',
   ollama: 'ollama',
+  ovms: 'ovms',
   'new-api': 'new-api',
   lmstudio: 'lmstudio',
   anthropic: 'anthropic',
   openai: 'openai',
   'azure-openai': 'azure-openai',
   gemini: 'gemini',
-  // vertexai: 'vertexai',
+  vertexai: 'vertexai',
   github: 'github',
   copilot: 'copilot',
   zhipu: 'zhipu',
@@ -310,9 +339,13 @@ export const SystemProviderIds = {
   gpustack: 'gpustack',
   voyageai: 'voyageai',
   'aws-bedrock': 'aws-bedrock',
-  poe: 'poe'
+  poe: 'poe',
+  aionly: 'aionly',
+  longcat: 'longcat',
+  huggingface: 'huggingface',
+  'ai-gateway': 'ai-gateway',
+  cerebras: 'cerebras'
 } as const
-
 export type SystemProviderId = keyof typeof SystemProviderIds
 
 export const isSystemProviderId = (id: string): id is SystemProviderId => {
@@ -323,6 +356,20 @@ export type SystemProvider = Provider & {
   id: SystemProviderId
   isSystem: true
   apiOptions?: never
+}
+
+export type VertexProvider = Provider & {
+  googleCredentials: {
+    privateKey: string
+    clientEmail: string
+  }
+  project: string
+  location: string
+}
+
+export type AzureOpenAIProvider = Provider & {
+  type: 'azure-openai'
+  apiVersion: string
 }
 
 /**

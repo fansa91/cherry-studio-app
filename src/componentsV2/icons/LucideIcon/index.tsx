@@ -1,20 +1,28 @@
-import React from 'react'
+import { cn } from 'heroui-native'
 import {
-  Save,
-  Store,
+  ArrowDown,
   ArrowLeft,
   ArrowLeftRight,
+  ArrowUp,
   ArrowUpRight,
   AtSign,
   AudioLines,
   BrushCleaning,
+  Bug,
   Camera,
   Check,
+  CheckSquare,
   ChevronDown,
+  ChevronRight,
   ChevronsRight,
+  ChevronsUpDown,
   CircleCheck,
   CircleDollarSign,
   CirclePause,
+  CirclePlus,
+  CircleStop,
+  CircleUserRound,
+  Clock,
   Cloud,
   Copy,
   Copyright,
@@ -29,233 +37,180 @@ import {
   FolderSearch2,
   Github,
   Globe,
+  Hammer,
   HardDrive,
   HeartPulse,
-  Palette,
   Image,
-  Hammer,
   ImageOff,
   Info,
   Languages,
   Lightbulb,
-  CircleUserRound,
-  LucideIcon,
+  ListCheck,
   Mail,
+  Maximize2,
   Menu,
   MessageSquareDiff,
   MessageSquareMore,
+  Mic,
   Minus,
   MoreHorizontal,
   Package,
+  Palette,
   PenLine,
   Plus,
-  SquareFunction,
+  Radio,
   RefreshCw,
   Repeat2,
   Rocket,
   RotateCcw,
   Rss,
+  Save,
   ScanQrCode,
   Search,
   Settings,
   Settings2,
-  ChevronRight,
   Share,
   ShieldCheck,
   Sparkles,
-  Wrench,
+  Square,
+  SquareCheck,
+  SquareFunction,
+  Store,
   TextSelect,
   ThumbsUp,
   Trash2,
   TriangleAlert,
   Wifi,
-  ArrowUp,
+  Wrench,
   X,
   XCircle
 } from 'lucide-react-native'
-import { cssInterop } from 'nativewind'
-import { cn } from 'heroui-native'
+import React from 'react'
+import { withUniwind } from 'uniwind'
 
-function interopIcon(icon: LucideIcon) {
-  cssInterop(icon, {
-    className: {
-      target: 'style',
-      nativeStyleToProp: {
-        color: true,
-        opacity: true
-      }
-    }
-  })
+const createIcon = (IconComponent: React.ComponentType<any>) => {
+  const UniwindIcon = withUniwind(IconComponent) as React.ComponentType<any>
+  type IconProps = React.ComponentProps<typeof UniwindIcon>
+
+  const IconWithDefaultColors = ({ className, ...props }: IconProps) => (
+    <UniwindIcon {...props} className={cn('text-foreground', className)} />
+  )
+
+  const displayName = IconComponent.displayName ?? IconComponent.name ?? 'Icon'
+  IconWithDefaultColors.displayName = displayName
+
+  return IconWithDefaultColors
 }
 
-interopIcon(Save)
-interopIcon(Store)
-interopIcon(ArrowUp)
-interopIcon(ArrowLeft)
-interopIcon(ArrowLeftRight)
-interopIcon(ArrowUpRight)
-interopIcon(AtSign)
-interopIcon(AudioLines)
-interopIcon(BrushCleaning)
-interopIcon(Camera)
-interopIcon(Check)
-interopIcon(ChevronDown)
-interopIcon(ChevronsRight)
-interopIcon(CircleCheck)
-interopIcon(CircleDollarSign)
-interopIcon(CirclePause)
-interopIcon(CircleUserRound)
-interopIcon(Cloud)
-interopIcon(Copy)
-interopIcon(Hammer)
-interopIcon(Copyright)
-interopIcon(Download)
-interopIcon(Edit3)
-interopIcon(Eye)
-interopIcon(EyeOff)
-interopIcon(FileText)
-interopIcon(Folder)
-interopIcon(FolderClosed)
-interopIcon(FolderOpen)
-interopIcon(FolderSearch2)
-interopIcon(Github)
-interopIcon(Globe)
-interopIcon(HardDrive)
-interopIcon(HeartPulse)
-interopIcon(Palette)
-interopIcon(Image)
-interopIcon(ImageOff)
-interopIcon(Info)
-interopIcon(Languages)
-interopIcon(Lightbulb)
-interopIcon(Mail)
-interopIcon(Menu)
-interopIcon(MessageSquareDiff)
-interopIcon(MessageSquareMore)
-interopIcon(Minus)
-interopIcon(MoreHorizontal)
-interopIcon(Package)
-interopIcon(PenLine)
-interopIcon(Plus)
-interopIcon(SquareFunction)
-interopIcon(RefreshCw)
-interopIcon(Repeat2)
-interopIcon(Rocket)
-interopIcon(RotateCcw)
-interopIcon(Rss)
-interopIcon(ScanQrCode)
-interopIcon(Search)
-interopIcon(Settings2)
-interopIcon(ChevronRight)
-interopIcon(Share)
-interopIcon(ShieldCheck)
-interopIcon(Sparkles)
-interopIcon(Wrench)
-interopIcon(TextSelect)
-interopIcon(ThumbsUp)
-interopIcon(Trash2)
-interopIcon(TriangleAlert)
-interopIcon(Wifi)
-interopIcon(X)
-interopIcon(XCircle)
-interopIcon(Settings)
-
-function withDefaultIconClass<T extends LucideIcon>(Icon: T): T {
-  const Wrapped = (({ className, ...props }: any) => (
-    <Icon className={cn('text-black dark:text-white', className)} {...props} />
-  )) as unknown as T
-  return Wrapped
-}
-
-const SaveIcon = withDefaultIconClass(Save)
-const StoreIcon = withDefaultIconClass(Store)
-const HammerIcon = withDefaultIconClass(Hammer)
-const ArrowUpIcon = withDefaultIconClass(ArrowUp)
-const ArrowLeftIcon = withDefaultIconClass(ArrowLeft)
-const ArrowLeftRightIcon = withDefaultIconClass(ArrowLeftRight)
-const ArrowUpRightIcon = withDefaultIconClass(ArrowUpRight)
-const AtSignIcon = withDefaultIconClass(AtSign)
-const AudioLinesIcon = withDefaultIconClass(AudioLines)
-const BrushCleaningIcon = withDefaultIconClass(BrushCleaning)
-const CameraIcon = withDefaultIconClass(Camera)
-const CheckIcon = withDefaultIconClass(Check)
-const ChevronDownIcon = withDefaultIconClass(ChevronDown)
-const ChevronsRightIcon = withDefaultIconClass(ChevronsRight)
-const CircleCheckIcon = withDefaultIconClass(CircleCheck)
-const CircleDollarSignIcon = withDefaultIconClass(CircleDollarSign)
-const CirclePauseIcon = withDefaultIconClass(CirclePause)
-const CloudIcon = withDefaultIconClass(Cloud)
-const CopyIcon = withDefaultIconClass(Copy)
-const CopyrightIcon = withDefaultIconClass(Copyright)
-const DownloadIcon = withDefaultIconClass(Download)
-const Edit3Icon = withDefaultIconClass(Edit3)
-const EyeIcon = withDefaultIconClass(Eye)
-const EyeOffIcon = withDefaultIconClass(EyeOff)
-const FileTextIcon = withDefaultIconClass(FileText)
-const FolderIcon = withDefaultIconClass(Folder)
-const FolderClosedIcon = withDefaultIconClass(FolderClosed)
-const FolderOpenIcon = withDefaultIconClass(FolderOpen)
-const FolderSearch2Icon = withDefaultIconClass(FolderSearch2)
-const GithubIcon = withDefaultIconClass(Github)
-const GlobeIcon = withDefaultIconClass(Globe)
-const HardDriveIcon = withDefaultIconClass(HardDrive)
-const HeartPulseIcon = withDefaultIconClass(HeartPulse)
-const PaletteIcon = withDefaultIconClass(Palette)
-const ImageIcon = withDefaultIconClass(Image)
-const ImageOffIcon = withDefaultIconClass(ImageOff)
-const InfoIcon = withDefaultIconClass(Info)
-const LanguagesIcon = withDefaultIconClass(Languages)
-const LightbulbIcon = withDefaultIconClass(Lightbulb)
-const CircleUserRoundIcon = withDefaultIconClass(CircleUserRound)
-const MailIcon = withDefaultIconClass(Mail)
-const MenuIcon = withDefaultIconClass(Menu)
-const MessageSquareDiffIcon = withDefaultIconClass(MessageSquareDiff)
-const MessageSquareMoreIcon = withDefaultIconClass(MessageSquareMore)
-const MinusIcon = withDefaultIconClass(Minus)
-const MoreHorizontalIcon = withDefaultIconClass(MoreHorizontal)
-const PackageIcon = withDefaultIconClass(Package)
-const PenLineIcon = withDefaultIconClass(PenLine)
-const PlusIcon = withDefaultIconClass(Plus)
-const SquareFunctionIcon = withDefaultIconClass(SquareFunction)
-const RefreshCwIcon = withDefaultIconClass(RefreshCw)
-const Repeat2Icon = withDefaultIconClass(Repeat2)
-const RocketIcon = withDefaultIconClass(Rocket)
-const RotateCcwIcon = withDefaultIconClass(RotateCcw)
-const RssIcon = withDefaultIconClass(Rss)
-const ScanQrCodeIcon = withDefaultIconClass(ScanQrCode)
-const SearchIcon = withDefaultIconClass(Search)
-const Settings2Icon = withDefaultIconClass(Settings2)
-const ChevronRightIcon = withDefaultIconClass(ChevronRight)
-const ShareIcon = withDefaultIconClass(Share)
-const ShieldCheckIcon = withDefaultIconClass(ShieldCheck)
-const SparklesIcon = withDefaultIconClass(Sparkles)
-const WrenchIcon = withDefaultIconClass(Wrench)
-const TextSelectIcon = withDefaultIconClass(TextSelect)
-const ThumbsUpIcon = withDefaultIconClass(ThumbsUp)
-const Trash2Icon = withDefaultIconClass(Trash2)
-const TriangleAlertIcon = withDefaultIconClass(TriangleAlert)
-const WifiIcon = withDefaultIconClass(Wifi)
-const XIcon = withDefaultIconClass(X)
-const XCircleIcon = withDefaultIconClass(XCircle)
-const SettingsIcon = withDefaultIconClass(Settings)
+const SaveIcon = createIcon(Save)
+const StoreIcon = createIcon(Store)
+const HammerIcon = createIcon(Hammer)
+const ArrowDownIcon = createIcon(ArrowDown)
+const ArrowUpIcon = createIcon(ArrowUp)
+const ArrowLeftIcon = createIcon(ArrowLeft)
+const ArrowLeftRightIcon = createIcon(ArrowLeftRight)
+const ArrowUpRightIcon = createIcon(ArrowUpRight)
+const AtSignIcon = createIcon(AtSign)
+const AudioLinesIcon = createIcon(AudioLines)
+const BrushCleaningIcon = createIcon(BrushCleaning)
+const BugIcon = createIcon(Bug)
+const CameraIcon = createIcon(Camera)
+const CheckIcon = createIcon(Check)
+const CheckSquareIcon = createIcon(CheckSquare)
+const ChevronDownIcon = createIcon(ChevronDown)
+const ChevronsRightIcon = createIcon(ChevronsRight)
+const ChevronsUpDownIcon = createIcon(ChevronsUpDown)
+const ClockIcon = createIcon(Clock)
+const CircleCheckIcon = createIcon(CircleCheck)
+const CircleDollarSignIcon = createIcon(CircleDollarSign)
+const CirclePauseIcon = createIcon(CirclePause)
+const CirclePlusIcon = createIcon(CirclePlus)
+const CircleStopIcon = createIcon(CircleStop)
+const CloudIcon = createIcon(Cloud)
+const CopyIcon = createIcon(Copy)
+const CopyrightIcon = createIcon(Copyright)
+const DownloadIcon = createIcon(Download)
+const Edit3Icon = createIcon(Edit3)
+const EyeIcon = createIcon(Eye)
+const EyeOffIcon = createIcon(EyeOff)
+const FileTextIcon = createIcon(FileText)
+const FolderIcon = createIcon(Folder)
+const FolderClosedIcon = createIcon(FolderClosed)
+const FolderOpenIcon = createIcon(FolderOpen)
+const FolderSearch2Icon = createIcon(FolderSearch2)
+const GithubIcon = createIcon(Github)
+const GlobeIcon = createIcon(Globe)
+const HardDriveIcon = createIcon(HardDrive)
+const HeartPulseIcon = createIcon(HeartPulse)
+const PaletteIcon = createIcon(Palette)
+const ImageIcon = createIcon(Image)
+const ImageOffIcon = createIcon(ImageOff)
+const InfoIcon = createIcon(Info)
+const LanguagesIcon = createIcon(Languages)
+const LightbulbIcon = createIcon(Lightbulb)
+const ListCheckIcon = createIcon(ListCheck)
+const CircleUserRoundIcon = createIcon(CircleUserRound)
+const MailIcon = createIcon(Mail)
+const Maximize2Icon = createIcon(Maximize2)
+const MenuIcon = createIcon(Menu)
+const MessageSquareDiffIcon = createIcon(MessageSquareDiff)
+const MessageSquareMoreIcon = createIcon(MessageSquareMore)
+const MicIcon = createIcon(Mic)
+const MinusIcon = createIcon(Minus)
+const MoreHorizontalIcon = createIcon(MoreHorizontal)
+const PackageIcon = createIcon(Package)
+const PenLineIcon = createIcon(PenLine)
+const PlusIcon = createIcon(Plus)
+const RadioIcon = createIcon(Radio)
+const SquareIcon = createIcon(Square)
+const SquareCheckIcon = createIcon(SquareCheck)
+const SquareFunctionIcon = createIcon(SquareFunction)
+const RefreshCwIcon = createIcon(RefreshCw)
+const Repeat2Icon = createIcon(Repeat2)
+const RocketIcon = createIcon(Rocket)
+const RotateCcwIcon = createIcon(RotateCcw)
+const RssIcon = createIcon(Rss)
+const ScanQrCodeIcon = createIcon(ScanQrCode)
+const SearchIcon = createIcon(Search)
+const Settings2Icon = createIcon(Settings2)
+const ChevronRightIcon = createIcon(ChevronRight)
+const ShareIcon = createIcon(Share)
+const ShieldCheckIcon = createIcon(ShieldCheck)
+const SparklesIcon = createIcon(Sparkles)
+const WrenchIcon = createIcon(Wrench)
+const TextSelectIcon = createIcon(TextSelect)
+const ThumbsUpIcon = createIcon(ThumbsUp)
+const Trash2Icon = createIcon(Trash2)
+const TriangleAlertIcon = createIcon(TriangleAlert)
+const WifiIcon = createIcon(Wifi)
+const XIcon = createIcon(X)
+const XCircleIcon = createIcon(XCircle)
+const SettingsIcon = createIcon(Settings)
 
 export {
-  SaveIcon as Save,
-  StoreIcon as Store,
-  ArrowUpIcon as ArrowUp,
+  ArrowDownIcon as ArrowDown,
   ArrowLeftIcon as ArrowLeft,
   ArrowLeftRightIcon as ArrowLeftRight,
+  ArrowUpIcon as ArrowUp,
   ArrowUpRightIcon as ArrowUpRight,
   AtSignIcon as AtSign,
   AudioLinesIcon as AudioLines,
   BrushCleaningIcon as BrushCleaning,
+  BugIcon as Bug,
   CameraIcon as Camera,
   CheckIcon as Check,
+  CheckSquareIcon as CheckSquare,
   ChevronDownIcon as ChevronDown,
+  ChevronRightIcon as ChevronRight,
   ChevronsRightIcon as ChevronsRight,
+  ChevronsUpDownIcon as ChevronsUpDown,
   CircleCheckIcon as CircleCheck,
   CircleDollarSignIcon as CircleDollarSign,
   CirclePauseIcon as CirclePause,
+  CirclePlusIcon as CirclePlus,
+  CircleStopIcon as CircleStop,
+  CircleUserRoundIcon as CircleUserRound,
+  ClockIcon as Clock,
   CloudIcon as Cloud,
   CopyIcon as Copy,
   CopyrightIcon as Copyright,
@@ -270,45 +225,51 @@ export {
   FolderSearch2Icon as FolderSearch2,
   GithubIcon as Github,
   GlobeIcon as Globe,
+  HammerIcon as Hammer,
   HardDriveIcon as HardDrive,
   HeartPulseIcon as HeartPulse,
-  PaletteIcon as Palette,
   ImageIcon as Image,
   ImageOffIcon as ImageOff,
-  HammerIcon as Hammer,
   InfoIcon as Info,
   LanguagesIcon as Languages,
   LightbulbIcon as Lightbulb,
-  CircleUserRoundIcon as CircleUserRound,
+  ListCheckIcon as ListCheck,
   MailIcon as Mail,
+  Maximize2Icon as Maximize2,
   MenuIcon as Menu,
   MessageSquareDiffIcon as MessageSquareDiff,
   MessageSquareMoreIcon as MessageSquareMore,
+  MicIcon as Mic,
   MinusIcon as Minus,
   MoreHorizontalIcon as MoreHorizontal,
   PackageIcon as Package,
+  PaletteIcon as Palette,
   PenLineIcon as PenLine,
   PlusIcon as Plus,
-  SquareFunctionIcon as SquareFunction,
+  RadioIcon as Radio,
   RefreshCwIcon as RefreshCw,
   Repeat2Icon as Repeat2,
   RocketIcon as Rocket,
   RotateCcwIcon as RotateCcw,
   RssIcon as Rss,
+  SaveIcon as Save,
   ScanQrCodeIcon as ScanQrCode,
   SearchIcon as Search,
+  SettingsIcon as Settings,
   Settings2Icon as Settings2,
-  ChevronRightIcon as ChevronRight,
   ShareIcon as Share,
   ShieldCheckIcon as ShieldCheck,
   SparklesIcon as Sparkles,
-  WrenchIcon as Wrench,
+  SquareIcon as Square,
+  SquareCheckIcon as SquareCheck,
+  SquareFunctionIcon as SquareFunction,
+  StoreIcon as Store,
   TextSelectIcon as TextSelect,
   ThumbsUpIcon as ThumbsUp,
   Trash2Icon as Trash2,
   TriangleAlertIcon as TriangleAlert,
   WifiIcon as Wifi,
+  WrenchIcon as Wrench,
   XIcon as X,
-  XCircleIcon as XCircle,
-  SettingsIcon as Settings
+  XCircleIcon as XCircle
 }

@@ -1,111 +1,133 @@
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
-import React, { forwardRef, useEffect, useState } from 'react'
-import { BackHandler } from 'react-native'
+import { TrueSheet } from '@lodev09/react-native-true-sheet'
+import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { BackHandler, View } from 'react-native'
 
-import { useBottom } from '@/hooks/useBottom'
-import { useTheme } from 'heroui-native'
-import { Assistant, Model } from '@/types/assistant'
-import { FileMetadata } from '@/types/file'
-
-import { useCameraModal } from './CameraModal'
-import { ExternalTools } from './ExternalTools'
-import { SystemTools } from './SystemTools'
-import { useAIFeatureHandler } from './useAIFeatureHandler'
-import { useFileHandler } from './useFileHandler'
 import YStack from '@/componentsV2/layout/YStack'
+import { useBottom } from '@/hooks/useBottom'
+import { useTheme } from '@/hooks/useTheme'
+import { useToast } from '@/hooks/useToast'
+import { isIOS26 } from '@/utils/device'
 
-interface ToolSheetProps {
-  mentions: Model[]
-  files: FileMetadata[]
-  setFiles: (files: FileMetadata[]) => void
-  assistant: Assistant
-  updateAssistant: (assistant: Assistant) => Promise<void>
-}
+import { presentWebSearchProviderSheet } from '../WebSearchProviderSheet'
+import { ExternalTools } from './ExternalTools'
+import {
+  dismissToolSheet,
+  presentToolSheet,
+  TOOL_SHEET_NAME,
+  useAIFeatureHandler,
+  useFileHandler,
+  useToolSheetData
+} from './hooks'
+import { SystemTools } from './SystemTools'
 
-export const ToolSheet = forwardRef<BottomSheetModal, ToolSheetProps>(
-  ({ mentions, files, setFiles, assistant, updateAssistant }, ref) => {
-    const { isDark } = useTheme()
-    const bottom = useBottom()
-    const [isVisible, setIsVisible] = useState(false)
+export { dismissToolSheet, presentToolSheet, TOOL_SHEET_NAME }
+export type { ToolSheetData } from './types'
 
-    const dismissSheet = () => {
-      ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
+export const ToolSheet: React.FC = () => {
+  const { t } = useTranslation()
+  const bottom = useBottom()
+  const { isDark } = useTheme()
+  const toast = useToast()
+
+  const { sheetData, isVisible, handleDidDismiss, handleDidPresent } = useToolSheetData()
+  const { mentions, files, setFiles, assistant, updateAssistant } = sheetData
+
+  const {
+    handleAddImage,
+    handleAddFile,
+    handleTakePhoto,
+    loadingState: fileLoadingState,
+    error: fileError,
+    clearError: clearFileError
+  } = useFileHandler({
+    files,
+    setFiles,
+    onSuccess: dismissToolSheet
+  })
+
+  const {
+    handleEnableGenerateImage,
+    handleEnableWebSearch,
+    isLoading: isAIFeatureLoading,
+    error: aiError,
+    clearError: clearAIError
+  } = useAIFeatureHandler({
+    assistant,
+    updateAssistant,
+    onSuccess: dismissToolSheet
+  })
+
+  // Display errors via toast
+  useEffect(() => {
+    const error = fileError || aiError
+    if (error) {
+      const message = error.translationKey ? t(error.translationKey) : error.message
+      toast.show(message)
+      clearFileError()
+      clearAIError()
+    }
+  }, [fileError, aiError, t, toast, clearFileError, clearAIError])
+
+  // Handle Android back button
+  useEffect(() => {
+    if (!isVisible) return
+
+    const backAction = () => {
+      dismissToolSheet()
+      return true
     }
 
-    const { handleAddImage, handleAddFile, handleAddPhotoFromCamera } = useFileHandler({
-      files,
-      setFiles,
-      onSuccess: dismissSheet
-    })
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction)
+    return () => backHandler.remove()
+  }, [isVisible])
 
-    const { handleEnableGenerateImage, handleEnableWebSearch } = useAIFeatureHandler({
+  const handleWebSearchSwitchPress = () => {
+    dismissToolSheet()
+    presentWebSearchProviderSheet({
+      mentions,
       assistant,
-      updateAssistant,
-      onSuccess: dismissSheet
+      updateAssistant
     })
-
-    const cameraModal = useCameraModal({
-      onPhotoTaken: handleAddPhotoFromCamera,
-      onSuccess: dismissSheet
-    })
-
-    useEffect(() => {
-      if (!isVisible) return
-
-      const backAction = () => {
-        ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
-        return true
-      }
-
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction)
-      return () => backHandler.remove()
-    }, [ref, isVisible])
-
-    const handleCameraPress = () => {
-      dismissSheet()
-      cameraModal.handleOpenCamera()
-    }
-
-    const renderBackdrop = (props: any) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.5} pressBehavior="close" />
-    )
-
-    return (
-      <>
-        <BottomSheetModal
-          enableDynamicSizing={true}
-          ref={ref}
-          backgroundStyle={{
-            borderRadius: 30,
-            backgroundColor: isDark ? '#121213ff' : '#f7f7f7ff'
-          }}
-          handleIndicatorStyle={{
-            backgroundColor: isDark ? '#f9f9f9ff' : '#202020ff'
-          }}
-          backdropComponent={renderBackdrop}
-          onDismiss={() => setIsVisible(false)}
-          onChange={index => setIsVisible(index >= 0)}>
-          <BottomSheetView style={{ paddingBottom: bottom }}>
-            <YStack className="gap-3">
-              <SystemTools
-                onCameraPress={handleCameraPress}
-                onImagePress={handleAddImage}
-                onFilePress={handleAddFile}
-              />
-              <ExternalTools
-                mentions={mentions}
-                assistant={assistant}
-                onWebSearchToggle={handleEnableWebSearch}
-                onGenerateImageToggle={handleEnableGenerateImage}
-              />
-            </YStack>
-          </BottomSheetView>
-        </BottomSheetModal>
-
-        {cameraModal.modal}
-      </>
-    )
   }
-)
 
-ToolSheet.displayName = 'ToolSheet'
+  const handleCameraPress = () => {
+    dismissToolSheet()
+    handleTakePhoto()
+  }
+
+  return (
+    <TrueSheet
+      name={TOOL_SHEET_NAME}
+      detents={['auto']}
+      cornerRadius={30}
+      grabber
+      dismissible
+      dimmed
+      backgroundColor={isIOS26 ? undefined : isDark ? '#19191c' : '#ffffff'}
+      onDidDismiss={handleDidDismiss}
+      onDidPresent={handleDidPresent}
+      style={{ paddingBottom: bottom + 10 }}>
+      <View>
+        <YStack className="gap-3 pt-5">
+          <SystemTools
+            onCameraPress={handleCameraPress}
+            onImagePress={handleAddImage}
+            onFilePress={handleAddFile}
+            loadingState={fileLoadingState}
+          />
+          {assistant && updateAssistant && (
+            <ExternalTools
+              mentions={mentions}
+              assistant={assistant}
+              onWebSearchToggle={handleEnableWebSearch}
+              onWebSearchSwitchPress={handleWebSearchSwitchPress}
+              onGenerateImageToggle={handleEnableGenerateImage}
+              isLoading={isAIFeatureLoading}
+            />
+          )}
+        </YStack>
+      </View>
+    </TrueSheet>
+  )
+}

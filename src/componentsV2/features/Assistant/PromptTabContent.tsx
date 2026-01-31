@@ -1,11 +1,13 @@
 import { MotiView } from 'moti'
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-
-import { Assistant } from '@/types/assistant'
+import { Pressable } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
-import YStack from '@/componentsV2/layout/YStack'
+
 import TextField from '@/componentsV2/base/TextField'
+import { presentPromptDetailSheet } from '@/componentsV2/features/Sheet/PromptDetailSheet'
+import YStack from '@/componentsV2/layout/YStack'
+import type { Assistant } from '@/types/assistant'
 
 interface PromptTabContentProps {
   assistant: Assistant
@@ -49,10 +51,10 @@ export function PromptTabContent({ assistant, updateAssistant }: PromptTabConten
       transition={{
         type: 'timing'
       }}>
-      <KeyboardAvoidingView className="flex-1">
+      <KeyboardAvoidingView className="h-full flex-1">
         <YStack className="flex-1 gap-4">
           <TextField className="gap-2">
-            <TextField.Label className="text-sm font-medium text-text-secondary dark:text-text-secondary">
+            <TextField.Label className="text-foreground-secondary text-sm font-medium">
               {t('common.name')}
             </TextField.Label>
             <TextField.Input
@@ -64,20 +66,35 @@ export function PromptTabContent({ assistant, updateAssistant }: PromptTabConten
             />
           </TextField>
 
-          <TextField className="gap-2 h-4/5">
-            <TextField.Label className="text-sm font-medium text-text-secondary dark:text-text-secondary">
+          <TextField className="flex-1 gap-2">
+            <TextField.Label className="text-foreground-secondary text-sm font-medium">
               {t('common.prompt')}
             </TextField.Label>
-            <TextField.Input
-              className="flex-1 rounded-lg  px-3 py-3 text-sm"
-              placeholder={t('common.prompt')}
-              multiline
-              numberOfLines={20}
-              textAlignVertical="top"
-              value={formData.prompt}
-              onChangeText={prompt => setFormData(prev => ({ ...prev, prompt }))}
-              onEndEditing={handleSave}
-            />
+            <Pressable
+              className="flex-1"
+              onPress={() => {
+                presentPromptDetailSheet(
+                  formData.prompt,
+                  prompt => setFormData(prev => ({ ...prev, prompt })),
+                  t('common.prompt'),
+                  prompt => {
+                    if (prompt !== assistant.prompt) {
+                      updateAssistant({ ...assistant, prompt })
+                    }
+                  }
+                )
+              }}>
+              <TextField.Input
+                editable={false}
+                pointerEvents="none"
+                className="flex-1 rounded-lg px-3 py-3 text-sm"
+                placeholder={t('common.prompt')}
+                multiline
+                numberOfLines={20}
+                textAlignVertical="top"
+                value={formData.prompt}
+              />
+            </Pressable>
           </TextField>
         </YStack>
       </KeyboardAvoidingView>

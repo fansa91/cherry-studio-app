@@ -1,13 +1,13 @@
-import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
-import React, { useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Pressable, Keyboard } from 'react-native'
+import React from 'react'
+import { Keyboard, Pressable } from 'react-native'
 
-import { Text, XStack, YStack } from '@/componentsV2'
-import AssistantItemSheet from '@/componentsV2/features/Assistant/AssistantItemSheet'
-import { Assistant, Topic } from '@/types/assistant'
-import { DrawerNavigationProps } from '@/types/naviagate'
+import Text from '@/componentsV2/base/Text'
+import { ChevronRight } from '@/componentsV2/icons'
+import XStack from '@/componentsV2/layout/XStack'
+import YStack from '@/componentsV2/layout/YStack'
+import type { Assistant, Topic } from '@/types/assistant'
+import type { HomeNavigationProps } from '@/types/naviagate'
 
 interface AssistantSelectionProps {
   assistant: Assistant
@@ -15,53 +15,36 @@ interface AssistantSelectionProps {
 }
 
 export const AssistantSelection: React.FC<AssistantSelectionProps> = ({ assistant, topic }) => {
-  const bottomSheetRef = useRef<BottomSheetModal>(null)
-  const navigation = useNavigation<DrawerNavigationProps>()
-  const { t } = useTranslation()
+  const navigation = useNavigation<HomeNavigationProps>()
 
   const handlePress = () => {
     Keyboard.dismiss()
-    bottomSheetRef.current?.present()
-  }
-
-  const handleEditAssistant = (assistantId: string) => {
-    navigation.navigate('Assistant', { screen: 'AssistantDetailScreen', params: { assistantId } })
-  }
-
-  const handlePressActionButton = () => {
-    bottomSheetRef.current?.dismiss()
-    navigation.navigate('Assistant', { screen: 'AssistantScreen' })
-  }
-
-  const actionButton = {
-    text: t('assistants.title.change'),
-    onPress: handlePressActionButton
+    navigation.navigate('AssistantDetailScreen', {
+      assistantId: assistant.id,
+      returnTo: 'chat',
+      topicId: topic.id,
+      tab: 'model'
+    })
   }
 
   return (
-    <>
-      <Pressable onPress={handlePress} className="active:opacity-60">
-        <XStack className="gap-3.5 items-center justify-center">
-          <YStack className="gap-0.5 items-center justify-start">
-            <Text
-              className="text-text-primary dark:text-text-primary-dark text-base"
-              ellipsizeMode="tail"
-              numberOfLines={1}>
+    <Pressable onPress={handlePress} className="active:opacity-60">
+      <XStack className="items-center justify-center">
+        <YStack className="items-center justify-start gap-0.5">
+          <XStack className="items-center justify-start gap-0.5">
+            <Text className="text-foreground text-base" ellipsizeMode="tail" numberOfLines={1}>
               {assistant.name}
             </Text>
-            <Text className="text-[11px] text-gray-60 dark:text-gray-60" ellipsizeMode="tail" numberOfLines={1}>
-              {topic.name}
-            </Text>
-          </YStack>
-        </XStack>
-      </Pressable>
-      <AssistantItemSheet
-        ref={bottomSheetRef}
-        assistant={assistant}
-        source="external"
-        onEdit={handleEditAssistant}
-        actionButton={actionButton}
-      />
-    </>
+            <ChevronRight className="text-foreground-secondary" size={20} />
+          </XStack>
+          <Text
+            className="max-w-[40vw] text-center text-[11px] text-zinc-400/60"
+            ellipsizeMode="tail"
+            numberOfLines={1}>
+            {topic.name}
+          </Text>
+        </YStack>
+      </XStack>
+    </Pressable>
   )
 }

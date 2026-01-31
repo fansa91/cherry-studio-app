@@ -1,10 +1,11 @@
+import { cn } from 'heroui-native'
 import { AnimatePresence, MotiView } from 'moti'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { View } from 'react-native'
 
-import { useTheme, cn } from 'heroui-native'
-import { uuid } from '@/utils'
 import Text from '@/componentsV2/base/Text'
+import { useTheme } from '@/hooks/useTheme'
+import { uuid } from '@/utils'
 
 export type ToastOptions = {
   key?: string
@@ -75,9 +76,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               {toast.icon && toast.icon}
 
               {typeof toast?.content === 'string' ? (
-                <Text className={cn('text-base', toast.color || 'text-green-100 dark:text-green-dark-100')}>
-                  {toast.content}
-                </Text>
+                <Text className={cn('text-base', toast.color || 'primary-text')}>{toast.content}</Text>
               ) : (
                 toast?.content
               )}

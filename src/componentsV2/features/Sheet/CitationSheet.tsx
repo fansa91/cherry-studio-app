@@ -1,31 +1,43 @@
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
+import { LegendList } from '@legendapp/list'
+import { TrueSheet } from '@lodev09/react-native-true-sheet'
 import * as ExpoLinking from 'expo-linking'
-import React, { forwardRef, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BackHandler, TouchableOpacity } from 'react-native'
+import { BackHandler, Platform, Pressable, View } from 'react-native'
 
+import Text from '@/componentsV2/base/Text'
 import { FallbackFavicon, X } from '@/componentsV2/icons'
-import { useTheme } from 'heroui-native'
-import { loggerService } from '@/services/LoggerService'
-import { Citation } from '@/types/websearch'
-import { getWebsiteBrand } from '@/utils/websearch'
 import XStack from '@/componentsV2/layout/XStack'
 import YStack from '@/componentsV2/layout/YStack'
-import Text from '@/componentsV2/base/Text'
+import { useTheme } from '@/hooks/useTheme'
+import { loggerService } from '@/services/LoggerService'
+import type { Citation } from '@/types/websearch'
+import { isIOS26 } from '@/utils/device'
+import { getWebsiteBrand } from '@/utils/websearch'
 
 const logger = loggerService.withContext('Citation Sheet')
 
-export interface CitationSheetProps {
-  citations: Citation[]
+const SHEET_NAME = 'citation-sheet'
+
+// Global state for citations
+let currentCitations: Citation[] = []
+let updateCitationsCallback: ((citations: Citation[]) => void) | null = null
+
+export const presentCitationSheet = (citations: Citation[]) => {
+  currentCitations = citations
+  updateCitationsCallback?.(citations)
+  return TrueSheet.present(SHEET_NAME)
 }
+
+export const dismissCitationSheet = () => TrueSheet.dismiss(SHEET_NAME)
 
 const CitationTitle = ({ number, title }: { number: number; title: string }) => (
   <XStack className="items-center gap-2.5">
-    <YStack className="w-5 h-5 items-center justify-center rounded-sm border border-green-20 bg-green-10 px-1 py-0.5 dark:border-green-dark-20 dark:bg-green-dark-10">
-      <Text className="text-center text-[10px] text-green-100 dark:text-green-dark-100">{number}</Text>
+    <YStack className="primary-container h-5 w-5 items-center justify-center rounded-sm border px-1 py-0.5">
+      <Text className="primary-text text-center text-[10px]">{number}</Text>
     </YStack>
     <YStack className="flex-1">
-      <Text className="text-base text-text-primary dark:text-text-primary-dark" numberOfLines={1} ellipsizeMode="tail">
+      <Text className="text-foreground text-base" numberOfLines={1} ellipsizeMode="tail">
         {title}
       </Text>
     </YStack>
@@ -34,10 +46,7 @@ const CitationTitle = ({ number, title }: { number: number; title: string }) => 
 
 const Content = ({ content }: { content: string }) => (
   <XStack className="mt-1">
-    <Text
-      className="text-sm leading-4 text-text-secondary dark:text-text-secondary-dark"
-      numberOfLines={3}
-      ellipsizeMode="tail">
+    <Text className="text-foreground-secondary text-sm leading-4" numberOfLines={3} ellipsizeMode="tail">
       {content}
     </Text>
   </XStack>
@@ -46,42 +55,47 @@ const Content = ({ content }: { content: string }) => (
 const Footer = ({ url, title }: { url: string; title: string }) => (
   <XStack className="mt-1.5 items-center gap-1.5">
     <FallbackFavicon hostname={new URL(url).hostname} alt={title || ''} />
-    <Text className="text-[10px] leading-5 text-text-secondary dark:text-text-secondary-dark">
-      {getWebsiteBrand(url)}
-    </Text>
+    <Text className="text-foreground-secondary text-[10px] leading-5">{getWebsiteBrand(url)}</Text>
   </XStack>
 )
 
 const CitationCard = ({ citation, onPress }: { citation: Citation; onPress: (url: string) => void }) => (
   <YStack className="gap-2 py-2.5">
-    <TouchableOpacity className="gap-2" activeOpacity={0.7} onPress={() => onPress(citation.url)}>
+    <Pressable
+      className="gap-2"
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+      onPress={() => onPress(citation.url)}>
       <CitationTitle number={citation.number} title={citation.title || ''} />
       <Content content={citation.content || ''} />
       <Footer url={citation.url} title={citation.title || ''} />
-    </TouchableOpacity>
+    </Pressable>
   </YStack>
 )
 
-export const CitationSheet = forwardRef<BottomSheetModal, CitationSheetProps>(({ citations }, ref) => {
+export const CitationSheet: React.FC = () => {
   const { t } = useTranslation()
   const { isDark } = useTheme()
   const [isVisible, setIsVisible] = useState(false)
+  const [citations, setCitations] = useState<Citation[]>(currentCitations)
+
+  useEffect(() => {
+    updateCitationsCallback = setCitations
+    return () => {
+      updateCitationsCallback = null
+    }
+  }, [])
 
   useEffect(() => {
     if (!isVisible) return
 
     const backAction = () => {
-      ;(ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()
+      dismissCitationSheet()
       return true
     }
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction)
     return () => backHandler.remove()
-  }, [ref, isVisible])
-
-  const renderBackdrop = (props: any) => (
-    <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.5} pressBehavior="close" />
-  )
+  }, [isVisible])
 
   const handlePress = async (url: string) => {
     const supported = await ExpoLinking.canOpenURL(url)
@@ -101,50 +115,55 @@ export const CitationSheet = forwardRef<BottomSheetModal, CitationSheetProps>(({
     }
   }
 
-  const citationItems = citations ?? []
+  const header = (
+    <XStack className="border-foreground/10 items-center justify-between border-b px-4 pb-4 pt-5">
+      <Text className="text-foreground text-lg font-bold">{t('common.source')}</Text>
+      <Pressable
+        style={({ pressed }) => ({
+          padding: 4,
+          backgroundColor: isDark ? '#333333' : '#dddddd',
+          borderRadius: 16,
+          opacity: pressed ? 0.7 : 1
+        })}
+        onPress={dismissCitationSheet}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <X size={16} />
+      </Pressable>
+    </XStack>
+  )
 
   return (
-    <BottomSheetModal
-      snapPoints={['40%', '90%']}
-      enableDynamicSizing={false}
-      ref={ref}
-      backgroundStyle={{
-        borderRadius: 30,
-        backgroundColor: isDark ? '#121213ff' : '#f7f7f7ff'
-      }}
-      handleIndicatorStyle={{
-        backgroundColor: isDark ? '#f9f9f9ff' : '#202020ff'
-      }}
-      backdropComponent={renderBackdrop}
-      onDismiss={() => setIsVisible(false)}
-      onChange={index => setIsVisible(index >= 0)}>
-      <XStack className="items-center justify-between border-b border-black/10 px-4 pb-4 dark:border-white/10">
-        <Text className="text-base font-bold text-text-primary dark:text-text-primary-dark">{t('common.source')}</Text>
-        <TouchableOpacity
-          style={{
-            padding: 4,
-            backgroundColor: isDark ? '#333333' : '#dddddd',
-            borderRadius: 16
-          }}
-          onPress={() => (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <X size={16} />
-        </TouchableOpacity>
-      </XStack>
-      <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-        <YStack className="px-5 pb-10 pt-2">
-          {citationItems.map((citation, index) => (
-            <YStack
-              key={`${citation.url}-${index}`}
-              className={`${index < citationItems.length - 1 ? 'border-b border-black/5 dark:border-white/5' : ''}`}>
+    <TrueSheet
+      name={SHEET_NAME}
+      detents={[0.4, 0.9]}
+      cornerRadius={30}
+      grabber
+      dismissible
+      dimmed
+      scrollable
+      backgroundColor={isIOS26 ? undefined : isDark ? '#19191c' : '#ffffff'}
+      header={header}
+      onDidDismiss={() => setIsVisible(false)}
+      onDidPresent={() => setIsVisible(true)}>
+      <View className="flex-1">
+        <LegendList
+          data={citations}
+          keyExtractor={(citation, index) => `${citation.url}-${index}`}
+          renderItem={({ item: citation, index }) => (
+            <YStack className={`${index < citations.length - 1 ? 'border-foreground/10 border-b' : ''}`}>
               <CitationCard citation={citation} onPress={handlePress} />
             </YStack>
-          ))}
-        </YStack>
-      </BottomSheetScrollView>
-    </BottomSheetModal>
+          )}
+          nestedScrollEnabled={Platform.OS === 'android'}
+          showsVerticalScrollIndicator={false}
+          estimatedItemSize={100}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 }}
+          recycleItems
+        />
+      </View>
+    </TrueSheet>
   )
-})
+}
 
 CitationSheet.displayName = 'CitationSheet'
 

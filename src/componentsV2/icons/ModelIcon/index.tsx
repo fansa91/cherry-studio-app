@@ -1,9 +1,9 @@
 import React from 'react'
 
-import { useTheme } from 'heroui-native'
-import { Model } from '@/types/assistant'
-import { getModelOrProviderIcon } from '@/utils/icons'
 import Image from '@/componentsV2/base/Image'
+import { useTheme } from '@/hooks/useTheme'
+import type { Model } from '@/types/assistant'
+import { getModelOrProviderIcon } from '@/utils/icons'
 
 interface ModelIconProps {
   model: Model

@@ -1,55 +1,59 @@
 import '@/i18n'
 import 'react-native-reanimated'
-import '../global.css'
 
-import { HeroUINativeProvider, useTheme as useHerouiTheme } from 'heroui-native'
-
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
+import { db, expoDb } from '@db'
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
-import { SQLiteProvider } from 'expo-sqlite'
+import { HeroUINativeProvider } from 'heroui-native'
 import React, { Suspense, useEffect } from 'react'
 import { ActivityIndicator } from 'react-native'
 import { SystemBars } from 'react-native-edge-to-edge'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
+import { Uniwind } from 'uniwind'
 
+import { DialogManager } from '@/componentsV2'
+import SheetManager from '@/componentsV2/features/Sheet/SheetManager'
+import { UpdatePrompt } from '@/componentsV2/features/UpdatePrompt'
 import { useTheme } from '@/hooks/useTheme'
 import { loggerService } from '@/services/LoggerService'
 import store, { persistor } from '@/store'
 
 import migrations from '../drizzle/migrations'
+import { ShortcutCallbackManager } from './aiCore/tools/SystemTools/ShortcutCallbackManager'
 import { DialogProvider } from './hooks/useDialog'
 import { ToastProvider } from './hooks/useToast'
 import MainStackNavigator from './navigators/MainStackNavigator'
-import { DATABASE_NAME, db, expoDb } from '@db'
 import { runAppDataMigrations } from './services/AppInitializationService'
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
-const initializationLogger = loggerService.withContext('AppInitialization')
+const logger = loggerService.withContext('AppInitialization')
 
 // 数据库初始化组件
 function DatabaseInitializer({ children }: { children: React.ReactNode }) {
   const { success, error } = useMigrations(db, migrations)
   const [loaded] = useFonts({
-    JetbrainMono: require('./assets/fonts/JetBrainsMono-Regular.ttf')
+    FiraCode: require('./assets/fonts/FiraCode-Regular.ttf')
   })
 
   useDrizzleStudio(expoDb)
 
   useEffect(() => {
     if (success) {
-      initializationLogger.info('Database migrations completed successfully', expoDb.databasePath)
+      logger.info('Database migrations completed successfully', expoDb.databasePath)
+      // Initialize iOS Shortcuts callback listener
+      ShortcutCallbackManager.initializeListener()
     }
 
     if (error) {
-      initializationLogger.error('Database migrations failed', error as Error)
+      logger.error('Database migrations failed', error as Error)
     }
   }, [success, error])
 
@@ -58,8 +62,9 @@ function DatabaseInitializer({ children }: { children: React.ReactNode }) {
       const initializeApp = async () => {
         try {
           await runAppDataMigrations()
+          logger.info('App data initialized successfully')
         } catch (e) {
-          initializationLogger.error('Failed to initialize app data', e as Error)
+          logger.error('Failed to initialize app data', e as Error)
         }
       }
 
@@ -89,19 +94,23 @@ function DatabaseInitializer({ children }: { children: React.ReactNode }) {
 
 // 主题和导航组件
 function ThemedApp() {
-  const { themeSetting } = useTheme()
-  const { isDark } = useHerouiTheme()
+  const { isDark } = useTheme()
+
+  useEffect(() => {
+    Uniwind.setTheme(isDark ? 'dark' : 'light')
+  }, [isDark])
 
   return (
-    <HeroUINativeProvider config={{ colorScheme: themeSetting }}>
+    <HeroUINativeProvider>
       <KeyboardProvider>
         <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
-          <SystemBars style={isDark ? 'dark' : 'light'} />
+          <SystemBars style={isDark ? 'light' : 'dark'} />
           <DialogProvider>
             <ToastProvider>
-              <BottomSheetModalProvider>
-                <MainStackNavigator />
-              </BottomSheetModalProvider>
+              <MainStackNavigator />
+              <SheetManager />
+              <DialogManager />
+              <UpdatePrompt />
             </ToastProvider>
           </DialogProvider>
         </NavigationContainer>
@@ -127,11 +136,9 @@ function AppWithRedux() {
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Suspense fallback={<ActivityIndicator size="large" />}>
-        <SQLiteProvider databaseName={DATABASE_NAME} options={{ enableChangeListener: true }} useSuspense>
-          <AppWithRedux />
-        </SQLiteProvider>
-      </Suspense>
+      <SafeAreaProvider>
+        <AppWithRedux />
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   )
 }

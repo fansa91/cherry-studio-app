@@ -1,11 +1,11 @@
-import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import React, { useRef } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { TouchableOpacity, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
+import { Text, YStack } from '@/componentsV2'
+import { presentCitationSheet } from '@/componentsV2/features/Sheet/CitationSheet'
 import { FallbackFavicon } from '@/componentsV2/icons'
-import { Citation } from '@/types/websearch'
-import { CitationSheet, Text, YStack } from '@/componentsV2'
+import type { Citation } from '@/types/websearch'
 
 interface PreviewIconProps {
   citation: Citation
@@ -15,7 +15,7 @@ interface PreviewIconProps {
 
 const PreviewIcon: React.FC<PreviewIconProps> = ({ citation, index, total }) => (
   <View
-    className="w-[14px] h-[14px] rounded-full overflow-hidden flex items-center justify-center bg-transparent border border-transparent"
+    className="flex h-3.5 w-3.5 items-center justify-center overflow-hidden rounded-full border border-transparent bg-transparent"
     style={[{ zIndex: total - index, marginLeft: index === 0 ? 0 : -2 }]}>
     <FallbackFavicon hostname={new URL(citation.url).hostname} alt={citation.title || ''} />
   </View>
@@ -27,29 +27,28 @@ interface CitationsListProps {
 
 const CitationsList: React.FC<CitationsListProps> = ({ citations }) => {
   const { t } = useTranslation()
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null)
 
   const previewItems = citations.slice(0, 3)
   const count = citations.length
   if (!count) return null
 
   const handlePress = () => {
-    bottomSheetModalRef.current?.present()
+    presentCitationSheet(citations)
   }
 
   return (
-    <YStack className="my-[6px]">
-      <TouchableOpacity
-        className="self-start rounded-lg px-2 h-7 bg-green-10 border border-green-20 dark:bg-green-dark-10 dark:border-green-dark-20 flex-row items-center gap-2"
+    <YStack className="my-1.5">
+      <Pressable
+        className="secondary-container h-7 flex-row items-center gap-2 self-start rounded-lg border px-2"
+        style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
         onPress={handlePress}>
         <View className="flex-row items-center">
           {previewItems.map((c, i) => (
             <PreviewIcon key={i} citation={c} index={i} total={previewItems.length} />
           ))}
         </View>
-        <Text className="text-[10px] text-green-100 dark:text-green-dark-100">{t('chat.citation', { count })}</Text>
-      </TouchableOpacity>
-      <CitationSheet ref={bottomSheetModalRef} citations={citations} />
+        <Text className="primary-text text-[10px]">{t('chat.citation', { count })}</Text>
+      </Pressable>
     </YStack>
   )
 }

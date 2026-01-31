@@ -2,12 +2,12 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Group, GroupTitle, YStack } from '@/componentsV2'
-import { WebsearchProviderRow } from '@/componentsV2/features/SettingsScreen/WebsearchProviderRow'
+import { WebsearchProviderRow } from '@/componentsV2/features/SettingsScreen/websearch/WebsearchProviderRow'
 import { useWebsearchProviders } from '@/hooks/useWebsearchProviders'
 
 export default function ProviderSettings() {
   const { t } = useTranslation()
-  const { freeProviders, apiProviders } = useWebsearchProviders()
+  const { apiProviders } = useWebsearchProviders()
 
   return (
     <YStack className="gap-6">

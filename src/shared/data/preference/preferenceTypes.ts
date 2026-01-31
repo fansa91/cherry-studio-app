@@ -1,4 +1,4 @@
-import { ThemeMode } from '@/types'
+import type { ThemeMode } from '@/types'
 
 export type PreferenceDefaultScopeType = PreferenceSchemas['default']
 export type PreferenceKeyType = keyof PreferenceDefaultScopeType
@@ -32,5 +32,7 @@ export interface PreferenceSchemas {
 
     // App State
     'app.initialization_version': number
+    'app.dismissed_update_version': string
+    'app.developer_mode': boolean
   }
 }

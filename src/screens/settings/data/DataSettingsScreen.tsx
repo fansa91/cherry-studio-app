@@ -15,12 +15,13 @@ import {
   YStack
 } from '@/componentsV2'
 import { FolderSearch2, Wifi } from '@/componentsV2/icons/LucideIcon'
-import { NavigationProps } from '@/types/naviagate'
+import type { NavigationProps } from '@/types/naviagate'
 
 interface SettingItemConfig {
   title: string
-  screen: string
+  screen?: string
   icon: React.ReactElement
+  onPress?: () => void
 }
 
 interface SettingGroupConfig {
@@ -41,9 +42,9 @@ export default function DataSettingsScreen() {
           icon: <FolderSearch2 size={24} />
         },
         {
-          title: t('settings.data.landrop.title'),
-          screen: 'LandropSettingsScreen',
-          icon: <Wifi size={24} />
+          title: t('settings.data.lan_transfer.title'),
+          icon: <Wifi size={24} />,
+          screen: 'LanTransferScreen'
         }
       ]
     }
@@ -95,16 +96,16 @@ export default function DataSettingsScreen() {
   ]
 
   return (
-    <SafeAreaContainer style={{ flex: 1 }}>
+    <SafeAreaContainer>
       <HeaderBar title={t('settings.data.title')} />
 
       <YStack className="flex-1">
         <Container>
-          <YStack className="gap-6 flex-1">
+          <YStack className="flex-1 gap-6">
             {settingsItems.map(group => (
               <GroupContainer key={group.title} title={group.title}>
                 {group.items.map(item => (
-                  <SettingItem key={item.title} title={item.title} screen={item.screen} icon={item.icon} />
+                  <SettingItem key={item.title} {...item} />
                 ))}
               </GroupContainer>
             ))}
@@ -124,21 +125,31 @@ function GroupContainer({ title, children }: { title: string; children: React.Re
   )
 }
 
-function SettingItem({ title, screen, icon }: SettingItemProps) {
+function SettingItem({ title, screen, icon, onPress }: SettingItemProps) {
   const navigation = useNavigation<NavigationProps>()
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress()
+    } else if (screen) {
+      navigation.navigate(screen as any)
+    }
+  }
+
   return (
-    <PressableRow onPress={() => navigation.navigate(screen as any)}>
+    <PressableRow onPress={handlePress}>
       <XStack className="items-center gap-3">
         {icon}
         <Text>{title}</Text>
       </XStack>
-      <RowRightArrow />
+      {(screen || onPress) && <RowRightArrow />}
     </PressableRow>
   )
 }
 
 interface SettingItemProps {
   title: string
-  screen: string
+  screen?: string
   icon: React.ReactElement
+  onPress?: () => void
 }

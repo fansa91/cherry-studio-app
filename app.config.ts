@@ -1,15 +1,17 @@
 import 'tsx/cjs'
+
 import packageJson from './package.json'
 
 // Read version from environment variable (set during build) or fallback to package.json
-const appVersion = process.env.APP_VERSION || packageJson.version
+const appVersion = packageJson.version
 
 export default {
   expo: {
     name: 'Cherry Studio',
     slug: 'cherry-studio',
     version: appVersion,
-    orientation: 'portrait',
+    // orientation: 'portrait', 锁定竖屏
+    orientation: 'default',
     icon: './src/assets/images/favicon.png',
     scheme: 'cherry-studio',
     userInterfaceStyle: 'automatic',
@@ -24,7 +26,14 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.cherry-ai.cherry-studio-app',
-      userInterfaceStyle: 'automatic'
+      userInterfaceStyle: 'automatic',
+      infoPlist: {
+        LSApplicationQueriesSchemes: ['shortcuts'],
+        NSSpeechRecognitionUsageDescription: 'Allow Cherry Studio App to use speech recognition for voice input.',
+        NSBonjourServices: ['_cherrystudio._tcp', '_http._tcp'],
+        NSLocalNetworkUsageDescription:
+          'Cherry Studio needs to access the local network to discover and connect to desktop applications.'
+      }
     },
     android: {
       adaptiveIcon: {
@@ -34,7 +43,8 @@ export default {
       edgeToEdgeEnabled: true,
       package: 'com.cherry_ai.cherry_studio_app',
       userInterfaceStyle: 'automatic',
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      permissions: ['android.permission.ACCESS_WIFI_STATE', 'android.permission.CHANGE_WIFI_MULTICAST_STATE']
     },
     plugins: [
       [
@@ -48,7 +58,8 @@ export default {
             minSdkVersion: 24,
             gradleVersion: '8.13',
             androidGradlePluginVersion: '8.13.0',
-            buildArchs: ['arm64-v8a']
+            buildArchs: ['arm64-v8a'],
+            usesCleartextTraffic: true
           }
         }
       ],
@@ -56,7 +67,7 @@ export default {
         'expo-splash-screen',
         {
           image: './src/assets/images/ios-splash-icon.png',
-          imageWidth: 200,
+          imageWidth: 144,
           resizeMode: 'contain',
           backgroundColor: '#ffffff',
           dark: {
@@ -76,11 +87,11 @@ export default {
           },
           android: {
             splash: {
-              image: './src/assets/images/splash-icon.png',
+              image: './src/assets/images/ios-splash-icon.png',
               backgroundColor: '#ffffff',
               resizeMode: 'contain',
               dark: {
-                image: './src/assets/images/splash-icon.png',
+                image: './src/assets/images/ios-splash-icon.png',
                 backgroundColor: '#000000'
               }
             }
@@ -92,7 +103,7 @@ export default {
       [
         'expo-font',
         {
-          fonts: ['./src/assets/fonts/JetBrainsMono-Regular.ttf']
+          fonts: ['./src/assets/fonts/FiraCode-Regular.ttf']
         }
       ],
       'expo-web-browser',
@@ -134,6 +145,13 @@ export default {
       ],
       ['react-native-compressor'],
       [
+        'expo-speech-recognition',
+        {
+          microphonePermission: 'Allow Cherry Studio App to use your microphone for voice input.',
+          speechRecognitionPermission: 'Allow Cherry Studio App to use speech recognition.'
+        }
+      ],
+      [
         'react-native-edge-to-edge',
         {
           android: {
@@ -149,7 +167,8 @@ export default {
           android: ['com.facebook.katana', 'com.instagram.android', 'com.twitter.android', 'com.zhiliaoapp.musically'],
           enableBase64ShareAndroid: true
         }
-      ]
+      ],
+      './plugins/heapSize'
     ],
     experiments: {
       typedRoutes: true,

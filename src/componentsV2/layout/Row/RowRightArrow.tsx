@@ -1,8 +1,9 @@
-import { ChevronRight } from '@/componentsV2/icons/LucideIcon'
 import React from 'react'
 
+import { ChevronRight } from '@/componentsV2/icons/LucideIcon'
+
 const RowRightArrow = () => {
-  return <ChevronRight size={20} className="text-text-secondary dark:text-text-secondary opacity-90 -mr-1" />
+  return <ChevronRight size={20} className="text-foreground-secondary -mr-1 opacity-90" />
 }
 
 export default RowRightArrow

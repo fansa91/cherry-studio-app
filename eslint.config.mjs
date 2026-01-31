@@ -1,10 +1,14 @@
 import expo from 'eslint-config-expo/flat.js'
+import eslint from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import unusedImports from 'eslint-plugin-unused-imports'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
 const ignores = [
   'node_modules/**',
   '.yarn/**',
   'packages/*/node_modules/**',
+  'packages/*/dist/**',
   'dist/**',
   'build/**',
   '.expo/**',
@@ -56,20 +60,24 @@ const ignores = [
   '.metro/**',
   'metro.config.js',
   'ios/Pods/**',
-  'android/app/build/**'
+  'android/app/build/**',
+  'src/integration/cherryai/**'
 ]
 
-export default [
-  { ignores },
+export default defineConfig([
   ...expo,
+  eslint.configs.recommended,
+  // Common rules for all JS/JSX/TS/TSX files
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
+      'simple-import-sort': simpleImportSort,
       'unused-imports': unusedImports
     },
     rules: {
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
@@ -81,5 +89,67 @@ export default [
         }
       ]
     }
-  }
-]
+  },
+  // TypeScript-specific rules
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off'
+    }
+  },
+  // Node.js scripts
+  {
+    files: ['scripts/**/*.{js,ts}'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        RequestInit: 'readonly'
+      }
+    }
+  },
+  // Jest test files
+  {
+    files: ['**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**/*.{js,jsx,ts,tsx}', 'jest.setup.js'],
+    languageOptions: {
+      globals: {
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        test: 'readonly'
+      }
+    }
+  },
+  // Packages have their own dependencies and TypeScript config
+  {
+    files: ['packages/*/src/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        RequestInit: 'readonly',
+        XMLHttpRequest: 'readonly',
+        Headers: 'readonly',
+        AbortController: 'readonly',
+        TextDecoder: 'readonly',
+        Response: 'readonly'
+      }
+    },
+    rules: {
+      'import/no-unresolved': 'off'
+    }
+  },
+  { ignores }
+])

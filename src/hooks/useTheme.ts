@@ -1,6 +1,7 @@
 import { useColorScheme } from 'react-native'
 
 import { ThemeMode } from '@/types'
+
 import { usePreference } from './usePreference'
 
 export function useTheme() {
@@ -9,6 +10,7 @@ export function useTheme() {
 
   const settedTheme = themeSetting === ThemeMode.system ? systemColorScheme : themeSetting
   const activeTheme = settedTheme === ThemeMode.dark ? 'dark' : 'light'
+  const isDark = activeTheme === 'dark'
 
-  return { themeSetting, settedTheme, activeTheme }
+  return { themeSetting, settedTheme, activeTheme, isDark }
 }

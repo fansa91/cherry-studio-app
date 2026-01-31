@@ -2,10 +2,13 @@ import { BlurView } from 'expo-blur'
 import React, { memo } from 'react'
 import { Platform, Pressable, View } from 'react-native'
 
-import { Text, XStack, YStack } from '@/componentsV2'
-import { useTheme } from 'heroui-native'
-import { Assistant } from '@/types/assistant'
+import Text from '@/componentsV2/base/Text'
+import XStack from '@/componentsV2/layout/XStack'
+import YStack from '@/componentsV2/layout/YStack'
+import { useTheme } from '@/hooks/useTheme'
+import type { Assistant } from '@/types/assistant'
 import { formateEmoji } from '@/utils/formats'
+
 import EmojiAvatar from './EmojiAvatar'
 import GroupTag from './GroupTag'
 
@@ -24,13 +27,13 @@ const AssistantItemCard = ({ assistant, onAssistantPress }: AssistantItemCardPro
   }
 
   return (
-    <View className="p-1.5 w-full">
+    <View className="w-full">
       <Pressable
         onPress={handlePress}
-        className="h-[230px] bg-ui-card-background dark:bg-ui-card-background-dark rounded-2xl overflow-hidden active:bg-gray-20 dark:active:bg-gray-20"
+        className="bg-card h-[230px] overflow-hidden rounded-2xl active:bg-zinc-400/20"
         style={{ height: 230 }}>
         {/* Background blur emoji */}
-        <XStack className="w-full h-1/2 absolute top-0 left-0 right-0 flex-wrap">
+        <XStack className="absolute left-0 right-0 top-0 h-1/2 w-full flex-wrap">
           {Array.from({ length: 8 }).map((_, index) => (
             <View key={index} className="w-1/4 scale-150 items-center justify-center">
               <Text className="text-[40px]" style={{ opacity: emojiOpacity }}>
@@ -51,29 +54,19 @@ const AssistantItemCard = ({ assistant, onAssistantPress }: AssistantItemCardPro
           }}
         />
 
-        <YStack className="flex-1 gap-2 items-center rounded-2xl py-4 px-3.5">
+        <YStack className="flex-1 items-center gap-2 rounded-2xl px-3.5 py-4">
           <EmojiAvatar emoji={assistant.emoji} size={90} borderWidth={5} borderColor={isDark ? '#333333' : '#f7f7f7'} />
-          <Text
-            className="text-base text-center text-text-primary dark:text-text-primary-dark"
-            numberOfLines={1}
-            ellipsizeMode="tail">
+          <Text className="text-foreground text-center text-base" numberOfLines={1} ellipsizeMode="tail">
             {assistant.name}
           </Text>
-          <YStack className="flex-1 justify-between items-center">
-            <Text
-              className="text-text-secondary dark:text-text-secondary-dark text-xs leading-[14px]"
-              numberOfLines={3}
-              ellipsizeMode="tail">
+          <YStack className="flex-1 items-center justify-between">
+            <Text className="text-foreground-secondary leading-3.5 text-xs" numberOfLines={3} ellipsizeMode="tail">
               {assistant.description}
             </Text>
-            <XStack className="gap-2.5 flex-wrap h-[18px] justify-center overflow-hidden">
+            <XStack className="h-[18px] flex-wrap justify-center gap-2.5 overflow-hidden">
               {assistant.group &&
                 assistant.group.map((group, index) => (
-                  <GroupTag
-                    key={index}
-                    group={group}
-                    className="text-[10px] bg-green-10 dark:bg-green-dark-10 text-green-100 dark:text-green-dark-100 border-[0.5px] border-green-20 dark:border-green-dark-20"
-                  />
+                  <GroupTag key={index} group={group} className="primary-badge border-[0.5px] text-[10px]" />
                 ))}
             </XStack>
           </YStack>

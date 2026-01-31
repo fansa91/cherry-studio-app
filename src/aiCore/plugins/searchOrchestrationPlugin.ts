@@ -8,8 +8,7 @@
  */
 import { type AiRequestContext, definePlugin } from '@cherrystudio/ai-core'
 // import { generateObject } from '@cherrystudio/ai-core'
-import { generateText, LanguageModel, type ModelMessage } from 'ai'
-import { isEmpty } from 'lodash'
+import { generateText, type LanguageModel, type ModelMessage } from 'ai'
 
 import {
   SEARCH_SUMMARY_PROMPT,
@@ -19,9 +18,10 @@ import {
 import { getDefaultModel } from '@/services/AssistantService'
 import { loggerService } from '@/services/LoggerService'
 import { getProviderByModel } from '@/services/ProviderService'
-import { Assistant } from '@/types/assistant'
-import { ExtractResults } from '@/types/extract'
+import type { Assistant } from '@/types/assistant'
+import type { ExtractResults } from '@/types/extract'
 import { extractInfoFromXML } from '@/utils/extract'
+import { hasApiKey } from '@/utils/providerUtils'
 
 import { webSearchToolWithPreExtractedKeywords } from '../tools/WebSearchTool'
 
@@ -115,8 +115,26 @@ async function analyzeSearchIntent(
   const model = assistant.model || getDefaultModel()
   const provider = getProviderByModel(model)
 
-  if (!provider || isEmpty(provider.apiKey)) {
-    logger.error('Provider not found or missing API key')
+  if (!provider) {
+    logger.error('Provider not found for model', {
+      modelId: model.id,
+      modelName: model.name,
+      providerId: model.provider,
+      assistantId: assistant.id,
+      assistantName: assistant.name
+    })
+    return getFallbackResult()
+  }
+
+  if (!hasApiKey(provider)) {
+    logger.error('Provider API key is missing', {
+      modelId: model.id,
+      modelName: model.name,
+      providerId: provider.id,
+      providerName: provider.name,
+      assistantId: assistant.id,
+      assistantName: assistant.name
+    })
     return getFallbackResult()
   }
 
@@ -242,8 +260,8 @@ export const searchOrchestrationPlugin = (assistant: Assistant, topicId: string)
           params.tools = {}
         }
 
-        // 🌐 网络搜索工具配置
-        if (analysisResult?.websearch && assistant.webSearchProviderId) {
+        // 🌐 网络搜索工具配置 (排除 builtin，builtin 使用模型原生搜索能力)
+        if (analysisResult?.websearch && assistant.webSearchProviderId && assistant.webSearchProviderId !== 'builtin') {
           const needsSearch = analysisResult.websearch.question && analysisResult.websearch.question[0] !== 'not_needed'
 
           if (needsSearch) {

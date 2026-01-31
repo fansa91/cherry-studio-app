@@ -12,23 +12,20 @@ import { isSupportServiceTierProvider } from '@/config/providers'
 import { defaultTimeout } from '@/constants'
 import { getAssistantSettings } from '@/services/AssistantService'
 import { loggerService } from '@/services/LoggerService'
+import type { Assistant, Model, OpenAIVerbosity, Provider } from '@/types/assistant'
 import {
-  Assistant,
   GroqServiceTiers,
   isGroqServiceTier,
   isOpenAIServiceTier,
-  Model,
   OpenAIServiceTiers,
-  OpenAIVerbosity,
-  Provider,
   SystemProviderIds
 } from '@/types/assistant'
 import { FileTypes } from '@/types/file'
-import { GenerateImageParams } from '@/types/image'
-import { KnowledgeReference } from '@/types/knowledge'
-import { MCPCallToolResponse, MCPToolResponse, ToolCallResponse } from '@/types/mcp'
-import { Message } from '@/types/message'
-import {
+import type { GenerateImageParams } from '@/types/image'
+import type { KnowledgeReference } from '@/types/knowledge'
+import type { MCPCallToolResponse, MCPToolResponse, ToolCallResponse } from '@/types/mcp'
+import type { Message } from '@/types/message'
+import type {
   RequestOptions,
   SdkInstance,
   SdkMessageParam,
@@ -39,15 +36,15 @@ import {
   SdkTool,
   SdkToolCall
 } from '@/types/sdk'
-import { MCPTool } from '@/types/tool'
-import { WebSearchProviderResponse, WebSearchResponse } from '@/types/websearch'
+import type { MCPTool } from '@/types/tool'
+import type { WebSearchProviderResponse, WebSearchResponse } from '@/types/websearch'
 import { storage } from '@/utils'
 import { addAbortController, removeAbortController } from '@/utils/abortController'
 import { isJSON, parseJSON } from '@/utils/json'
 import { findFileBlocks, getMainTextContent } from '@/utils/messageUtils/find'
 
-import { CompletionsContext } from '../middleware/types'
-import { ApiClient, RequestTransformer, ResponseChunkTransformer } from './types'
+import type { CompletionsContext } from '../middleware/types'
+import type { ApiClient, RequestTransformer, ResponseChunkTransformer } from './types'
 
 const logger = loggerService.withContext('BaseApiClient')
 
@@ -63,8 +60,7 @@ export abstract class BaseApiClient<
   TMessageParam extends SdkMessageParam = SdkMessageParam,
   TToolCall extends SdkToolCall = SdkToolCall,
   TSdkSpecificTool extends SdkTool = SdkTool
-> implements ApiClient<TSdkInstance, TSdkParams, TRawOutput, TRawChunk, TMessageParam, TToolCall, TSdkSpecificTool>
-{
+> implements ApiClient<TSdkInstance, TSdkParams, TRawOutput, TRawChunk, TMessageParam, TToolCall, TSdkSpecificTool> {
   public provider: Provider
   protected host: string
   protected apiKey: string
@@ -155,25 +151,7 @@ export abstract class BaseApiClient<
 
   public getApiKey() {
     const keys = this.provider.apiKey.split(',').map(key => key.trim())
-    const keyName = `provider:${this.provider.id}:last_used_key`
-
-    if (keys.length === 1) {
-      return keys[0]
-    }
-
-    const lastUsedKey = storage.getString(keyName)
-
-    if (!lastUsedKey) {
-      storage.set(keyName, keys[0])
-      return keys[0]
-    }
-
-    const currentIndex = keys.indexOf(lastUsedKey)
-    const nextIndex = (currentIndex + 1) % keys.length
-    const nextKey = keys[nextIndex]
-    storage.set(keyName, nextKey)
-
-    return nextKey
+    return keys[0]
   }
 
   public defaultHeaders() {

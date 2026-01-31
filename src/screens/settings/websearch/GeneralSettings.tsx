@@ -1,9 +1,9 @@
-import React from 'react'
+import { Switch } from 'heroui-native'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Group, GroupTitle, Row, TextField, Text, YStack } from '@/componentsV2'
+import { Group, GroupTitle, Row, Text, TextField, YStack } from '@/componentsV2'
 import { useWebsearchSettings } from '@/hooks/useWebsearchProviders'
-import { Switch } from 'heroui-native'
 
 export default function GeneralSettings() {
   const { t } = useTranslation()
@@ -19,24 +19,42 @@ export default function GeneralSettings() {
     setContentLimit
   } = useWebsearchSettings()
 
-  // Handler for search count change
-  const handleSearchCountChange = (value: string) => {
-    const numValue = parseInt(value, 10)
+  // Local state for input values
+  const [searchCountInput, setSearchCountInput] = useState(searchCount.toString())
+  const [contentLimitInput, setContentLimitInput] = useState(contentLimit?.toString() || '')
+
+  useEffect(() => {
+    setSearchCountInput(searchCount.toString())
+  }, [searchCount])
+
+  useEffect(() => {
+    setContentLimitInput(contentLimit?.toString() || '')
+  }, [contentLimit])
+
+  // Handler for search count validation on blur
+  const handleSearchCountEndEditing = () => {
+    const numValue = parseInt(searchCountInput, 10)
     if (!isNaN(numValue) && numValue >= 1 && numValue <= 20) {
       setSearchCount(numValue).catch(console.error)
-    } else if (value === '') {
-      setSearchCount(1).catch(console.error)
+    } else {
+      // Reset to current valid value if invalid
+      setSearchCountInput(searchCount.toString())
     }
   }
 
-  // Handler for content limit change
-  const handleContentLimitChange = (value: string) => {
-    const numValue = parseInt(value, 10)
-
-    if (!isNaN(numValue)) {
-      setContentLimit(numValue).catch(console.error)
-    } else if (value === '') {
+  // Handler for content limit validation on blur
+  const handleContentLimitEndEditing = () => {
+    const trimmedValue = contentLimitInput.trim()
+    if (trimmedValue === '') {
       setContentLimit(undefined).catch(console.error)
+    } else {
+      const numValue = parseInt(trimmedValue, 10)
+      if (!isNaN(numValue) && numValue > 0) {
+        setContentLimit(numValue).catch(console.error)
+      } else {
+        // Reset to current valid value if invalid
+        setContentLimitInput(contentLimit?.toString() || '')
+      }
     }
   }
 
@@ -46,28 +64,36 @@ export default function GeneralSettings() {
       <Group>
         <Row>
           <Text>{t('settings.websearch.contentLengthLimit')}</Text>
-          <TextField className="flex-1 max-w-20">
-            <TextField.Input value={contentLimit?.toString() || ''} onChangeText={handleContentLimitChange} />
+          <TextField className="max-w-20 flex-1">
+            <TextField.Input
+              className="rounded-xl"
+              value={contentLimitInput}
+              onChangeText={setContentLimitInput}
+              onEndEditing={handleContentLimitEndEditing}
+              keyboardType="numeric"
+            />
           </TextField>
         </Row>
         <Row>
           <Text>{t('settings.websearch.searchCount')}</Text>
-          <TextField className="flex-1 max-w-20">
-            <TextField.Input value={searchCount.toString()} onChangeText={handleSearchCountChange} />
+          <TextField className="max-w-20 flex-1">
+            <TextField.Input
+              className="rounded-xl"
+              value={searchCountInput}
+              onChangeText={setSearchCountInput}
+              onEndEditing={handleSearchCountEndEditing}
+              keyboardType="numeric"
+            />
           </TextField>
         </Row>
 
         <Row>
           <Text>{t('settings.websearch.searchWithDates')}</Text>
-          <Switch color="success" isSelected={searchWithDates} onSelectedChange={setSearchWithDates}>
-            <Switch.Thumb colors={{ defaultBackground: 'white', selectedBackground: 'white' }} />
-          </Switch>
+          <Switch isSelected={searchWithDates} onSelectedChange={setSearchWithDates}></Switch>
         </Row>
         <Row>
           <Text>{t('settings.websearch.overrideSearchService')}</Text>
-          <Switch color="success" isSelected={overrideSearchService} onSelectedChange={setOverrideSearchService}>
-            <Switch.Thumb colors={{ defaultBackground: 'white', selectedBackground: 'white' }} />
-          </Switch>
+          <Switch isSelected={overrideSearchService} onSelectedChange={setOverrideSearchService}></Switch>
         </Row>
       </Group>
     </YStack>

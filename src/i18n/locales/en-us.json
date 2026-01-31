@@ -20,6 +20,13 @@
         "search_placeholder": "Search assistants...",
         "title": "Assistant Market"
       },
+      "multi_select": {
+        "action": "Multi-select",
+        "delete_confirm_message": "This will also delete all topics associated with these assistants. This action cannot be undone.",
+        "delete_confirm_title": "Delete {{count}} assistants?",
+        "delete_success": "Deleted {{count}} assistants",
+        "selected_count": "{{count}} selected"
+      },
       "name": "Assistant Name",
       "save": "Save Assistant",
       "search": {
@@ -36,6 +43,7 @@
           "low": "Low",
           "medium": "Medium",
           "minimal": "Weinian",
+          "none": "None",
           "off": "Off"
         },
         "stream_output": "Stream Output",
@@ -46,7 +54,8 @@
           "prompt": "Prompt invocation",
           "title": "Tool invocation method"
         },
-        "top_p": "Top P"
+        "top_p": "Top P",
+        "unlimited_context": "Enable Max Context Limit"
       },
       "sort": {
         "alphabetical": "Alphabetical",
@@ -61,6 +70,10 @@
         "label": "Assistants",
         "mine": "My assistant",
         "recent": "Recent Assistants"
+      },
+      "topics": {
+        "count_one": "1 topic",
+        "count_other": "{{count}} topics"
       }
     },
     "button": {
@@ -95,6 +108,7 @@
         "name": "Default"
       },
       "think": "Thinking for {{seconds}} seconds",
+      "think_done": "Thought deeply for {{seconds}} seconds",
       "think_expand": "Tap to read my mind",
       "title": "Welcome to Cherry Studio!",
       "topics": {
@@ -107,16 +121,20 @@
       "welcome": "I'm your AI assistant for producers. You can create assistants, manage models, and more."
     },
     "common": {
+      "add": "Add",
       "added": " Added",
       "camera": "Camera",
       "cancel": "Cancel",
+      "check": "Check",
       "cherry_studio": "Cherry Studio",
       "cherry_studio_description": "A Powerful AI assistant for producer",
       "clear_all": "Clear All",
       "close": "Close",
       "confirm": "Confirm",
+      "content_too_long": "Content too long to display",
       "copied": "Copied",
       "copy": "Copy Text",
+      "copy_latex": "Copy as LaTeX",
       "delete": "Delete",
       "delete_translation": "Delete Translation",
       "description": "Description",
@@ -139,24 +157,28 @@
       "ok": "OK",
       "older": "Older",
       "others": "Others",
+      "parameters": "Parameters",
       "photo": "Photo",
       "play": "Play",
       "preset": "Preset",
       "prompt": "Prompt",
       "regenerate": "Regenerate",
       "rename": "Rename",
+      "result": "Result",
       "save": "Save",
       "saved": "Saved",
       "search_placeholder": "Search...",
       "see_all": "See All",
-      "select_text": "Select Text",
+      "select_all": "Select All",
       "source": "Source",
-      "start": "Get Started with Cherry Studio App 🎉",
+      "start": "Get Started with Cherry Studio 🎉",
       "stop": "Stop",
       "this_week": "This Week",
       "today": "Today",
       "tool": "Tool",
       "translate": "Translate",
+      "type": "Type",
+      "url": "URL",
       "visit": "Visit",
       "websearch": "Web Search",
       "welcome": {
@@ -166,12 +188,20 @@
       "yesterday": "Yesterday"
     },
     "error": {
+      "ai_feature": {
+        "not_available": "AI feature is not available.",
+        "update_failed": "Failed to update AI feature. Please try again."
+      },
       "availableProviders": "Available Providers",
       "availableTools": "Available Tools",
       "backup": {
         "file_format": "Backup file format error",
         "file_invalid": "The backup file is invalid. You need to export it to a mobile device through Cherry Studio.",
         "title": "Backup failed"
+      },
+      "camera": {
+        "failed": "Failed to take photo. Please try again.",
+        "file_not_found": "Photo file not found."
       },
       "cause": "Cause",
       "chat": {
@@ -209,6 +239,10 @@
       "originalMessage": "Original Message",
       "parameter": "Parameter",
       "pause_placeholder": "Interrupted",
+      "permission": {
+        "camera_denied": "Camera permission denied. Please enable it in Settings.",
+        "media_library_denied": "Photo library permission denied. Please enable it in Settings."
+      },
       "prompt": "Prompt",
       "provider": "Provider",
       "providerId": "Provider ID",
@@ -233,6 +267,9 @@
       "toolName": "Tool Name",
       "translate_assistant_model_not_defined": "Translate assistant model is not configured. Please go to Settings > Default Assistant to configure the translation assistant model",
       "unknown": "Unknown error",
+      "upload": {
+        "failed": "Failed to upload file. Please try again."
+      },
       "usage": "Usage",
       "user_message_not_found": "Unable to locate the original user message",
       "value": "Value",
@@ -246,6 +283,8 @@
       "linkErrorTitle": "Link Opening Error"
     },
     "export": {
+      "already_exporting": "Export in progress",
+      "failed": "Export failed",
       "image": "Export as image",
       "joplin": "Export to Joplin",
       "md": {
@@ -284,7 +323,12 @@
       "obsidian_title_required": "The title cannot be empty",
       "obsidian_vault": "Vault",
       "obsidian_vault_placeholder": "Please select the vault name",
+      "options": {
+        "include_reasoning": "Include reasoning chain",
+        "title": "Export Options"
+      },
       "siyuan": "Export to Siyuan Note",
+      "success": "Exported successfully",
       "title": "Export Message",
       "title_naming_failed": "Failed to generate title, using default title",
       "title_naming_success": "Title generated successfully",
@@ -303,11 +347,32 @@
         "empty": " No topics found"
       }
     },
+    "html_preview": {
+      "loading": "Loading HTML...",
+      "title": "HTML Preview"
+    },
     "inputs": {
+      "longTextConverted": {
+        "message": "The pasted text ({{length}} characters) has been automatically converted to a file attachment",
+        "title": "Long Text Converted"
+      },
       "mentions": "@ {{number}} models",
       "placeholder": "Send Message..."
     },
     "mcp": {
+      "auth": {
+        "auth_required_content": "The MCP server \"{{name}}\" requires OAuth authorization. Connect now?",
+        "auth_required_title": "Authentication required",
+        "connect": "Connect",
+        "connected": "Connected",
+        "disconnect": "Disconnect",
+        "headers": "Custom Headers",
+        "invalid_json": "Invalid JSON",
+        "invalid_json_content": "Please enter valid JSON format for headers.",
+        "oauth": "OAuth",
+        "oauth_failed": "OAuth authentication failed",
+        "title": "Authentication"
+      },
       "builtin": {
         "calendar": {
           "description": "Get, operating system calendar"
@@ -318,22 +383,39 @@
         "reminder": {
           "description": "Get, create, update, and delete reminders"
         },
+        "shortcuts": {
+          "description": "Run iOS Shortcuts and get results"
+        },
         "time": {
           "description": "Get the current time"
         }
       },
       "market": {
+        "add": {
+          "success": "Added {{mcp_name}}"
+        },
         "title": "MCP Market"
       },
       "server": {
-        "empty": "No MCP servers available...",
+        "add": "Add MCP Server",
+        "delete": {
+          "content": "Are you sure you want to delete this MCP server? This action cannot be undone.",
+          "title": "Delete Server"
+        },
+        "description_placeholder": "Enter a description for this MCP server...",
+        "empty": {
+          "add": "Go to add MCP server",
+          "label": "No MCP servers available..."
+        },
+        "new": "New MCP Server",
         "selected": "{{num}} MCP servers selected",
-        "title": "MCP Server"
+        "title": "MCP Server",
+        "update_failed": "Failed to update {{name}}"
       },
       "type": {
         "inMemory": "built-in",
         "sse": "Server-Sent Events",
-        "streamableHttp": "Streaming HTTP"
+        "streamableHttp": "StreamableHTTP"
       }
     },
     "menu": {
@@ -355,8 +437,22 @@
       "delete_topic": "Delete Topic",
       "delete_topic_confirmation": "Are you sure you want to delete this topic?",
       "delete_translation": "Remove Translation",
+      "edit_failed": {
+        "content": "Failed to edit message. Please try again.",
+        "title": "Edit Failed"
+      },
+      "edit_reply": "Edit Reply",
+      "editing_message": "Editing",
       "marked_as_best_answer": "Marked as best answer",
+      "pause_failed": {
+        "content": "Failed to pause. Please try again.",
+        "title": "Pause Failed"
+      },
       "searching": "Searching...",
+      "send_failed": {
+        "content": "Failed to send message. Please try again.",
+        "title": "Send Failed"
+      },
       "share_message": "Share news",
       "topic_deleted": "Topic deleted",
       "translate_message": "Translate Message",
@@ -398,7 +494,8 @@
       "baidu-cloud": "Baidu Cloud",
       "burncloud": "BurnCloud",
       "cephalon": "Cephalon",
-      "cherryin": "CherryIn",
+      "cherryai": "CherryAI",
+      "cherryin": "CherryIN",
       "copilot": "GitHub Copilot",
       "dashscope": "Alibaba Cloud",
       "deepseek": "DeepSeek",
@@ -513,34 +610,60 @@
         "data_reset": {
           "error": "Data reset failed. Please try again or contact support if the problem persists."
         },
-        "landrop": {
-          "filename": "File Name",
-          "scan_qr_code": {
-            "description": "Scan QR Code from Cherry Studio",
-            "grant_permission": "Grant Permission",
-            "permission_denied": "Camera permission not granted. Please enable it in your device settings to scan QR codes.",
-            "requesting_permission": "Requesting camera permission...",
-            "success": "Connection Successful 🎉",
-            "success_description": "You can now Click Send Button to Restore Data!",
-            "title": "Scan QR Code"
-          },
-          "status": {
-            "connected": "Connected",
-            "connecting": "Connecting...",
-            "disconnected": "Disconnected",
-            "error": "Connection Error",
+        "lan_transfer": {
+          "app_version": "App Version",
+          "back_cancel_receive_body": "Going back will cancel the current transfer. Continue?",
+          "back_cancel_receive_title": "Leave this page?",
+          "backup_detected_body": "A backup file is ready. Restore now?",
+          "backup_detected_title": "Backup file detected",
+          "cancel_receive": "Cancel Receive",
+          "chunks": "chunks",
+          "connected": "Connected",
+          "device": "Device",
+          "device_name": "Device name",
+          "error": "Error",
+          "eta": "ETA",
+          "file_status": {
+            "cancelled": "Cancelled",
+            "cancelling": "Cancelling...",
+            "complete": "Complete",
+            "completing": "Completing...",
+            "error": "Error",
             "idle": "Idle",
-            "title": "Connection Status",
-            "zip_file_end": "File Transfer Completed",
-            "zip_file_start": "File Transfer Started"
+            "receiving": "Receiving",
+            "verifying": "Verifying..."
           },
-          "title": "Landrop"
+          "file_transfer": "File Transfer",
+          "hint": "Select this device in Cherry Studio desktop to send the backup",
+          "info": "Transfer Info",
+          "ip_address": "IP address",
+          "no_connection_warning": "Please open LAN Transfer in Cherry Studio desktop client",
+          "port": "Port",
+          "preparing": "Preparing...",
+          "receiving": "Receiving file...",
+          "restore_confirm": "Restore",
+          "restore_later": "Later",
+          "service": "Service",
+          "start_service": "Start receiving",
+          "status": "Status",
+          "stop_service": "Stop service",
+          "title": "LAN Transfer",
+          "transfer_cancelled_body": "File transfer has been cancelled",
+          "transfer_cancelled_title": "Transfer Cancelled",
+          "transfer_error": "LAN Transfer Error",
+          "unknown": "Unknown",
+          "waiting_connection": "Waiting for desktop to connect...",
+          "warning_content": "This will clear existing data and restore from desktop. Make sure important data is backed up.",
+          "warning_title": "Heads up",
+          "zeroconf_error": "Zeroconf Error"
         },
         "log_location": "Log file location",
         "reset": "Data Reset",
         "reset_success": "Data reset successful! The app has been restored to its initial state.",
         "reset_warning": "Are you sure you want to reset all data? This will delete all conversations, messages, and user-created content. This action cannot be undone.",
         "restore": {
+          "clear_error": "Failed to clear existing data. Please try again.",
+          "confirm_warning": "Restoring from backup will overwrite all current app data.",
           "error": "Restore Error",
           "error_message": "An error occurred during the restore process. Please check the file and try again.",
           "progress": {
@@ -552,6 +675,7 @@
             "success_description": "Restore Successful, Enjoy your time!"
           },
           "steps": {
+            "clear_data": "Clear existing data",
             "receive_file": "Receive file",
             "restore_messages": "Restore messages",
             "restore_settings": "Restore configuration"
@@ -563,6 +687,9 @@
       },
       "dataAndSecurity": "Data & Security",
       "general": {
+        "developer_mode": {
+          "title": "Developer Mode"
+        },
         "display": {
           "title": "Display Settings"
         },
@@ -630,6 +757,10 @@
           "add_model": "Let's add your first model",
           "label": "No Model yet...",
           "tooltip": "The page you were looking for is beyond our reach. Sorry for the inconvenience."
+        },
+        "health_check": {
+          "checking": "Checking...",
+          "title": "Model Health Check"
         },
         "search": "Search Models...",
         "title": "Models"
@@ -700,6 +831,7 @@
           }
         },
         "api_check": {
+          "confirm_message": "Start API check?",
           "title": "Detection",
           "tooltip": "Select the model to use for detection"
         },
@@ -833,6 +965,7 @@
         "blacklist_description": "Results from the following websites will not appear in search results",
         "blacklist_placeholder": "Please use the following format (separated by newlines)\nPattern matching: *://*.example.com/*\nRegular expression: /example\\.(net|org)/",
         "builtin": "Built-in web search",
+        "change_provider": "Switch web search provider",
         "check_error": "Check Error",
         "check_fail": "Check Fail",
         "check_success": "Check Success",
@@ -851,6 +984,16 @@
             "title": "Free Service Providers"
           },
           "title": "Web Search Provider"
+        },
+        "providers": {
+          "bocha": "Bocha",
+          "builtin": "Built-in",
+          "exa": "Exa",
+          "local-baidu": "Baidu",
+          "local-bing": "Bing",
+          "local-google": "Google",
+          "searxng": "Searxng",
+          "tavily": "Tavily"
         },
         "searchCount": "Search Count",
         "searchWithDates": "Search with dates included",
@@ -877,6 +1020,13 @@
       }
     },
     "topics": {
+      "multi_select": {
+        "action": "Multi-select",
+        "delete_confirm_message": "This action cannot be undone.",
+        "delete_confirm_title": "Delete {{count}} topics?",
+        "delete_success": "Deleted {{count}} topics",
+        "selected_count": "{{count}} selected"
+      },
       "new_topic": "New Topic",
       "rename": {
         "title": "Rename Topic"
@@ -886,6 +1036,20 @@
         "label": "Topic",
         "recent": "Recent Topics"
       }
+    },
+    "update": {
+      "description": "A new version is available. Would you like to update now?",
+      "ignore": "Don't remind again",
+      "now": "Update Now",
+      "title": "Update Available"
+    },
+    "voice": {
+      "error": "Speech recognition error",
+      "not_available": "Speech recognition is not available",
+      "permission_denied": "Microphone permission denied",
+      "permission_denied_message": "Please allow Cherry Studio to access your microphone in Settings",
+      "start": "Start voice input",
+      "stop": "Stop voice input"
     }
   }
 }

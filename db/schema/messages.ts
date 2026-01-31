@@ -1,8 +1,8 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { assistants } from './assistants'
-import { topics } from './topics'
 import { createUpdateTimestamps } from './columnHelpers'
+import { topics } from './topics'
 
 export const messages = sqliteTable(
   'messages',
@@ -11,10 +11,10 @@ export const messages = sqliteTable(
     role: text('role').notNull(),
     assistant_id: text('assistant_id')
       .notNull()
-      .references(() => assistants.id),
+      .references(() => assistants.id, { onDelete: 'cascade' }),
     topic_id: text('topic_id')
       .notNull()
-      .references(() => topics.id),
+      .references(() => topics.id, { onDelete: 'cascade' }),
     status: text('status').notNull(),
     model_id: text('model_id'),
     model: text('model'),

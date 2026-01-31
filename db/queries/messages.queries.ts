@@ -1,7 +1,7 @@
-import { eq, sql, count } from 'drizzle-orm'
+import { count, eq, sql } from 'drizzle-orm'
 
 import { loggerService } from '@/services/LoggerService'
-import { Message } from '@/types/message'
+import type { Message } from '@/types/message'
 
 import { db } from '..'
 import { transformDbToMessage, transformMessageToDb } from '../mappers'
@@ -81,6 +81,20 @@ export async function deleteMessagesByTopicId(topicId: string): Promise<void> {
     await db.delete(messages).where(eq(messages.topic_id, topicId))
   } catch (error) {
     logger.error(`Error deleting messages for topic ID ${topicId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * 根据助手 ID 删除该助手下的所有消息
+ * @param assistantId - 助手的唯一标识符
+ * @throws 当删除操作失败时抛出错误
+ */
+export async function deleteMessagesByAssistantId(assistantId: string): Promise<void> {
+  try {
+    await db.delete(messages).where(eq(messages.assistant_id, assistantId))
+  } catch (error) {
+    logger.error(`Error deleting messages for assistant ID ${assistantId}:`, error)
     throw error
   }
 }

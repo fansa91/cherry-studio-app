@@ -27,7 +27,7 @@
  * Cache Strategy:
  * - LRU Cache: 20 recently accessed MCP servers
  * - All MCP Servers Cache: All servers with 5-minute TTL
- * - Tools: NOT cached, fetched on each request from config/protocol
+ * - Tools Cache: Tools per MCP server with 5-minute TTL
  *
  * @example Basic Usage
  * ```typescript
@@ -44,11 +44,13 @@
  * ```
  */
 
+import { mcpDatabase } from '@database'
+
 import { BUILTIN_TOOLS } from '@/config/mcp'
 import { loggerService } from '@/services/LoggerService'
-import { MCPServer } from '@/types/mcp'
-import { MCPTool } from '@/types/tool'
-import { mcpDatabase } from '@database'
+import { mcpClientService } from '@/services/mcp/McpClientService'
+import type { MCPServer } from '@/types/mcp'
+import type { MCPTool } from '@/types/tool'
 
 const logger = loggerService.withContext('McpService')
 
@@ -135,6 +137,20 @@ export class McpService {
    * Prevents duplicate concurrent loads
    */
   private loadAllMcpServersPromise: Promise<MCPServer[]> | null = null
+
+  // ==================== Tools Cache ====================
+
+  /**
+   * Cache for MCP tools
+   * Key: mcpId
+   * Value: { tools: MCPTool[], timestamp: number }
+   */
+  private toolsCache = new Map<string, { tools: MCPTool[]; timestamp: number }>()
+
+  /**
+   * TTL for tools cache (5 minutes, same as other caches)
+   */
+  private readonly TOOLS_CACHE_TTL = 5 * 60 * 1000
 
   // ==================== Subscription System ====================
 
@@ -283,20 +299,28 @@ export class McpService {
    */
   public async getActiveMcpServers(): Promise<MCPServer[]> {
     const allServers = await this.getAllMcpServers()
-    return allServers.filter((server) => server.isActive)
+    return allServers.filter(server => server.isActive)
   }
 
   /**
-   * Get MCP tools for a specific MCP server (NOT cached)
+   * Get MCP tools for a specific MCP server
    *
-   * Tools are fetched on each request from:
-   * - Builtin tools config (for internal MCP servers)
-   * - MCP protocol (for external servers, future implementation)
+   * Tools are fetched from:
+   * - Builtin tools config (for inMemory MCP servers)
+   * - MCP protocol via McpClientService (for streamableHttp servers)
+   *
+   * This method implements caching with TTL:
+   * 1. Check cache → return if valid and not force refresh
+   * 2. Fetch from source → cache and return
+   *
+   * Note: SSE transport is not yet supported
    *
    * @param mcpId - The MCP server ID
+   * @param forceRefresh - Force refetch from source, bypassing cache
+   * @param includeDisabled - Include disabled tools in result (for UI display)
    * @returns Promise resolving to array of MCP tools
    */
-  public async getMcpTools(mcpId: string): Promise<MCPTool[]> {
+  public async getMcpTools(mcpId: string, forceRefresh = false, includeDisabled = false): Promise<MCPTool[]> {
     try {
       const mcpServer = await this.getMcpServer(mcpId)
 
@@ -305,18 +329,78 @@ export class McpService {
         return []
       }
 
-      // Get tools from builtin config (temporary, until MCP protocol is implemented)
-      const tools = BUILTIN_TOOLS[mcpServer.id] || []
+      let tools: MCPTool[] = []
 
-      // Filter disabled tools
-      if (mcpServer.disabledTools && mcpServer.disabledTools.length > 0) {
-        return tools.filter((tool) => !mcpServer.disabledTools?.includes(tool.name))
+      // Check cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cached = this.toolsCache.get(mcpId)
+        if (cached && Date.now() - cached.timestamp < this.TOOLS_CACHE_TTL) {
+          logger.verbose(`Tools cache hit for MCP server: ${mcpId}`)
+          tools = cached.tools
+        }
       }
 
-      return tools
+      // Fetch tools if not cached
+      if (tools.length === 0) {
+        if (mcpServer.type === 'inMemory') {
+          // Built-in tools from static config
+          tools = BUILTIN_TOOLS[mcpServer.id] || []
+        } else if (mcpServer.type === 'streamableHttp') {
+          // External server - fetch via MCP protocol
+          if (!mcpServer.baseUrl) {
+            // No URL configured yet - return empty tools
+            return []
+          }
+          try {
+            tools = await mcpClientService.listTools(mcpServer)
+          } catch (error) {
+            logger.error(`Failed to list tools for ${mcpServer.name}:`, error as Error)
+            return []
+          }
+        } else if (mcpServer.type === 'sse') {
+          // SSE transport not yet supported
+          logger.warn(`SSE transport not yet supported for server: ${mcpServer.name}`)
+          return []
+        } else {
+          // Unknown type - try static config as fallback
+          tools = BUILTIN_TOOLS[mcpServer.id] || []
+        }
+
+        // Cache all tools (unfiltered)
+        this.toolsCache.set(mcpId, { tools, timestamp: Date.now() })
+        logger.verbose(`Cached ${tools.length} tools for MCP server: ${mcpId}`)
+      }
+
+      // Return all tools if includeDisabled is true (for UI display)
+      if (includeDisabled) {
+        return tools
+      }
+
+      // Filter disabled tools for API usage
+      const filteredTools =
+        mcpServer.disabledTools && mcpServer.disabledTools.length > 0
+          ? tools.filter(tool => !mcpServer.disabledTools?.includes(tool.name))
+          : tools
+
+      return filteredTools
     } catch (error) {
       logger.error(`Failed to get MCP tools for ${mcpId}:`, error as Error)
       return []
+    }
+  }
+
+  /**
+   * Invalidate tools cache for a specific MCP server or all servers
+   *
+   * @param mcpId - Optional MCP server ID. If not provided, clears all tools cache.
+   */
+  public invalidateToolsCache(mcpId?: string): void {
+    if (mcpId) {
+      this.toolsCache.delete(mcpId)
+      logger.verbose(`Invalidated tools cache for MCP server: ${mcpId}`)
+    } else {
+      this.toolsCache.clear()
+      logger.verbose('Invalidated all tools cache')
     }
   }
 
@@ -599,7 +683,7 @@ export class McpService {
 
         // Update cache
         this.allMcpServersCache.clear()
-        mcpServers.forEach((server) => {
+        mcpServers.forEach(server => {
           this.allMcpServersCache.set(server.id, server)
         })
 
@@ -627,15 +711,10 @@ export class McpService {
   /**
    * Perform optimistic MCP server update with rollback on failure
    */
-  private async performMcpServerUpdate(
-    mcpId: string,
-    updates: Partial<Omit<MCPServer, 'id'>>
-  ): Promise<void> {
+  private async performMcpServerUpdate(mcpId: string, updates: Partial<Omit<MCPServer, 'id'>>): Promise<void> {
     // Save old data for rollback
     const oldLRUServer = this.mcpCache.get(mcpId) ? { ...this.mcpCache.get(mcpId)! } : null
-    const oldAllServersServer = this.allMcpServersCache.get(mcpId)
-      ? { ...this.allMcpServersCache.get(mcpId)! }
-      : null
+    const oldAllServersServer = this.allMcpServersCache.get(mcpId) ? { ...this.allMcpServersCache.get(mcpId)! } : null
 
     try {
       // Fetch current MCP server data
@@ -673,6 +752,12 @@ export class McpService {
 
       // Persist to database
       await mcpDatabase.upsertMcps([updatedServer])
+
+      // Invalidate tools cache when configuration changes that might affect tools
+      // (e.g., baseUrl, headers, type, disabledTools changes)
+      if ('baseUrl' in updates || 'headers' in updates || 'type' in updates || 'disabledTools' in updates) {
+        this.invalidateToolsCache(mcpId)
+      }
 
       // Notify other subscribers
       this.notifyGlobalSubscribers()
@@ -713,7 +798,7 @@ export class McpService {
     const subscribers = this.mcpServerSubscribers.get(mcpId)
     if (subscribers && subscribers.size > 0) {
       logger.verbose(`Notifying ${subscribers.size} subscribers for MCP server ${mcpId}`)
-      subscribers.forEach((callback) => {
+      subscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -729,7 +814,7 @@ export class McpService {
   private notifyGlobalSubscribers(): void {
     if (this.globalSubscribers.size > 0) {
       logger.verbose(`Notifying ${this.globalSubscribers.size} global subscribers`)
-      this.globalSubscribers.forEach((callback) => {
+      this.globalSubscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -748,7 +833,7 @@ export class McpService {
   private notifyAllMcpServersSubscribers(): void {
     if (this.allMcpServersSubscribers.size > 0) {
       logger.verbose(`Notifying ${this.allMcpServersSubscribers.size} all MCP servers subscribers`)
-      this.allMcpServersSubscribers.forEach((callback) => {
+      this.allMcpServersSubscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -863,8 +948,7 @@ export class McpService {
       cacheAge: number | null
     }
   } {
-    const cacheAge =
-      this.allMcpServersCacheTimestamp !== null ? Date.now() - this.allMcpServersCacheTimestamp : null
+    const cacheAge = this.allMcpServersCacheTimestamp !== null ? Date.now() - this.allMcpServersCacheTimestamp : null
 
     return {
       lruCache: {
@@ -876,8 +960,7 @@ export class McpService {
       allServersCache: {
         size: this.allMcpServersCache.size,
         isCacheValid:
-          this.allMcpServersCacheTimestamp !== null &&
-          Date.now() - this.allMcpServersCacheTimestamp < this.CACHE_TTL,
+          this.allMcpServersCacheTimestamp !== null && Date.now() - this.allMcpServersCacheTimestamp < this.CACHE_TTL,
         cacheAge
       }
     }

@@ -1,44 +1,51 @@
-import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useNavigation } from '@react-navigation/native'
-import { StackNavigationProp } from '@react-navigation/stack'
-import { ChevronDown, Languages, MessageSquareMore, Rocket, Settings2 } from '@/componentsV2/icons/LucideIcon'
-import React, { useRef } from 'react'
+import type { StackNavigationProp } from '@react-navigation/stack'
+import { Button } from 'heroui-native'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator } from 'react-native'
-import { Button, useTheme } from 'heroui-native'
 
-import { Container, HeaderBar, Image, SafeAreaContainer, Text, XStack, YStack, IconButton } from '@/componentsV2'
+import { Container, HeaderBar, IconButton, Image, SafeAreaContainer, Text, XStack, YStack } from '@/componentsV2'
+import { presentModelSheet } from '@/componentsV2/features/Sheet/ModelSheet'
+import { ChevronDown, Languages, MessageSquareMore, Rocket, Settings2 } from '@/componentsV2/icons/LucideIcon'
 import { useAssistant } from '@/hooks/useAssistant'
-import { AssistantSettingsStackParamList } from '@/navigators/settings/AssistantSettingsStackNavigator'
-import { Assistant, Model } from '@/types/assistant'
+import { useProvider } from '@/hooks/useProviders'
+import { useTheme } from '@/hooks/useTheme'
+import type { AssistantSettingsStackParamList } from '@/navigators/settings/AssistantSettingsStackNavigator'
+import type { Assistant, Model } from '@/types/assistant'
 import { getModelOrProviderIcon } from '@/utils/icons'
 import { getBaseModelName } from '@/utils/naming'
-import ModelSheet from '@/componentsV2/features/Sheet/ModelSheet'
 
 function ModelPicker({ assistant, onPress }: { assistant: Assistant; onPress: () => void }) {
   const { t } = useTranslation()
   const { isDark } = useTheme()
   const model = assistant?.defaultModel
+  const providerId = model?.provider ?? ''
+  const { provider } = useProvider(providerId)
+  const providerDisplayName = providerId
+    ? t(`provider.${providerId}`, { defaultValue: provider?.name ?? providerId })
+    : (provider?.name ?? providerId)
 
   return (
     <Button
+      pressableFeedbackVariant="ripple"
       variant="ghost"
-      className="w-full   bg-ui-card-background dark:bg-ui-card-background-dark px-3  justify-between"
+      className="bg-card  w-full justify-between rounded-2xl px-3"
       onPress={onPress}>
-      <Button.Label>
-        <XStack className="flex-1 items-center gap-2 overflow-hidden">
+      <Button.Label className="min-w-0 flex-1">
+        <XStack className="min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {model ? (
             <>
               <Image
                 className="h-[18px] w-[18px] rounded-full"
                 source={getModelOrProviderIcon(model.id, model.provider, isDark)}
               />
-              <Text numberOfLines={1} className="shrink-0 max-w-[60%] font-medium">
+              <Text numberOfLines={1} ellipsizeMode="tail" className="min-w-0 max-w-[55%] flex-1 font-medium">
                 {getBaseModelName(model.name)}
               </Text>
-              <Text className="opacity-45 font-semibold">|</Text>
-              <Text numberOfLines={1} className="shrink font-semibold opacity-45">
-                {t(`provider.${model.provider}`)}
+              <Text className="font-semibold opacity-45">|</Text>
+              <Text numberOfLines={1} ellipsizeMode="tail" className="min-w-0 flex-1 font-semibold opacity-45">
+                {providerDisplayName}
               </Text>
             </>
           ) : (
@@ -48,7 +55,7 @@ function ModelPicker({ assistant, onPress }: { assistant: Assistant; onPress: ()
           )}
         </XStack>
       </Button.Label>
-      <ChevronDown size={18} className="text-text-secondary dark:text-text-secondary-dark opacity-90" />
+      <ChevronDown size={18} className="text-foreground-secondary opacity-90" />
     </Button>
   )
 }
@@ -72,38 +79,36 @@ function AssistantSettingItem({
 }: AssistantSettingItemProps) {
   const { t } = useTranslation()
   const navigation = useNavigation<StackNavigationProp<AssistantSettingsStackParamList>>()
-  const sheetRef = useRef<BottomSheetModal>(null)
 
   const handleModelChange = async (models: Model[]) => {
     const newModel = models[0]
     await updateAssistant({ ...assistant, model: newModel, defaultModel: newModel })
   }
 
+  const handlePress = () => {
+    presentModelSheet({
+      mentions: assistant.defaultModel ? [assistant.defaultModel] : [],
+      setMentions: handleModelChange,
+      multiple: false
+    })
+  }
+
   return (
     <>
       <YStack className="gap-2">
-        <XStack className="items-center justify-between px-[10px]">
+        <XStack className="items-center justify-between px-2.5">
           <XStack className="items-center gap-2">
             {icon}
-            <Text className="font-semibold text-text-secondary dark:text-text-secondary-dark">{t(titleKey)}</Text>
+            <Text className="text-foreground-secondary font-semibold">{t(titleKey)}</Text>
           </XStack>
           <IconButton
-            icon={<Settings2 size={16} className="text-text-link" />}
+            icon={<Settings2 size={16} className="text-blue-500" />}
             onPress={() => navigation.navigate('AssistantDetailScreen', { assistantId })}
           />
         </XStack>
-        <ModelPicker assistant={assistant} onPress={() => sheetRef.current?.present()} />
-        <Text className="px-[10px] text-text-secondary dark:text-text-secondary-dark opacity-70">
-          {t(descriptionKey)}
-        </Text>
+        <ModelPicker assistant={assistant} onPress={handlePress} />
+        <Text className="text-foreground-secondary px-2.5 opacity-70">{t(descriptionKey)}</Text>
       </YStack>
-
-      <ModelSheet
-        ref={sheetRef}
-        mentions={assistant.defaultModel ? [assistant.defaultModel] : []}
-        setMentions={handleModelChange}
-        multiple={false}
-      />
     </>
   )
 }
@@ -132,7 +137,7 @@ export default function AssistantSettingsScreen() {
       descriptionKey: 'settings.assistant.default_assistant.description',
       assistant: defaultAssistant,
       updateAssistant: updateDefaultAssistant,
-      icon: <MessageSquareMore size={16} className="text-text-secondary dark:text-text-secondary-dark" />
+      icon: <MessageSquareMore size={16} className="text-foreground-secondary" />
     },
     {
       id: 'quick',
@@ -140,7 +145,7 @@ export default function AssistantSettingsScreen() {
       descriptionKey: 'settings.assistant.quick_assistant.description',
       assistant: quickAssistant,
       updateAssistant: updateQuickAssistant,
-      icon: <Rocket size={16} className="text-text-secondary dark:text-text-secondary-dark" />
+      icon: <Rocket size={16} className="text-foreground-secondary" />
     },
     {
       id: 'translate',
@@ -148,7 +153,7 @@ export default function AssistantSettingsScreen() {
       descriptionKey: 'settings.assistant.translate_assistant.description',
       assistant: translateAssistant,
       updateAssistant: updateTranslateAssistant,
-      icon: <Languages size={16} className="text-text-secondary dark:text-text-secondary-dark" />
+      icon: <Languages size={16} className="text-foreground-secondary" />
     }
   ]
 

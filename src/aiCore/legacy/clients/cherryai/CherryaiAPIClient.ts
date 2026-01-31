@@ -1,15 +1,10 @@
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
 
-import { Provider } from '@/types/assistant'
-import { OpenAISdkParams, OpenAISdkRawOutput } from '@/types/sdk'
+import type { OpenAISdkParams, OpenAISdkRawOutput } from '@/types/sdk'
 
 import { OpenAIAPIClient } from '../openai/OpenAIApiClient'
 
 export class CherryinAPIClient extends OpenAIAPIClient {
-  constructor(provider: Provider) {
-    super(provider)
-  }
-
   override async createCompletions(
     payload: OpenAISdkParams,
     options?: OpenAI.RequestOptions
@@ -44,7 +39,7 @@ export class CherryinAPIClient extends OpenAIAPIClient {
     const created = Date.now()
     return models.map(id => ({
       id,
-      owned_by: 'cherryin',
+      owned_by: 'cherryai',
       object: 'model' as const,
       created
     }))

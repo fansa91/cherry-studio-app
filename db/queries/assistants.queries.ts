@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 
 import { loggerService } from '@/services/LoggerService'
-import { Assistant } from '@/types/assistant'
+import type { Assistant } from '@/types/assistant'
 
 import { db } from '..'
-import { transformDbToAssistant, transformAssistantToDb } from '../mappers'
+import { transformAssistantToDb, transformDbToAssistant } from '../mappers'
 import { assistants } from '../schema'
 import { buildExcludedSet } from '../utils/buildExcludedSet'
 
@@ -38,12 +38,14 @@ export async function upsertAssistants(assistantsToUpsert: Assistant[]) {
 
 /**
  * 根据 ID 删除指定助手
+ * @description 删除助手，关联的 topics、messages、message_blocks 会通过数据库级联删除自动清理
  * @param id - 助手的唯一标识符
  * @throws 当删除操作失败时抛出错误
  */
 export async function deleteAssistantById(id: string) {
   try {
     await db.delete(assistants).where(eq(assistants.id, id))
+    logger.verbose(`Deleted assistant ${id}`)
   } catch (error) {
     logger.error(`Error deleting assistant with ID ${id}:`, error)
     throw error
@@ -61,7 +63,8 @@ export async function getAllAssistants(): Promise<Assistant[]> {
     const results = await db.query.assistants.findMany({
       with: {
         topics: true
-      }
+      },
+      orderBy: [desc(assistants.created_at)]
     })
     return results.map(transformDbToAssistant)
   } catch (error) {

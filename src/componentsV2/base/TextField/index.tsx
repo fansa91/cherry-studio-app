@@ -1,5 +1,3 @@
-import React, { forwardRef } from 'react'
-import { TextField as HeroUITextField, useTextFieldContext, cn } from 'heroui-native'
 import type {
   TextFieldDescriptionProps,
   TextFieldErrorMessageProps,
@@ -9,7 +7,9 @@ import type {
   TextFieldLabelProps,
   TextFieldRootProps
 } from 'heroui-native'
-import { TextInput, View } from 'react-native'
+import { cn, TextField as HeroUITextField, useTextField } from 'heroui-native'
+import React, { forwardRef } from 'react'
+import type { TextInput, View } from 'react-native'
 
 const TextFieldRoot = forwardRef<View, TextFieldRootProps>(({ className, ...props }, ref) => {
   return <HeroUITextField ref={ref} className={cn(className)} {...props} />
@@ -23,7 +23,15 @@ const TextFieldInput = forwardRef<TextInput, TextFieldInputProps>(({ className, 
     input: cn('text-[14px] py-0', classNames?.input)
   }
 
-  return <HeroUITextField.Input ref={ref} className={cn('h-8', className)} classNames={mergedClassNames} {...props} />
+  return (
+    <HeroUITextField.Input
+      ref={ref}
+      className={cn('h-8', className)}
+      classNames={mergedClassNames}
+      selectionColor="#2563eb"
+      {...props}
+    />
+  )
 })
 
 TextFieldInput.displayName = 'TextFieldInput'
@@ -47,6 +55,6 @@ export type {
   TextFieldRootProps
 }
 
-export { useTextFieldContext }
+export { useTextField }
 
 export default TextField

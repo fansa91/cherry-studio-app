@@ -10,7 +10,7 @@ interface SearchingProps {
 export default function Searching({ text }: SearchingProps) {
   return (
     <MotiView
-      className="flex-row items-center gap-1 text-sm p-2.5 pl-0"
+      className="flex-row items-center gap-1 p-2.5 pl-0 text-sm"
       from={{
         opacity: 0.3
       }}
@@ -23,8 +23,8 @@ export default function Searching({ text }: SearchingProps) {
         loop: true,
         repeatReverse: true
       }}>
-      <Search size={16} className="text-text-primary dark:text-text-primary-dark" />
-      <MotiText className="text-text-primary dark:text-text-primary-dark text-sm">{text}</MotiText>
+      <Search size={16} className="text-foreground" />
+      <MotiText className="text-foreground text-sm">{text}</MotiText>
     </MotiView>
   )
 }

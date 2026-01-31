@@ -38,13 +38,13 @@
  * ```
  */
 
-import { eq } from 'drizzle-orm'
+import { db } from '@db/index'
+import { preferenceTable } from '@db/schema'
+import { eq, sql } from 'drizzle-orm'
 
 import { loggerService } from '@/services/LoggerService'
 import { DefaultPreferences } from '@/shared/data/preference/preferenceSchemas'
 import type { PreferenceDefaultScopeType, PreferenceKeyType } from '@/shared/data/preference/preferenceTypes'
-import { preferenceTable } from '@db/schema'
-import { db } from '@db/index'
 
 const logger = loggerService.withContext('PreferenceService')
 
@@ -424,23 +424,26 @@ export class PreferenceService {
         // Query database from preference table
         const result = await db.select().from(preferenceTable).where(eq(preferenceTable.key, key)).get()
 
+        let value: PreferenceValue<K>
+
         if (result) {
-          const value = result.value as PreferenceValue<K>
-          this.cache.set(key, value)
+          value = result.value as PreferenceValue<K>
           logger.debug(`Loaded ${key} from database: ${JSON.stringify(value)}`)
-          return value
         } else {
           // Not found in database → use default value
-          const defaultValue = DefaultPreferences.default[key] as PreferenceValue<K>
-          this.cache.set(key, defaultValue)
-          logger.debug(`Preference ${key} not found in database, using default: ${JSON.stringify(defaultValue)}`)
-          return defaultValue
+          value = DefaultPreferences.default[key] as PreferenceValue<K>
+          logger.debug(`Preference ${key} not found in database, using default: ${JSON.stringify(value)}`)
         }
+
+        this.cache.set(key, value)
+        this.notify(key)
+        return value
       } catch (error) {
         // Database error → use default value
         const defaultValue = DefaultPreferences.default[key] as PreferenceValue<K>
         logger.error(`Failed to load preference ${key}, using default:`, error as Error)
         this.cache.set(key, defaultValue)
+        this.notify(key)
         return defaultValue
       } finally {
         this.loadingKeys.delete(key)
@@ -477,11 +480,22 @@ export class PreferenceService {
     this.notify(key)
 
     try {
-      // 4. Persist to database in background
+      // 4. Persist to database in background using upsert
+      // INSERT if not exists, UPDATE if exists
       await db
-        .update(preferenceTable)
-        .set({ value: newValue as any })
-        .where(eq(preferenceTable.key, key))
+        .insert(preferenceTable)
+        .values({
+          key,
+          value: newValue as any,
+          updated_at: sql`(datetime('now'))`
+        })
+        .onConflictDoUpdate({
+          target: preferenceTable.key,
+          set: {
+            value: newValue as any,
+            updated_at: sql`(datetime('now'))`
+          }
+        })
 
       logger.debug(`Preference ${key} saved to database: ${JSON.stringify(newValue)}`)
     } catch (error) {

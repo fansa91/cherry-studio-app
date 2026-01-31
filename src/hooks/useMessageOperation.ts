@@ -1,14 +1,12 @@
+import { messageDatabase } from '@database'
 import { useCallback } from 'react'
 
-import { loggerService } from '@/services/LoggerService'
 import { topicService } from '@/services/TopicService'
-import { Topic } from '@/types/assistant'
+import type { Topic } from '@/types/assistant'
+import { AssistantMessageStatus } from '@/types/message'
 import { abortCompletion } from '@/utils/abortController'
+
 import { useTopic } from './useTopic'
-
-import { messageDatabase } from '@database'
-
-const logger = loggerService.withContext('UseMessageOperations')
 
 /**
  * Hook 提供针对特定主题的消息操作方法。 / Hook providing various operations for messages within a specific topic.
@@ -28,6 +26,16 @@ export function useMessageOperations(topic: Topic) {
 
     for (const askId of askIds) {
       abortCompletion(askId)
+    }
+
+    // 直接更新消息状态为 SUCCESS，确保即使 onError 回调未触发，状态也能正确更新
+    if (streamingMessages.length > 0) {
+      const messagesToUpdate = streamingMessages.map(msg => ({
+        ...msg,
+        status: AssistantMessageStatus.SUCCESS,
+        updatedAt: Date.now()
+      }))
+      await messageDatabase.upsertMessages(messagesToUpdate)
     }
 
     await topicService.updateTopic(topic.id, { isLoading: false })

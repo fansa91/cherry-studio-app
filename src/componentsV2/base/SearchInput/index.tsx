@@ -1,7 +1,8 @@
 import React from 'react'
 
-import TextField from '../TextField'
 import { Search } from '@/componentsV2/icons'
+
+import TextField from '../TextField'
 
 interface SearchInputProps {
   placeholder: string
@@ -11,14 +12,34 @@ interface SearchInputProps {
 
 export const SearchInput = ({ placeholder, onChangeText, value }: SearchInputProps) => {
   return (
-    <TextField>
+    <TextField className="bg-secondary rounded-xl">
       <TextField.Input
         placeholder={placeholder}
         onChangeText={onChangeText}
         value={value}
-        className="w-full h-10 rounded-lg bg-transparent text-base py-0">
+        className="h-10 w-full"
+        selectionColor="#2563eb"
+        animation={{
+          backgroundColor: {
+            value: {
+              blur: 'transparent',
+              focus: 'transparent',
+              error: 'transparent'
+            }
+          },
+          borderColor: {
+            value: {
+              blur: 'transparent',
+              focus: 'transparent',
+              error: 'transparent'
+            }
+          }
+        }}
+        style={{
+          fontSize: 18
+        }}>
         <TextField.InputStartContent>
-          <Search size={20} className="text-text-secondary dark:text-text-secondary-dark " />
+          <Search size={20} className="text-foreground-secondary" />
         </TextField.InputStartContent>
       </TextField.Input>
     </TextField>

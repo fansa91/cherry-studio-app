@@ -38,13 +38,13 @@
  * ```
  */
 
+import { topicDatabase } from '@database'
 import { t } from 'i18next'
 
 import { loggerService } from '@/services/LoggerService'
 import { preferenceService } from '@/services/PreferenceService'
 import type { Assistant, Topic } from '@/types/assistant'
 import { uuid } from '@/utils'
-import { topicDatabase } from '@database'
 
 const logger = loggerService.withContext('TopicService')
 
@@ -347,9 +347,16 @@ export class TopicService {
 
     logger.info('Creating new topic (optimistic):', newTopic.id)
 
+    // Optimistically cache the new topic so subsequent switchToTopic calls
+    // can reuse it without hitting the database again.
+    this.addToCache(newTopic.id, newTopic)
+    if (this.allTopicsCache.size > 0 || this.allTopicsCacheTimestamp !== null) {
+      this.allTopicsCache.set(newTopic.id, newTopic)
+    }
+
     // Optimistic: return immediately
     // Background: save to database
-    this.performTopicCreate(newTopic).catch((error) => {
+    this.performTopicCreate(newTopic).catch(error => {
       logger.error('Failed to persist new topic:', error as Error)
       // Note: We don't rollback here because the topic has already been returned
       // The UI has already updated. Consider implementing a retry mechanism.
@@ -595,7 +602,7 @@ export class TopicService {
 
     // Get all topics for this assistant for cache cleanup
     const affectedTopics = await topicDatabase.getTopicsByAssistantId(assistantId)
-    const affectedTopicIds = new Set(affectedTopics.map((t) => t.id))
+    const affectedTopicIds = new Set(affectedTopics.map(t => t.id))
 
     // Optimistically update cache
     if (isCurrentTopicAffected) {
@@ -604,7 +611,7 @@ export class TopicService {
     }
 
     // Remove affected topics from LRU cache
-    affectedTopicIds.forEach((topicId) => {
+    affectedTopicIds.forEach(topicId => {
       if (this.topicCache.has(topicId)) {
         this.topicCache.delete(topicId)
         const index = this.accessOrder.indexOf(topicId)
@@ -615,7 +622,7 @@ export class TopicService {
     })
 
     // Remove affected topics from all topics cache
-    affectedTopicIds.forEach((topicId) => {
+    affectedTopicIds.forEach(topicId => {
       if (this.allTopicsCache.has(topicId)) {
         this.allTopicsCache.delete(topicId)
       }
@@ -626,7 +633,7 @@ export class TopicService {
       await topicDatabase.deleteTopicsByAssistantId(assistantId)
 
       // Notify subscribers for all affected topics
-      affectedTopicIds.forEach((topicId) => {
+      affectedTopicIds.forEach(topicId => {
         this.notifyTopicSubscribers(topicId)
       })
 
@@ -675,7 +682,9 @@ export class TopicService {
 
     if (isCacheValid) {
       logger.verbose('Returning cached topics, cache size:', this.allTopicsCache.size)
-      return Array.from(this.allTopicsCache.values())
+      return Array.from(this.allTopicsCache.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
     }
 
     // If already loading, wait for ongoing load
@@ -702,7 +711,9 @@ export class TopicService {
    * ```
    */
   public getAllTopicsCached(): Topic[] {
-    return Array.from(this.allTopicsCache.values())
+    return Array.from(this.allTopicsCache.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
   }
 
   /**
@@ -752,6 +763,25 @@ export class TopicService {
     this.allTopicsCacheTimestamp = null
     logger.info('All topics cache invalidated')
     this.notifyAllTopicsSubscribers()
+  }
+
+  /**
+   * Clear caches and reset loading state
+   */
+  public resetState(): void {
+    this.currentTopicCache = null
+    this.topicCache.clear()
+    this.accessOrder = []
+    this.isLoadingCurrentTopic = false
+    this.currentTopicLoadPromise = null
+    this.loadPromises.clear()
+    this.allTopicsCache.clear()
+    this.allTopicsCacheTimestamp = null
+    this.isLoadingAllTopics = false
+    this.loadAllTopicsPromise = null
+    this.updateQueue.clear()
+
+    logger.info('TopicService state reset')
   }
 
   // ==================== Public API: Subscription ====================
@@ -942,7 +972,7 @@ export class TopicService {
 
         // Update cache
         this.allTopicsCache.clear()
-        topics.forEach((topic) => {
+        topics.forEach(topic => {
           this.allTopicsCache.set(topic.id, topic)
         })
 
@@ -1089,7 +1119,7 @@ export class TopicService {
   private notifyCurrentTopicSubscribers(): void {
     if (this.currentTopicSubscribers.size > 0) {
       logger.verbose(`Notifying ${this.currentTopicSubscribers.size} current topic subscribers`)
-      this.currentTopicSubscribers.forEach((callback) => {
+      this.currentTopicSubscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -1106,7 +1136,7 @@ export class TopicService {
     const subscribers = this.topicSubscribers.get(topicId)
     if (subscribers && subscribers.size > 0) {
       logger.verbose(`Notifying ${subscribers.size} subscribers for topic ${topicId}`)
-      subscribers.forEach((callback) => {
+      subscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -1122,7 +1152,7 @@ export class TopicService {
   private notifyGlobalSubscribers(): void {
     if (this.globalSubscribers.size > 0) {
       logger.verbose(`Notifying ${this.globalSubscribers.size} global subscribers`)
-      this.globalSubscribers.forEach((callback) => {
+      this.globalSubscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -1141,7 +1171,7 @@ export class TopicService {
   private notifyAllTopicsSubscribers(): void {
     if (this.allTopicsSubscribers.size > 0) {
       logger.verbose(`Notifying ${this.allTopicsSubscribers.size} all topics subscribers`)
-      this.allTopicsSubscribers.forEach((callback) => {
+      this.allTopicsSubscribers.forEach(callback => {
         try {
           callback()
         } catch (error) {
@@ -1301,8 +1331,7 @@ export class TopicService {
       cacheAge: number | null
     }
   } {
-    const cacheAge =
-      this.allTopicsCacheTimestamp !== null ? Date.now() - this.allTopicsCacheTimestamp : null
+    const cacheAge = this.allTopicsCacheTimestamp !== null ? Date.now() - this.allTopicsCacheTimestamp : null
 
     return {
       hasCurrentTopic: this.currentTopicCache !== null,
@@ -1317,8 +1346,7 @@ export class TopicService {
       allTopicsCache: {
         size: this.allTopicsCache.size,
         isCacheValid:
-          this.allTopicsCacheTimestamp !== null &&
-          Date.now() - this.allTopicsCacheTimestamp < this.CACHE_TTL,
+          this.allTopicsCacheTimestamp !== null && Date.now() - this.allTopicsCacheTimestamp < this.CACHE_TTL,
         cacheAge
       }
     }

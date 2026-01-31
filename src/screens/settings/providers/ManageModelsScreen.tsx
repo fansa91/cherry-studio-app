@@ -1,21 +1,26 @@
-import { RouteProp, useRoute } from '@react-navigation/native'
+import type { RouteProp } from '@react-navigation/native'
+import { useRoute } from '@react-navigation/native'
+import { cn, Tabs } from 'heroui-native'
 import { groupBy, isEmpty, uniqBy } from 'lodash'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView } from 'react-native'
+import { ScrollView } from 'react-native'
 
 import {
   Container,
   Group,
   HeaderBar,
+  IconButton,
+  ListSkeleton,
   ModelGroup,
   SafeAreaContainer,
+  SearchInput,
   Text,
   XStack,
-  YStack,
-  IconButton,
-  SearchInput
+  YStack
 } from '@/componentsV2'
+import { ModelTags } from '@/componentsV2/features/ModelTags'
+import { ModelIcon } from '@/componentsV2/icons'
 import { Minus, Plus } from '@/componentsV2/icons/LucideIcon'
 import {
   groupQwenModels,
@@ -27,16 +32,16 @@ import {
   isWebSearchModel
 } from '@/config/models'
 import { isFreeModel } from '@/config/models/free'
+import { isNotSupportedTextDelta } from '@/config/models/utils'
+import { isNewApiProvider } from '@/config/providers'
 import { useSearch } from '@/hooks/useSearch'
-import { ProvidersStackParamList } from '@/navigators/settings/ProvidersStackNavigator'
+import { useSkeletonLoading } from '@/hooks/useSkeletonLoading'
+import type { ProvidersStackParamList } from '@/navigators/settings/ProvidersStackNavigator'
 import { fetchModels } from '@/services/ApiService'
 import { loggerService } from '@/services/LoggerService'
-import { getProviderById, saveProvider } from '@/services/ProviderService'
-import { Model, Provider } from '@/types/assistant'
+import { providerService } from '@/services/ProviderService'
+import type { Model, Provider } from '@/types/assistant'
 import { getDefaultGroupName } from '@/utils/naming'
-import { ModelIcon } from '@/componentsV2/icons'
-import { ModelTags } from '@/componentsV2/features/ModelTags'
-import { cn, Tabs } from 'heroui-native'
 const logger = loggerService.withContext('ManageModelsScreen')
 
 type ProviderSettingsRouteProp = RouteProp<ProvidersStackParamList, 'ManageModelsScreen'>
@@ -92,12 +97,19 @@ const groupAndSortModels = (models: Model[], providerId: string) => {
 const transformApiModels = (apiModels: any[], provider: Provider): Model[] => {
   return apiModels
     .map(model => ({
+      // @ts-ignore modelId
       id: model?.id || model?.name,
+      // @ts-ignore name
       name: model?.display_name || model?.displayName || model?.name || model?.id,
       provider: provider.id,
+      // @ts-ignore group
       group: getDefaultGroupName(model?.id || model?.name, provider.id),
+      // @ts-ignore description
       description: model?.description || '',
-      owned_by: model?.owned_by || ''
+      // @ts-ignore owned_by
+      owned_by: model?.owned_by || '',
+      // @ts-ignore supported_endpoint_types
+      supported_endpoint_types: model?.supported_endpoint_types
     }))
     .filter(model => !isEmpty(model.name))
 }
@@ -122,8 +134,9 @@ export default function ManageModelsScreen() {
   const [allModels, setAllModels] = useState<Model[]>([])
   const [activeFilterType, setActiveFilterType] = useState<string>('all')
   const [isLoading, setIsLoading] = useState(true)
+  const showSkeleton = useSkeletonLoading(isLoading)
 
-  const { providerId } = route.params
+  const { providerId, providerName } = route.params
   const [provider, setProvider] = useState<Provider | undefined>(undefined)
   // const { provider, updateProvider } = useProvider(providerId)
 
@@ -143,15 +156,41 @@ export default function ManageModelsScreen() {
   const filteredModels = filterModels(searchFilteredModels, '', activeFilterType)
   const sortedModelGroups = groupAndSortModels(filteredModels, provider?.id || '')
 
+  const prepareModelForAdd = (model: Model): Model | null => {
+    if (isEmpty(model.name)) {
+      return null
+    }
+
+    if (isNewApiProvider(provider!)) {
+      const endpointTypes = model.supported_endpoint_types
+      if (endpointTypes && endpointTypes.length > 0) {
+        return {
+          ...model,
+          endpoint_type: endpointTypes.includes('image-generation') ? 'image-generation' : endpointTypes[0],
+          supported_text_delta: !isNotSupportedTextDelta(model)
+        }
+      }
+      return null
+    } else {
+      return {
+        ...model,
+        supported_text_delta: !isNotSupportedTextDelta(model)
+      }
+    }
+  }
+
   const handleUpdateModels = async (newModels: Model[]) => {
     if (!provider) return
     const updatedProvider = { ...provider, models: newModels }
     setProvider(updatedProvider)
-    await saveProvider(updatedProvider)
+    await providerService.updateProvider(updatedProvider.id, updatedProvider)
   }
 
   const onAddModel = async (model: Model) => {
-    await handleUpdateModels(uniqBy([...(provider?.models || []), model], 'id'))
+    const preparedModel = prepareModelForAdd(model)
+    if (!preparedModel) return
+
+    await handleUpdateModels(uniqBy([...(provider?.models || []), preparedModel], 'id'))
   }
 
   const onRemoveModel = async (model: Model) => {
@@ -159,7 +198,11 @@ export default function ManageModelsScreen() {
   }
 
   const onAddAllModels = async (modelsToAdd: Model[]) => {
-    await handleUpdateModels(uniqBy([...(provider?.models || []), ...modelsToAdd], 'id'))
+    const preparedModels = modelsToAdd.map(prepareModelForAdd).filter((model): model is Model => model !== null)
+
+    if (preparedModels.length === 0) return
+
+    await handleUpdateModels(uniqBy([...(provider?.models || []), ...preparedModels], 'id'))
   }
 
   const onRemoveAllModels = async (modelsToRemove: Model[]) => {
@@ -169,7 +212,8 @@ export default function ManageModelsScreen() {
 
   useEffect(() => {
     const fetchAndSetModels = async () => {
-      const fetchedProvider = await getProviderById(providerId)
+      const fetchedProvider = await providerService.getProvider(providerId)
+      if (!fetchedProvider) return
       setProvider(fetchedProvider)
 
       if (!fetchedProvider) return
@@ -178,6 +222,7 @@ export default function ManageModelsScreen() {
       try {
         const modelsFromApi = await fetchModels(fetchedProvider)
         const transformedModels = transformApiModels(modelsFromApi, fetchedProvider)
+        console.log('transformedModels', transformedModels)
         setAllModels(uniqBy(transformedModels, 'id'))
       } catch (error) {
         logger.error('Failed to fetch models', error)
@@ -192,40 +237,37 @@ export default function ManageModelsScreen() {
 
   return (
     <SafeAreaContainer className="flex-1">
-      {provider && <HeaderBar title={t(`provider.${provider.id}`, { defaultValue: provider.name })} />}
-      {isLoading ? (
-        <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator />
-        </SafeAreaContainer>
-      ) : (
-        <Container className="pb-0" onStartShouldSetResponder={() => false} onMoveShouldSetResponder={() => false}>
-          {/* Filter Tabs */}
-          <Tabs value={activeFilterType} onValueChange={setActiveFilterType}>
-            <Tabs.ScrollView>
-              <Tabs.List aria-label="Model filter tabs" className="bg-transparent">
-                <Tabs.Indicator />
-                {TAB_CONFIGS.map(({ value, i18nKey }) => (
-                  <Tabs.Trigger key={value} value={value}>
-                    <Tabs.Label
-                      className={cn(
-                        activeFilterType === value ? 'text-green-100 dark:text-green-dark-100' : undefined
-                      )}>
-                      {t(i18nKey)}
-                    </Tabs.Label>
-                  </Tabs.Trigger>
-                ))}
-              </Tabs.List>
-            </Tabs.ScrollView>
-          </Tabs>
+      <HeaderBar title={t(`provider.${providerId}`, { defaultValue: providerName })} />
+      <Container className="pb-0" onStartShouldSetResponder={() => false} onMoveShouldSetResponder={() => false}>
+        {/* Filter Tabs */}
+        <Tabs value={activeFilterType} onValueChange={setActiveFilterType}>
+          <Tabs.ScrollView>
+            <Tabs.List aria-label="Model filter tabs" className="bg-transparent">
+              <Tabs.Indicator className="primary-container rounded-xl border" />
+              {TAB_CONFIGS.map(({ value, i18nKey }) => (
+                <Tabs.Trigger key={value} value={value}>
+                  <Tabs.Label className={cn(activeFilterType === value ? 'primary-text' : undefined)}>
+                    {t(i18nKey)}
+                  </Tabs.Label>
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+          </Tabs.ScrollView>
+        </Tabs>
 
-          <SearchInput placeholder={t('settings.models.search')} value={searchText} onChangeText={setSearchText} />
+        <SearchInput placeholder={t('settings.models.search')} value={searchText} onChangeText={setSearchText} />
 
+        {showSkeleton ? (
+          <Group className="flex-1 p-3">
+            <ListSkeleton variant="model" count={8} />
+          </Group>
+        ) : (
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             <Group className="flex-1">
               <ModelGroup
                 modelGroups={sortedModelGroups}
                 renderModelItem={(model, _index) => (
-                  <XStack className="items-center justify-between w-full">
+                  <XStack className="w-full items-center justify-between">
                     <XStack className="flex-1 gap-2">
                       <XStack className="items-center justify-center">
                         <ModelIcon model={model} />
@@ -241,12 +283,9 @@ export default function ManageModelsScreen() {
                       <IconButton
                         icon={
                           isModelInCurrentProvider(model.id) ? (
-                            <Minus size={18} className="rounded-full bg-red-20 text-red-100 dark:text-red-100" />
+                            <Minus size={18} className="rounded-full bg-red-600/20 text-red-600" />
                           ) : (
-                            <Plus
-                              size={18}
-                              className="rounded-full bg-green-20 text-green-100 dark:bg-green-dark-20 dark:text-green-dark-100"
-                            />
+                            <Plus size={18} className="secondary-container primary-text rounded-full" />
                           )
                         }
                         onPress={
@@ -260,12 +299,9 @@ export default function ManageModelsScreen() {
                   <IconButton
                     icon={
                       isAllModelsInCurrentProvider(models) ? (
-                        <Minus size={18} className="rounded-full bg-red-20 text-red-100 dark:text-red-100" />
+                        <Minus size={18} className="rounded-full bg-red-600/20 text-red-600" />
                       ) : (
-                        <Plus
-                          size={18}
-                          className="rounded-full bg-green-20 text-green-100 dark:bg-green-dark-20 dark:text-green-dark-100"
-                        />
+                        <Plus size={18} className="bg-brand-300/20 primary-text rounded-full" />
                       )
                     }
                     onPress={
@@ -278,8 +314,8 @@ export default function ManageModelsScreen() {
               />
             </Group>
           </ScrollView>
-        </Container>
-      )}
+        )}
+      </Container>
     </SafeAreaContainer>
   )
 }

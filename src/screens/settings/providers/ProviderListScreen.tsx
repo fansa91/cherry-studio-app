@@ -1,24 +1,22 @@
-import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import { Plus } from '@/componentsV2/icons/LucideIcon'
-import React, { useCallback, useRef, useState } from 'react'
+import { useNavigation } from '@react-navigation/native'
+import { FlashList } from '@shopify/flash-list'
+import React, { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator } from 'react-native'
-import { SafeAreaContainer, Container, HeaderBar, SearchInput, Group } from '@/componentsV2'
-import { useSearch } from '@/hooks/useSearch'
-import { Provider } from '@/types/assistant'
-import { AddProviderSheet } from '@/componentsV2/features/SettingsScreen/AddProviderSheet'
-import { ProviderItem } from '@/componentsV2/features/SettingsScreen/ProviderItem'
-import { LegendList } from '@legendapp/list'
+
+import { Container, Group, HeaderBar, ListSkeleton, SafeAreaContainer, SearchInput } from '@/componentsV2'
+import { ProviderItem } from '@/componentsV2/features/SettingsScreen/providers/ProviderItem'
+import { Plus } from '@/componentsV2/icons'
 import { useAllProviders } from '@/hooks/useProviders'
+import { useSearch } from '@/hooks/useSearch'
+import { useSkeletonLoading } from '@/hooks/useSkeletonLoading'
+import type { Provider } from '@/types/assistant'
+import type { ProvidersNavigationProps } from '@/types/naviagate'
 
 export default function ProviderListScreen() {
   const { t } = useTranslation()
+  const navigation = useNavigation<ProvidersNavigationProps>()
 
-  const bottomSheetRef = useRef<BottomSheetModal>(null)
   const { providers, isLoading } = useAllProviders()
-
-  const [sheetMode, setSheetMode] = useState<'add' | 'edit'>('add')
-  const [editingProvider, setEditingProvider] = useState<Provider | undefined>(undefined)
 
   const {
     searchText,
@@ -30,20 +28,17 @@ export default function ProviderListScreen() {
     { delay: 100 }
   )
 
+  const showSkeleton = useSkeletonLoading(isLoading)
+
+  const providersList = filteredProviders.filter(p => p.id !== 'cherryai')
+
   const onAddProvider = () => {
-    setSheetMode('add')
-    setEditingProvider(undefined)
-    bottomSheetRef.current?.present()
+    navigation.navigate('AddProviderScreen')
   }
 
-  const onEditProvider = (provider: Provider) => {
-    setSheetMode('edit')
-    setEditingProvider(provider)
-    bottomSheetRef.current?.present()
-  }
-
-  const renderProviderItem = ({ item }: { item: Provider }) => (
-    <ProviderItem provider={item} mode={item.enabled ? 'enabled' : 'checked'} onEdit={onEditProvider} />
+  const renderProviderItem = useCallback(
+    ({ item }: { item: Provider }) => <ProviderItem provider={item} mode={item.enabled ? 'enabled' : 'checked'} />,
+    []
   )
 
   return (
@@ -55,31 +50,23 @@ export default function ProviderListScreen() {
           onPress: onAddProvider
         }}
       />
-      {isLoading ? (
-        <SafeAreaContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator />
-        </SafeAreaContainer>
-      ) : (
-        <Container className="pb-0 gap-4">
-          <SearchInput placeholder={t('settings.provider.search')} value={searchText} onChangeText={setSearchText} />
+      <Container className="gap-4 pb-0">
+        <SearchInput placeholder={t('settings.provider.search')} value={searchText} onChangeText={setSearchText} />
 
-          <Group className="flex-1">
-            <LegendList
-              data={filteredProviders}
+        <Group className="flex-1">
+          {showSkeleton ? (
+            <ListSkeleton variant="provider" count={15} />
+          ) : (
+            <FlashList
+              data={providersList}
               renderItem={renderProviderItem}
               keyExtractor={item => item.id}
-              estimatedItemSize={60}
               showsVerticalScrollIndicator={false}
-              extraData={filteredProviders}
               contentContainerStyle={{ paddingBottom: 30 }}
-              drawDistance={2000}
-              recycleItems
             />
-          </Group>
-        </Container>
-      )}
-
-      <AddProviderSheet ref={bottomSheetRef} mode={sheetMode} editProvider={editingProvider} />
+          )}
+        </Group>
+      </Container>
     </SafeAreaContainer>
   )
 }

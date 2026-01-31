@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm'
 
 import { loggerService } from '@/services/LoggerService'
-import { MessageBlock } from '@/types/message'
+import type { MessageBlock } from '@/types/message'
 
 import { db } from '..'
 import { transformDbToMessageBlock, transformMessageBlockToDb, transformPartialMessageBlockToDb } from '../mappers'
@@ -109,6 +109,23 @@ export async function getBlockById(blockId: string): Promise<MessageBlock | null
     }
 
     return transformDbToMessageBlock(dbRecord[0])
+  } catch (error) {
+    logger.error(`Error getting block with ID ${blockId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * 根据块 ID 同步获取指定的消息块
+ * @param blockId - 消息块的唯一标识符
+ * @returns 如果找到则返回消息块对象，否则返回 null
+ * @throws 当查询操作失败时抛出错误
+ */
+export function getBlockByIdSync(blockId: string): MessageBlock | null {
+  try {
+    const dbRecord = db.select().from(messageBlocks).where(eq(messageBlocks.id, blockId)).limit(1).get()
+
+    return transformDbToMessageBlock(dbRecord)
   } catch (error) {
     logger.error(`Error getting block with ID ${blockId}:`, error)
     throw error

@@ -1,11 +1,15 @@
+import { messageBlockDatabase, messageDatabase } from '@database'
+
 import ModernAiProvider from '@/aiCore/index_new'
-import { AiSdkMiddlewareConfig } from '@/aiCore/middleware/AiSdkMiddlewareBuilder'
+import type { AiSdkMiddlewareConfig } from '@/aiCore/middleware/AiSdkMiddlewareBuilder'
 import { buildStreamTextParams, convertMessagesToSdkMessages } from '@/aiCore/prepareParams'
 import { loggerService } from '@/services/LoggerService'
-import { Assistant, Model, Topic, Usage } from '@/types/assistant'
+import type { Assistant, Model, Topic, Usage } from '@/types/assistant'
 import { ChunkType } from '@/types/chunk'
-import { FileMetadata, FileTypes } from '@/types/file'
-import { AssistantMessageStatus, Message, MessageBlock, MessageBlockStatus, MessageBlockType } from '@/types/message'
+import type { FileMetadata } from '@/types/file'
+import { FileTypes } from '@/types/file'
+import type { MainTextMessageBlock, Message, MessageBlock } from '@/types/message'
+import { AssistantMessageStatus, MessageBlockStatus, MessageBlockType } from '@/types/message'
 import { uuid } from '@/utils'
 import { addAbortController } from '@/utils/abortController'
 import {
@@ -17,15 +21,16 @@ import {
   createTranslationBlock,
   resetAssistantMessage
 } from '@/utils/messageUtils/create'
+import { findMainTextBlocks } from '@/utils/messageUtils/find'
 import { getTopicQueue } from '@/utils/queue'
 
-import { messageBlockDatabase, messageDatabase } from '@database'
 import { fetchTopicNaming } from './ApiService'
 import { assistantService, getDefaultModel } from './AssistantService'
 import { BlockManager, createCallbacks } from './messageStreaming'
 import { transformMessagesAndFetch } from './OrchestrationService'
 import { getAssistantProvider } from './ProviderService'
-import { createStreamProcessor, StreamProcessorCallbacks } from './StreamProcessingService'
+import type { StreamProcessorCallbacks } from './StreamProcessingService'
+import { createStreamProcessor } from './StreamProcessingService'
 import { topicService } from './TopicService'
 
 const logger = loggerService.withContext('Messages Service')
@@ -150,7 +155,11 @@ export async function sendMessage(
   }
 }
 
-export async function regenerateAssistantMessage(assistantMessage: Message, assistant: Assistant) {
+export async function regenerateAssistantMessage(
+  assistantMessage: Message,
+  assistant: Assistant,
+  options?: { skipLoadingStateManagement?: boolean }
+) {
   const topicId = assistantMessage.topicId
 
   try {
@@ -216,8 +225,234 @@ export async function regenerateAssistantMessage(assistantMessage: Message, assi
     await fetchAndProcessAssistantResponseImpl(topicId, assistantConfigForRegen, resetAssistantMsg)
   } catch (error) {
     logger.error('Error in regenerateAssistantMessage:', error)
+    throw error // Re-throw to allow caller to handle
   } finally {
+    // Only manage loading state if not skipped (for batch operations)
+    if (!options?.skipLoadingStateManagement) {
+      await finishTopicLoading(topicId)
+    }
+  }
+}
+
+/**
+ * Regenerate all assistant responses linked to a user message.
+ * This finds all assistant messages with askId matching the user message id
+ * and regenerates each of them.
+ */
+export async function regenerateResponsesForUserMessage(userMessage: Message, assistant: Assistant) {
+  const topicId = userMessage.topicId
+
+  try {
+    // Find all assistant messages linked to this user message
+    const allMessages = await messageDatabase.getMessagesByTopicId(topicId)
+    const linkedAssistantMessages = allMessages.filter(m => m.role === 'assistant' && m.askId === userMessage.id)
+
+    if (linkedAssistantMessages.length === 0) {
+      logger.warn(`No linked assistant messages found for user message ${userMessage.id}`)
+      return
+    }
+
+    // Regenerate all linked assistant messages in parallel
+    // Use skipLoadingStateManagement to prevent race condition where first completion
+    // sets loading=false while others are still running
+    const results = await Promise.allSettled(
+      linkedAssistantMessages.map(assistantMsg =>
+        regenerateAssistantMessage(assistantMsg, assistant, { skipLoadingStateManagement: true })
+      )
+    )
+
+    // Check for failures and log them
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+    if (failures.length > 0) {
+      logger.error(`${failures.length}/${results.length} regenerations failed:`, {
+        errors: failures.map(f => f.reason)
+      })
+      // Throw error if all regenerations failed
+      if (failures.length === results.length) {
+        throw new Error(`All ${failures.length} regeneration(s) failed`)
+      }
+    }
+  } catch (error) {
+    logger.error('Error in regenerateResponsesForUserMessage:', error)
+    throw error // Propagate error to caller
+  } finally {
+    // Always reset loading state when all regenerations complete (success or failure)
     await finishTopicLoading(topicId)
+  }
+}
+
+/**
+ * Edit a user message and regenerate the assistant response.
+ * This function:
+ * 1. Updates the user message content
+ * 2. Handles new files if provided
+ * 3. Deletes all linked assistant responses
+ * 4. Creates a new assistant message and triggers regeneration
+ */
+export async function editUserMessageAndRegenerate(
+  userMessageId: string,
+  newContent: string,
+  newFiles: FileMetadata[],
+  assistant: Assistant,
+  topicId: string
+) {
+  try {
+    // 1. Get and validate user message
+    const userMessage = await messageDatabase.getMessageById(userMessageId)
+    if (!userMessage || userMessage.role !== 'user') {
+      logger.error(`[editUserMessageAndRegenerate] Invalid user message: ${userMessageId}`)
+      throw new Error('Invalid user message')
+    }
+
+    // 2. Find and update MainTextMessageBlock
+    const mainTextBlocks = await findMainTextBlocks(userMessage)
+    if (mainTextBlocks.length > 0) {
+      const mainTextBlock = mainTextBlocks[0] as MainTextMessageBlock
+      await messageBlockDatabase.updateOneBlock({
+        id: mainTextBlock.id,
+        changes: {
+          content: newContent,
+          status: MessageBlockStatus.SUCCESS,
+          updatedAt: Date.now()
+        }
+      })
+    } else {
+      // If no main text block exists, create one
+      const newTextBlock = createMainTextBlock(userMessageId, newContent, {
+        status: MessageBlockStatus.SUCCESS
+      })
+      await messageBlockDatabase.upsertBlocks([newTextBlock])
+      userMessage.blocks = [...userMessage.blocks, newTextBlock.id]
+    }
+
+    // 3. Handle file blocks - remove old file/image blocks
+    const oldBlocks = await Promise.all(userMessage.blocks.map(id => messageBlockDatabase.getBlockById(id)))
+    const fileBlockIds = oldBlocks
+      .filter(
+        (block): block is MessageBlock =>
+          block !== null && (block.type === MessageBlockType.FILE || block.type === MessageBlockType.IMAGE)
+      )
+      .map(block => block.id)
+
+    if (fileBlockIds.length > 0) {
+      await cleanupMultipleBlocks(fileBlockIds)
+    }
+
+    // 4. Add new file blocks if provided
+    const newBlockIds: string[] = []
+    if (newFiles.length > 0) {
+      for (const file of newFiles) {
+        if (file.type === FileTypes.IMAGE) {
+          const imgBlock = createImageBlock(userMessageId, { file, status: MessageBlockStatus.SUCCESS })
+          await messageBlockDatabase.upsertBlocks([imgBlock])
+          newBlockIds.push(imgBlock.id)
+        } else {
+          const fileBlock = createFileBlock(userMessageId, file, { status: MessageBlockStatus.SUCCESS })
+          await messageBlockDatabase.upsertBlocks([fileBlock])
+          newBlockIds.push(fileBlock.id)
+        }
+      }
+    }
+
+    // 5. Update user message blocks array
+    const remainingBlockIds = userMessage.blocks.filter(id => !fileBlockIds.includes(id))
+    const updatedBlockIds = [...newBlockIds, ...remainingBlockIds]
+
+    await messageDatabase.updateMessageById(userMessageId, {
+      blocks: updatedBlockIds,
+      updatedAt: Date.now()
+    })
+
+    // 6. Find and delete all linked assistant messages
+    const allMessages = await messageDatabase.getMessagesByTopicId(topicId)
+    const linkedAssistantMessages = allMessages.filter(m => m.role === 'assistant' && m.askId === userMessageId)
+
+    for (const assistantMsg of linkedAssistantMessages) {
+      // Delete blocks first
+      if (assistantMsg.blocks.length > 0) {
+        await cleanupMultipleBlocks(assistantMsg.blocks)
+      }
+      // Delete message
+      await messageDatabase.deleteMessageById(assistantMsg.id)
+    }
+
+    // 7. Create new assistant message and trigger regeneration
+    const newAssistantMessage = createAssistantMessage(assistant.id, topicId, {
+      askId: userMessageId,
+      model: assistant.model
+    })
+    await saveMessageAndBlocksToDB(newAssistantMessage, [])
+
+    // 8. Fetch and process assistant response
+    await fetchAndProcessAssistantResponseImpl(topicId, assistant, newAssistantMessage)
+  } catch (error) {
+    logger.error('Error in editUserMessageAndRegenerate:', error)
+    await finishTopicLoading(topicId)
+    throw error
+  }
+}
+
+/**
+ * Edit an assistant message content without triggering regeneration.
+ * Updates only the MAIN_TEXT blocks, preserving other block types.
+ */
+export async function editAssistantMessage(assistantMessageId: string, newContent: string): Promise<void> {
+  try {
+    // 1. Get and validate assistant message
+    const assistantMessage = await messageDatabase.getMessageById(assistantMessageId)
+    if (!assistantMessage || assistantMessage.role !== 'assistant') {
+      logger.error(`[editAssistantMessage] Invalid assistant message: ${assistantMessageId}`)
+      throw new Error('Invalid assistant message')
+    }
+
+    // 2. Find all MAIN_TEXT blocks
+    const mainTextBlocks = await findMainTextBlocks(assistantMessage)
+
+    if (mainTextBlocks.length > 0) {
+      // Update the first MAIN_TEXT block with new content
+      const firstBlock = mainTextBlocks[0]
+      await messageBlockDatabase.updateOneBlock({
+        id: firstBlock.id,
+        changes: {
+          content: newContent,
+          status: MessageBlockStatus.SUCCESS,
+          updatedAt: Date.now()
+        }
+      })
+
+      // Remove additional MAIN_TEXT blocks if any
+      if (mainTextBlocks.length > 1) {
+        const additionalBlockIds = mainTextBlocks.slice(1).map(b => b.id)
+        await cleanupMultipleBlocks(additionalBlockIds)
+
+        // Update message blocks array to remove deleted blocks
+        const updatedBlockIds = assistantMessage.blocks.filter(id => !additionalBlockIds.includes(id))
+        await messageDatabase.updateMessageById(assistantMessageId, {
+          blocks: updatedBlockIds,
+          updatedAt: Date.now()
+        })
+      } else {
+        // Just update timestamp
+        await messageDatabase.updateMessageById(assistantMessageId, {
+          updatedAt: Date.now()
+        })
+      }
+    } else {
+      // No MAIN_TEXT block exists - create one
+      const newTextBlock = createMainTextBlock(assistantMessageId, newContent, {
+        status: MessageBlockStatus.SUCCESS
+      })
+      await messageBlockDatabase.upsertBlocks([newTextBlock])
+      await messageDatabase.updateMessageById(assistantMessageId, {
+        blocks: [...assistantMessage.blocks, newTextBlock.id],
+        updatedAt: Date.now()
+      })
+    }
+
+    logger.info(`Assistant message ${assistantMessageId} edited successfully`)
+  } catch (error) {
+    logger.error('Error in editAssistantMessage:', error)
+    throw error
   }
 }
 
@@ -420,6 +655,7 @@ export async function fetchAndProcessAssistantResponseImpl(
   assistantMessage: Message
 ) {
   const assistantMsgId = assistantMessage.id
+  const startTime = Date.now()
   let callbacks: StreamProcessorCallbacks = {}
 
   try {
@@ -460,7 +696,8 @@ export async function fetchAndProcessAssistantResponseImpl(
       topicId,
       assistantMsgId,
       saveUpdatesToDB,
-      assistant
+      assistant,
+      startTime
     })
     const streamProcessorCallbacks = createStreamProcessor(callbacks)
 
@@ -582,12 +819,21 @@ export async function deleteMessageById(messageId: string): Promise<void> {
 }
 
 export async function fetchTranslateThunk(assistantMessageId: string, message: Message) {
+  const startTime = Date.now()
   let callbacks: StreamProcessorCallbacks = {}
   const translateAssistant = await assistantService.getAssistant('translate')
 
   if (!translateAssistant) {
     throw new Error('Translate assistant not found')
   }
+
+  const translateAssistantModel = translateAssistant.defaultModel || getDefaultModel()
+  const assistantForProvider = translateAssistant.model
+    ? translateAssistant
+    : { ...translateAssistant, model: translateAssistantModel }
+  const assistantForRequest = translateAssistant.defaultModel
+    ? assistantForProvider
+    : { ...assistantForProvider, defaultModel: translateAssistantModel }
 
   const newBlock = createTranslationBlock(assistantMessageId, '', {
     status: MessageBlockStatus.STREAMING
@@ -608,7 +854,8 @@ export async function fetchTranslateThunk(assistantMessageId: string, message: M
     topicId: message.topicId,
     assistantMsgId: assistantMessageId,
     saveUpdatesToDB,
-    assistant: translateAssistant
+    assistant: assistantForRequest,
+    startTime
   })
 
   callbacks.onTextStart = async () => {
@@ -655,24 +902,20 @@ export async function fetchTranslateThunk(assistantMessageId: string, message: M
 
   const streamProcessorCallbacks = createStreamProcessor(callbacks)
 
-  if (!translateAssistant.defaultModel) {
-    throw new Error('Translate assistant model is not defined')
-  }
-
-  const provider = await getAssistantProvider(translateAssistant)
+  const provider = await getAssistantProvider(assistantForProvider)
   message = {
     ...message,
     role: 'user'
   }
-  const llmMessages = await convertMessagesToSdkMessages([message], translateAssistant.defaultModel)
+  const llmMessages = await convertMessagesToSdkMessages([message], translateAssistantModel)
 
-  const AI = new ModernAiProvider(translateAssistant.defaultModel || getDefaultModel(), provider)
-  const { params: aiSdkParams, modelId } = await buildStreamTextParams(llmMessages, translateAssistant, provider)
+  const AI = new ModernAiProvider(translateAssistantModel, provider)
+  const { params: aiSdkParams, modelId } = await buildStreamTextParams(llmMessages, assistantForRequest, provider)
 
   const middlewareConfig: AiSdkMiddlewareConfig = {
     streamOutput: true,
     onChunk: streamProcessorCallbacks,
-    model: translateAssistant.defaultModel,
+    model: translateAssistantModel,
     provider: provider,
     enableReasoning: false,
     isPromptToolUse: false,
@@ -690,7 +933,7 @@ export async function fetchTranslateThunk(assistantMessageId: string, message: M
       (
         await AI.completions(modelId, aiSdkParams, {
           ...middlewareConfig,
-          assistant: translateAssistant,
+          assistant: assistantForRequest,
           topicId: message.topicId,
           callType: 'chat',
           uiMessages: [message]

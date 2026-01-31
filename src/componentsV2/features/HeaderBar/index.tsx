@@ -1,10 +1,11 @@
-import React from 'react'
-import { TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import React from 'react'
+import { Pressable } from 'react-native'
+
+import Text from '@/componentsV2/base/Text'
+import XStack from '@/componentsV2/layout/XStack'
 
 import { ArrowLeft } from '../../icons/LucideIcon'
-import XStack from '@/componentsV2/layout/XStack'
-import Text from '@/componentsV2/base/Text'
 
 export interface HeaderBarButton {
   icon: React.ReactNode
@@ -33,31 +34,27 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const handleBack = () => {
     if (onBackPress) return onBackPress()
-    try {
-      navigation?.goBack?.()
-    } catch {}
+    navigation?.goBack?.()
   }
 
   return (
-    <XStack className="px-4 items-center h-[44px] justify-between">
+    <XStack className="relative h-11 items-center justify-between px-4">
       {/* Left area */}
       <XStack className="min-w-[40px] items-center">
         {leftButton ? (
-          <TouchableOpacity hitSlop={10} onPress={leftButton.onPress}>
+          <Pressable
+            hitSlop={10}
+            onPress={leftButton.onPress}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
             {leftButton.icon}
-          </TouchableOpacity>
+          </Pressable>
         ) : showBackButton ? (
-          <TouchableOpacity hitSlop={10} onPress={handleBack}>
+          <Pressable hitSlop={10} onPress={handleBack} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
             <ArrowLeft size={24} />
-          </TouchableOpacity>
+          </Pressable>
         ) : (
           <XStack className="w-[40px]" />
         )}
-      </XStack>
-
-      {/* Title */}
-      <XStack className="flex-1 justify-center items-center">
-        <Text className="text-[18px] font-bold text-center">{title}</Text>
       </XStack>
 
       {/* Right area */}
@@ -65,14 +62,23 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         {buttonsToRender.length > 0 ? (
           <XStack className="gap-3">
             {buttonsToRender.map((button, index) => (
-              <TouchableOpacity key={index} hitSlop={10} onPress={button.onPress}>
+              <Pressable
+                key={index}
+                hitSlop={10}
+                onPress={button.onPress}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
                 {button.icon}
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </XStack>
         ) : (
           <XStack className="w-[40px]" />
         )}
+      </XStack>
+
+      {/* Title - centered absolutely */}
+      <XStack className="absolute inset-y-0 left-4 right-4 items-center justify-center" pointerEvents="none">
+        <Text className="text-center text-[18px] font-bold">{title}</Text>
       </XStack>
     </XStack>
   )

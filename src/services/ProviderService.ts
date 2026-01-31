@@ -26,9 +26,12 @@
  * ```
  */
 
+import { providerDatabase } from '@database'
+
+import { CHERRYAI_PROVIDER } from '@/config/providers'
 import { loggerService } from '@/services/LoggerService'
 import type { Assistant, Model, Provider } from '@/types/assistant'
-import { providerDatabase } from '@database'
+
 import { getDefaultModel } from './AssistantService'
 
 const logger = loggerService.withContext('ProviderService')
@@ -232,6 +235,11 @@ export class ProviderService {
       return null
     }
 
+    // 0. Check special provider
+    if (providerId === 'cherryai') {
+      return CHERRYAI_PROVIDER
+    }
+
     // 1. Check default provider cache
     if (this.defaultProviderCache && this.defaultProviderCache.id === providerId) {
       logger.verbose(`Returning default provider from cache: ${providerId}`)
@@ -275,6 +283,10 @@ export class ProviderService {
    * @returns The cached provider or null
    */
   public getProviderCached(providerId: string): Provider | null {
+    if (providerId === 'cherryai') {
+      return CHERRYAI_PROVIDER
+    }
+
     // Check default provider cache
     if (this.defaultProviderCache && this.defaultProviderCache.id === providerId) {
       return this.defaultProviderCache
@@ -588,6 +600,23 @@ export class ProviderService {
   }
 
   /**
+   * Clear cached providers and reset initialization state
+   */
+  public clearCache(): void {
+    this.defaultProviderCache = null
+    this.defaultProviderInitialized = false
+    this.providerCache.clear()
+    this.accessOrder = []
+    this.loadPromises.clear()
+    this.allProvidersCache.clear()
+    this.allProvidersCacheTimestamp = null
+    this.isLoadingAllProviders = false
+    this.loadAllProvidersPromise = null
+
+    logger.info('ProviderService caches cleared')
+  }
+
+  /**
    * Subscribe to default provider changes
    */
   public subscribeDefaultProvider(callback: () => void): UnsubscribeFunction {
@@ -606,8 +635,7 @@ export class ProviderService {
    * Get cache status for debugging
    */
   public getCacheStatus(): ProviderCacheStatus {
-    const cacheAge =
-      this.allProvidersCacheTimestamp !== null ? Date.now() - this.allProvidersCacheTimestamp : null
+    const cacheAge = this.allProvidersCacheTimestamp !== null ? Date.now() - this.allProvidersCacheTimestamp : null
 
     return {
       defaultProvider: {
@@ -623,8 +651,7 @@ export class ProviderService {
       allProvidersCache: {
         size: this.allProvidersCache.size,
         isValid:
-          this.allProvidersCacheTimestamp !== null &&
-          Date.now() - this.allProvidersCacheTimestamp < this.CACHE_TTL,
+          this.allProvidersCacheTimestamp !== null && Date.now() - this.allProvidersCacheTimestamp < this.CACHE_TTL,
         age: cacheAge
       },
       subscribers: {

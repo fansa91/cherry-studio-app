@@ -1,8 +1,9 @@
 import React from 'react'
 import Svg, { Path } from 'react-native-svg'
 
-import { IconProps } from '../types'
-import { useTheme } from 'heroui-native'
+import { useTheme } from '@/hooks/useTheme'
+
+import type { IconProps } from '../types'
 
 export function MCPIcon(props: IconProps) {
   const { isDark } = useTheme()

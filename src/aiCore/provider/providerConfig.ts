@@ -1,19 +1,18 @@
-import {
-  hasProviderConfig,
-  ProviderConfigFactory,
-  ProviderId,
-  ProviderSettingsMap
-} from '@cherrystudio/ai-core/provider'
+import type { ProviderId, ProviderSettingsMap } from '@cherrystudio/ai-core/provider'
+import { hasProviderConfig, ProviderConfigFactory } from '@cherrystudio/ai-core/provider'
+import { fetch } from 'expo/fetch'
 import { cloneDeep } from 'lodash'
 
 import { isOpenAIChatCompletionOnlyModel } from '@/config/models'
+import { isNewApiProvider } from '@/config/providers'
+import { generateSignature } from '@/integration/cherryai'
 import { loggerService } from '@/services/LoggerService'
 import { getProviderByModel } from '@/services/ProviderService'
-import { Model, Provider } from '@/types/assistant'
+import { isSystemProvider, type Model, type Provider } from '@/types/assistant'
 import { storage } from '@/utils'
 import { formatApiHost } from '@/utils/api'
 
-import { aihubmixProviderCreator, newApiResolverCreator } from './config'
+import { aihubmixProviderCreator, newApiResolverCreator, vertexAnthropicProviderCreator } from './config'
 import { getAiSdkProviderId } from './factory'
 
 const logger = loggerService.withContext('ProviderConfigProcessor')
@@ -49,26 +48,18 @@ function getRotatedApiKey(provider: Provider): string {
  * 处理特殊provider的转换逻辑
  */
 function handleSpecialProviders(model: Model, provider: Provider): Provider {
-  // if (provider.type === 'vertexai' && !isVertexProvider(provider)) {
-  //   if (!isVertexAIConfigured()) {
-  //     throw new Error('VertexAI is not configured. Please configure project, location and service account credentials.')
-  //   }
-  //   return createVertexProvider(provider)
-  // }
-
-  if (provider.id === 'aihubmix') {
-    return aihubmixProviderCreator(model, provider)
-  }
-
-  if (provider.id === 'newapi') {
+  if (isNewApiProvider(provider)) {
     return newApiResolverCreator(model, provider)
   }
 
-  if (provider.id === 'vertexai') {
-    throw new Error('VertexAI is not supported yet.')
-    // return vertexAnthropicProviderCreator(model, provider)
+  if (isSystemProvider(provider)) {
+    if (provider.id === 'aihubmix') {
+      return aihubmixProviderCreator(model, provider)
+    }
+    if (provider.id === 'vertexai') {
+      return vertexAnthropicProviderCreator(model, provider)
+    }
   }
-
   return provider
 }
 
@@ -206,6 +197,12 @@ export function providerToAiSdkConfig(
     // baseConfig.baseURL = isEmpty(baseConfig.baseURL) ? '' : baseConfig.baseURL
   }
 
+  if (aiSdkProviderId === 'cherryin') {
+    if (model.endpoint_type) {
+      extraOptions.endpointType = model.endpoint_type
+    }
+  }
+
   // 如果AI SDK支持该provider，使用原生配置
   if (hasProviderConfig(aiSdkProviderId) && aiSdkProviderId !== 'openai-compatible') {
     const options = ProviderConfigFactory.fromProvider(aiSdkProviderId, baseConfig, extraOptions)
@@ -255,53 +252,52 @@ export async function prepareSpecialProviderConfig(
   config: ReturnType<typeof providerToAiSdkConfig>
 ) {
   // todo
-  // switch (provider.id) {
-  //   // case 'copilot': {
-  //   //   const defaultHeaders = store.getState().copilot.defaultHeaders
-  //   //   const { token } = await window.api.copilot.getToken(defaultHeaders)
-  //   //   config.options.apiKey = token
-  //   //   break
-  //   // }
+  switch (provider.id) {
+    // case 'copilot': {
+    //   const defaultHeaders = store.getState().copilot.defaultHeaders
+    //   const { token } = await window.api.copilot.getToken(defaultHeaders)
+    //   config.options.apiKey = token
+    //   break
+    // }
 
-  //   case 'cherryin': {
-  //     config.options.fetch = async (url, options) => {
-  //       // 在这里对最终参数进行签名
-  //       const signature = await window.api.cherryin.generateSignature({
-  //         method: 'POST',
-  //         path: '/chat/completions',
-  //         query: '',
-  //         body: JSON.parse(options.body)
-  //       })
-  //       return fetch(url, {
-  //         ...options,
-  //         headers: {
-  //           ...options.headers,
-  //           ...signature
-  //         }
-  //       })
-  //     }
+    case 'cherryai': {
+      config.options.fetch = async (url, options) => {
+        // 在这里对最终参数进行签名
+        const signature = await generateSignature({
+          method: 'POST',
+          path: '/chat/completions',
+          query: '',
+          body: JSON.parse(options.body)
+        })
+        return fetch(url, {
+          ...options,
+          headers: {
+            ...options.headers,
+            ...signature
+          }
+        })
+      }
+      break
+    }
 
-  //     break
-  //   }
-
-  //   // case 'anthropic': {
-  //   //   if (provider.authType === 'oauth') {
-  //   //     const oauthToken = await window.api.anthropic_oauth.getAccessToken()
-  //   //     config.options = {
-  //   //       ...config.options,
-  //   //       headers: {
-  //   //         ...(config.options.headers ? config.options.headers : {}),
-  //   //         'Content-Type': 'application/json',
-  //   //         'anthropic-version': '2023-06-01',
-  //   //         'anthropic-beta': 'oauth-2025-04-20',
-  //   //         Authorization: `Bearer ${oauthToken}`
-  //   //       },
-  //   //       baseURL: 'https://api.anthropic.com/v1',
-  //   //       apiKey: ''
-  //   //     }
-  //   //   }
-  //   // }
-  // }
+    // case 'anthropic': {
+    //   if (provider.authType === 'oauth') {
+    //     const oauthToken = await window.api.anthropic_oauth.getAccessToken()
+    //     config.options = {
+    //       ...config.options,
+    //       headers: {
+    //         ...(config.options.headers ? config.options.headers : {}),
+    //         'Content-Type': 'application/json',
+    //         'anthropic-version': '2023-06-01',
+    //         'anthropic-beta': 'oauth-2025-04-20',
+    //         Authorization: `Bearer ${oauthToken}`
+    //       },
+    //       baseURL: 'https://api.anthropic.com/v1',
+    //       apiKey: ''
+    //     }
+    //   }
+    // }
+  }
 
   return config
 }

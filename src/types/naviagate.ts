@@ -1,23 +1,32 @@
-import { DrawerNavigationProp } from '@react-navigation/drawer'
-import type { NavigatorScreenParams } from '@react-navigation/native'
-import { StackNavigationProp } from '@react-navigation/stack'
+import type { DrawerNavigationProp } from '@react-navigation/drawer'
+import type { NavigatorScreenParams, RouteProp } from '@react-navigation/native'
+import type { StackNavigationProp } from '@react-navigation/stack'
 
-import { AssistantStackParamList } from '@/navigators/AssistantStackNavigator'
-import { HomeStackParamList } from '@/navigators/HomeStackNavigator'
-import { AboutStackParamList } from '@/navigators/settings/AboutStackNavigator'
-import { DataSourcesStackParamList } from '@/navigators/settings/DataSourcesStackNavigator'
-import { GeneralSettingsStackParamList } from '@/navigators/settings/GeneralSettingsStackNavigator'
-import { ProvidersStackParamList } from '@/navigators/settings/ProvidersStackNavigator'
-import { WebSearchStackParamList } from '@/navigators/settings/WebSearchStackNavigator'
-import { SettingsStackParamList } from '@/navigators/SettingsStackNavigator'
-import { McpStackParamList } from '@/navigators/McpStackNavigator'
-import { WelcomeStackParamList } from '@/navigators/WelcomeStackNavigator'
+import type { AssistantMarketStackParamList } from '@/navigators/AssistantMarketStackNavigator'
+import type { AssistantStackParamList } from '@/navigators/AssistantStackNavigator'
+import type { HomeStackParamList } from '@/navigators/HomeStackNavigator'
+import type { McpStackParamList } from '@/navigators/McpStackNavigator'
+import type { AboutStackParamList } from '@/navigators/settings/AboutStackNavigator'
+import type { DataSourcesStackParamList } from '@/navigators/settings/DataSourcesStackNavigator'
+import type { GeneralSettingsStackParamList } from '@/navigators/settings/GeneralSettingsStackNavigator'
+import type { ProvidersStackParamList } from '@/navigators/settings/ProvidersStackNavigator'
+import type { WebSearchStackParamList } from '@/navigators/settings/WebSearchStackNavigator'
+import type { SettingsStackParamList } from '@/navigators/SettingsStackNavigator'
+import type { WelcomeStackParamList } from '@/navigators/WelcomeStackNavigator'
+
+export type AssistantDetailScreenParams = {
+  assistantId: string
+  tab?: string
+  returnTo?: 'chat'
+  topicId?: string
+}
 
 // App Drawer Navigator
 export type AppDrawerParamList = {
   Home:
     | { screen: 'ChatScreen'; params: { topicId: string } }
-    | { screen: 'TopicScreen' }
+    | { screen: 'TopicScreen'; params?: { assistantId?: string } }
+    | { screen: 'AssistantDetailScreen'; params: AssistantDetailScreenParams }
     | { screen: 'SettingsScreen' }
     | { screen: 'GeneralSettings'; params?: any }
     | { screen: 'AssistantSettings'; params?: any }
@@ -28,10 +37,16 @@ export type AppDrawerParamList = {
     | undefined
   Assistant:
     | { screen: 'AssistantScreen' }
-    | { screen: 'AssistantMarketScreen' }
-    | { screen: 'AssistantDetailScreen'; params: { assistantId: string; tab?: string } }
+    | {
+        screen: 'AssistantDetailScreen'
+        params: AssistantDetailScreenParams
+      }
     | undefined
-  Mcp: { screen: 'McpMarketScreen' }
+  AssistantMarket: { screen: 'AssistantMarketScreen' } | undefined
+  Mcp:
+    | { screen: 'McpScreen' }
+    | { screen: 'McpMarketScreen' }
+    | { screen: 'McpDetailScreen'; params: { mcpId: string } }
 }
 
 // Root Stack Navigator (MainStackNavigator)
@@ -47,6 +62,7 @@ export type DrawerNavigationProps = DrawerNavigationProp<AppDrawerParamList>
 // Nested Navigator Props
 export type HomeNavigationProps = StackNavigationProp<HomeStackParamList>
 export type AssistantNavigationProps = StackNavigationProp<AssistantStackParamList>
+export type AssistantMarketNavigationProps = StackNavigationProp<AssistantMarketStackParamList>
 export type McpNavigationProps = StackNavigationProp<McpStackParamList>
 export type SettingsNavigationProps = StackNavigationProp<SettingsStackParamList>
 export type WelcomeNavigationProps = StackNavigationProp<WelcomeStackParamList>
@@ -60,3 +76,9 @@ export type AboutNavigationProps = StackNavigationProp<AboutStackParamList>
 
 // Legacy compatibility
 export type NavigationProps = RootNavigationProps
+
+type LanTransferRouteParamList = {
+  LanTransferScreen: { redirectToHome?: boolean } | undefined
+}
+
+export type LanTransferRouteProp = RouteProp<LanTransferRouteParamList, 'LanTransferScreen'>

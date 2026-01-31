@@ -13,6 +13,7 @@
  */
 
 import { ThemeMode } from '@/types'
+
 import type { PreferenceSchemas } from './preferenceTypes'
 
 /**
@@ -63,7 +64,16 @@ export const DefaultPreferences: PreferenceSchemas = {
 
     // Current version of the app data initialization
     // Used to run incremental initialization migrations when new data is added
-    'app.initialization_version': 0
+    'app.initialization_version': 0,
+
+    // User-dismissed update version
+    // When user clicks "Later", this stores the version they dismissed
+    // Empty string means no version has been dismissed
+    'app.dismissed_update_version': '',
+
+    // Developer mode toggle
+    // When enabled, shows advanced features for development
+    'app.developer_mode': false
   }
 }
 
@@ -81,5 +91,7 @@ export const PreferenceDescriptions: Record<keyof PreferenceSchemas['default'], 
   'websearch.max_results': 'Maximum number of search results (1-20)',
   'websearch.override_search_service': 'Use custom search service configuration',
   'websearch.content_limit': 'Content length limit for search results (characters)',
-  'app.initialization_version': 'Current version of app data initialization migrations'
+  'app.initialization_version': 'Current version of app data initialization migrations',
+  'app.dismissed_update_version': 'Version number that user chose to skip updating',
+  'app.developer_mode': 'Enable developer mode for advanced features'
 }

@@ -1,27 +1,29 @@
 import * as ExpoLinking from 'expo-linking'
-import Constants from 'expo-constants'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
+import FastSquircleView from 'react-native-fast-squircle'
+
 import {
-  Text,
+  Container,
+  Group,
+  HeaderBar,
   Image,
-  XStack,
-  YStack,
   PressableRow,
   Row,
-  Group,
-  Container,
   SafeAreaContainer,
-  HeaderBar
+  Text,
+  XStack,
+  YStack
 } from '@/componentsV2'
-import { useTranslation } from 'react-i18next'
-
-import { loggerService } from '@/services/LoggerService'
 import { ArrowUpRight, Copyright, Github, Globe, Mail, Rss } from '@/componentsV2/icons/LucideIcon'
+import { loggerService } from '@/services/LoggerService'
+
+import packageJson from '../../../../package.json'
 const logger = loggerService.withContext('AboutScreen')
 
 export default function AboutScreen() {
   const { t } = useTranslation()
-  const appVersion = Constants.expoConfig?.version || 'latest'
+  const appVersion = packageJson.version ?? 'latest'
 
   const openLink = async (url: string) => {
     try {
@@ -32,7 +34,7 @@ export default function AboutScreen() {
   }
 
   return (
-    <SafeAreaContainer style={{ flex: 1 }}>
+    <SafeAreaContainer>
       <HeaderBar
         title={t('settings.about.header')}
         rightButton={{
@@ -41,17 +43,26 @@ export default function AboutScreen() {
         }}
       />
       <Container>
-        <YStack className="gap-6 flex-1">
+        <YStack className="flex-1 gap-6">
           {/* Logo and Description */}
           <Group>
             <Row className="gap-4">
-              <Image className="h-[70px] w-[70px] rounded-[41px]" source={require('@/assets/images/favicon.png')} />
-              <YStack className="gap-[5px] py-1 flex-1">
-                <Text className="font-bold text-[22px]">{t('common.cherry_studio')}</Text>
-                <Text className="text-sm text-text-secondary dark:text-text-secondary-dark" numberOfLines={0}>
+              <FastSquircleView
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: 18,
+                  overflow: 'hidden'
+                }}
+                cornerSmoothing={0.6}>
+                <Image className="h-full w-full" source={require('@/assets/images/favicon.png')} />
+              </FastSquircleView>
+              <YStack className="flex-1 gap-[5px] py-1">
+                <Text className="text-[22px] font-bold">{t('common.cherry_studio')}</Text>
+                <Text className="text-foreground-secondary text-sm" numberOfLines={0}>
                   {t('common.cherry_studio_description')}
                 </Text>
-                <Text className="text-sm border border-green-20 dark:border-green-dark-20 bg-green-10 dark:bg-green-dark-10 text-green-100 dark:text-green-dark-100 self-start px-2 py-0.5 rounded-[25.37px]">
+                <Text className="primary-badge self-start rounded-[25.37px] border px-2 py-0.5 text-sm">
                   v{appVersion}
                 </Text>
               </YStack>
@@ -61,7 +72,7 @@ export default function AboutScreen() {
           <Group>
             <PressableRow
               onPress={async () => await openLink('https://github.com/CherryHQ/cherry-studio-app/releases/')}>
-              <XStack className="items-center gap-[10px]">
+              <XStack className="items-center gap-2.5">
                 <Rss size={20} />
                 <Text>{t('settings.about.releases.title')}</Text>
               </XStack>

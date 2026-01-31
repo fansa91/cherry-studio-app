@@ -1,12 +1,14 @@
-import React, { FC } from 'react'
+import type { FC } from 'react'
+import React from 'react'
 import { View } from 'react-native'
 
-import { Assistant } from '@/types/assistant'
-import { AssistantMessageStatus, GroupedMessage, MessageBlock } from '@/types/message'
+import type { Assistant } from '@/types/assistant'
+import type { GroupedMessage, MessageBlock } from '@/types/message'
+import { AssistantMessageStatus } from '@/types/message'
 
 import MessageItem from './Message'
-import MessageHeader from './MessageHeader'
 import MessageFooter from './MessageFooter'
+import MessageHeader from './MessageHeader'
 import MultiModelTab from './MultiModelTab'
 
 interface MessageGroupProps {
@@ -19,7 +21,14 @@ const MessageGroup: FC<MessageGroupProps> = ({ assistant, item, messageBlocks })
   const [key, messagesInGroup] = item
 
   const renderUserMessage = () => {
-    return <MessageItem message={messagesInGroup[0]} assistant={assistant} messageBlocks={messageBlocks} />
+    return (
+      <View className="gap-2">
+        <MessageItem message={messagesInGroup[0]} messageBlocks={messageBlocks} />
+        <View className="items-end">
+          <MessageFooter assistant={assistant} message={messagesInGroup[0]} />
+        </View>
+      </View>
+    )
   }
 
   const renderAssistantMessages = () => {
@@ -29,7 +38,7 @@ const MessageGroup: FC<MessageGroupProps> = ({ assistant, item, messageBlocks })
           <View className="px-4">
             <MessageHeader message={messagesInGroup[0]} />
           </View>
-          <MessageItem message={messagesInGroup[0]} assistant={assistant} messageBlocks={messageBlocks} />
+          <MessageItem message={messagesInGroup[0]} messageBlocks={messageBlocks} />
           {/* 输出过程中不显示footer */}
           {messagesInGroup[0].status !== AssistantMessageStatus.PROCESSING && (
             <MessageFooter assistant={assistant} message={messagesInGroup[0]} />

@@ -1,20 +1,30 @@
+import { messageBlockDatabase, messageDatabase } from '@database'
 import { useNavigation } from '@react-navigation/native'
 import * as Clipboard from 'expo-clipboard'
 import * as Speech from 'expo-speech'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Share from 'react-native-share'
+import { useDispatch } from 'react-redux'
 
+import { presentDialog } from '@/componentsV2'
+import { dismissTextEditSheet, presentTextEditSheet } from '@/componentsV2/features/Sheet/TextEditSheet'
 import { loggerService } from '@/services/LoggerService'
-import { deleteMessageById, fetchTranslateThunk, regenerateAssistantMessage } from '@/services/MessagesService'
-import { Assistant } from '@/types/assistant'
-import { Message } from '@/types/message'
-import { HomeNavigationProps } from '@/types/naviagate'
+import {
+  deleteMessageById,
+  editAssistantMessage,
+  fetchTranslateThunk,
+  regenerateAssistantMessage,
+  regenerateResponsesForUserMessage
+} from '@/services/MessagesService'
+import { setEditingMessage } from '@/store/runtime'
+import type { Assistant } from '@/types/assistant'
+import type { Message } from '@/types/message'
+import type { HomeNavigationProps } from '@/types/naviagate'
+import { markdownToPlainText } from '@/utils/markdown'
 import { filterMessages } from '@/utils/messageUtils/filters'
-import { getMainTextContent, findTranslationBlocks } from '@/utils/messageUtils/find'
+import { findTranslationBlocks, getMainTextContent } from '@/utils/messageUtils/find'
 
-import { messageBlockDatabase, messageDatabase } from '@database'
-import { useDialog } from './useDialog'
 import { useToast } from './useToast'
 
 const logger = loggerService.withContext('useMessageActions')
@@ -28,11 +38,11 @@ interface UseMessageActionsProps {
 
 export const useMessageActions = ({ message, assistant }: UseMessageActionsProps) => {
   const { t } = useTranslation()
+  const dispatch = useDispatch()
   const [playState, setPlayState] = useState<PlayState>('idle')
   const [isTranslating, setIsTranslating] = useState(false)
   const [isTranslated, setIsTranslated] = useState(false)
   const toast = useToast()
-  const dialog = useDialog()
   const navigation = useNavigation<HomeNavigationProps>()
 
   useEffect(() => {
@@ -65,26 +75,21 @@ export const useMessageActions = ({ message, assistant }: UseMessageActionsProps
 
   const handleDelete = async () => {
     return new Promise<void>((resolve, reject) => {
-      dialog.open({
-        type: 'error',
+      presentDialog('error', {
         title: t('message.delete_message'),
         content: t('message.delete_message_confirmation'),
         confirmText: t('common.delete'),
         cancelText: t('common.cancel'),
-        onConFirm: async () => {
+        showCancel: true,
+        onConfirm: async () => {
           try {
             await deleteMessageById(message.id)
-
-            if (message.askId) {
-              await deleteMessageById(message.askId)
-            }
 
             logger.info('Message deleted successfully:', message.id)
             resolve()
           } catch (error) {
             logger.error('Error deleting message:', error)
-            dialog.open({
-              type: 'error',
+            presentDialog('error', {
               title: t('common.error'),
               content: t('common.error_occurred')
             })
@@ -105,7 +110,13 @@ export const useMessageActions = ({ message, assistant }: UseMessageActionsProps
     }
 
     try {
-      await regenerateAssistantMessage(message, assistant)
+      if (message.role === 'user') {
+        // For user messages: regenerate all linked assistant responses
+        await regenerateResponsesForUserMessage(message, assistant)
+      } else {
+        // For assistant messages: regenerate this specific response
+        await regenerateAssistantMessage(message, assistant)
+      }
     } catch (error) {
       logger.error('Error regenerating message:', error)
     }
@@ -116,7 +127,8 @@ export const useMessageActions = ({ message, assistant }: UseMessageActionsProps
       if (playState === 'idle') {
         const filteredMessages = await filterMessages([message])
         const mainContent = await getMainTextContent(filteredMessages[0])
-        Speech.speak(mainContent, { onDone: () => setPlayState('idle') })
+        const speechContent = markdownToPlainText(mainContent)
+        Speech.speak(speechContent, { onDone: () => setPlayState('idle') })
         setPlayState('playing')
       } else if (playState === 'playing') {
         Speech.stop()
@@ -142,22 +154,20 @@ export const useMessageActions = ({ message, assistant }: UseMessageActionsProps
       const errorMessage = error instanceof Error ? error.message : String(error)
 
       if (errorMessage.includes('Translate assistant model is not defined')) {
-        dialog.open({
-          type: 'warning',
+        presentDialog('warning', {
           title: t('common.error_occurred'),
           content: t('error.translate_assistant_model_not_defined'),
           confirmText: t('common.go_to_settings'),
-          onConFirm: () => {
+          onConfirm: () => {
             navigation.navigate('AssistantSettings', {
               screen: 'AssistantSettingsScreen'
             })
           }
         })
       } else {
-        dialog.open({
+        presentDialog('error', {
           title: t('common.error_occurred'),
-          content: errorMessage,
-          type: 'error'
+          content: errorMessage
         })
       }
     } finally {
@@ -244,6 +254,29 @@ export const useMessageActions = ({ message, assistant }: UseMessageActionsProps
     }
   }
 
+  const handleEdit = async () => {
+    if (message.role === 'system') {
+      logger.warn('Cannot edit system messages')
+      return
+    }
+
+    if (message.role === 'assistant') {
+      // Assistant messages: use sheet for editing
+      try {
+        const content = await getMainTextContent(message)
+        presentTextEditSheet(content, async (newContent: string) => {
+          await editAssistantMessage(message.id, newContent)
+          dismissTextEditSheet()
+        })
+      } catch (error) {
+        logger.error('Error opening edit sheet:', error)
+      }
+    } else {
+      // User messages: use existing input box editing
+      dispatch(setEditingMessage(message))
+    }
+  }
+
   return {
     playState,
     isTranslating,
@@ -257,6 +290,7 @@ export const useMessageActions = ({ message, assistant }: UseMessageActionsProps
     getMessageContent,
     handleBestAnswer,
     isUseful: message.useful,
-    handleShare
+    handleShare,
+    handleEdit
   }
 }

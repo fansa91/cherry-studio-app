@@ -1,5 +1,6 @@
-import { SystemProviderId } from '@/types/assistant'
-import { ImageRequireSource } from 'react-native'
+import type { ImageRequireSource } from 'react-native'
+
+import type { SystemProviderId } from '@/types/assistant'
 
 const MODEL_ICONS_DARK = {
   chatgpt: require('@/assets/images/llmIcons/dark/openai.png'),
@@ -97,7 +98,7 @@ export function getModelIcon(modelId: string, isDark: boolean): ImageRequireSour
   return result
 }
 
-const PROVIDER_ICONS_DARK: Record<SystemProviderId | 'default', ImageRequireSource> = {
+const PROVIDER_ICONS_DARK: Record<SystemProviderId | 'default' | 'cherryai', ImageRequireSource> = {
   gemini: require('@/assets/images/llmIcons/dark/google.png'),
   grok: require('@/assets/images/llmIcons/dark/grok.png'),
   deepseek: require('@/assets/images/llmIcons/dark/deepseek.png'),
@@ -111,7 +112,8 @@ const PROVIDER_ICONS_DARK: Record<SystemProviderId | 'default', ImageRequireSour
   baichuan: require('@/assets/images/llmIcons/dark/baichuan.png'),
   nvidia: require('@/assets/images/llmIcons/dark/nvidia.png'),
   perplexity: require('@/assets/images/llmIcons/dark/perplexity.png'),
-  cherryin: require('@/assets/images/llmIcons/dark/cherryIn.png'),
+  cherryin: require('@/assets/images/llmIcons/dark/cherryin.png'),
+  cherryai: require('@/assets/images/llmIcons/dark/cherryai.png'),
   silicon: require('@/assets/images/llmIcons/dark/silicon.png'),
   aihubmix: require('@/assets/images/llmIcons/dark/aihubmix.png'),
   ocoolai: require('@/assets/images/llmIcons/dark/ocoolai.png'),
@@ -150,10 +152,18 @@ const PROVIDER_ICONS_DARK: Record<SystemProviderId | 'default', ImageRequireSour
   voyageai: require('@/assets/images/llmIcons/dark/voyage.png'),
   'aws-bedrock': require('@/assets/images/llmIcons/dark/bedrock.png'),
   poe: require('@/assets/images/llmIcons/dark/poe.png'),
+  sophnet: require('@/assets/images/llmIcons/dark/sophnet.png'),
+  ovms: require('@/assets/images/llmIcons/dark/ovms.png'),
+  vertexai: require('@/assets/images/llmIcons/dark/vertexai.png'),
+  aionly: require('@/assets/images/llmIcons/dark/aiOnly.webp'),
+  longcat: require('@/assets/images/llmIcons/dark/longcat.png'),
+  huggingface: require('@/assets/images/llmIcons/dark/huggingface.png'),
+  'ai-gateway': require('@/assets/images/llmIcons/dark/vercel.png'),
+  cerebras: require('@/assets/images/llmIcons/dark/cerebras.png'),
   default: require('@/assets/images/llmIcons/dark/openai.png')
 }
 
-const PROVIDER_ICONS_LIGHT: Record<SystemProviderId | 'default', ImageRequireSource> = {
+const PROVIDER_ICONS_LIGHT: Record<SystemProviderId | 'default' | 'cherryai', ImageRequireSource> = {
   gemini: require('@/assets/images/llmIcons/light/google.png'),
   grok: require('@/assets/images/llmIcons/light/grok.png'),
   deepseek: require('@/assets/images/llmIcons/light/deepseek.png'),
@@ -167,7 +177,8 @@ const PROVIDER_ICONS_LIGHT: Record<SystemProviderId | 'default', ImageRequireSou
   baichuan: require('@/assets/images/llmIcons/light/baichuan.png'),
   nvidia: require('@/assets/images/llmIcons/light/nvidia.png'),
   perplexity: require('@/assets/images/llmIcons/light/perplexity.png'),
-  cherryin: require('@/assets/images/llmIcons/light/cherryIn.png'),
+  cherryin: require('@/assets/images/llmIcons/light/cherryin.png'),
+  cherryai: require('@/assets/images/llmIcons/light/cherryai.png'),
   silicon: require('@/assets/images/llmIcons/light/silicon.png'),
   aihubmix: require('@/assets/images/llmIcons/light/aihubmix.png'),
   ocoolai: require('@/assets/images/llmIcons/light/ocoolai.png'),
@@ -206,7 +217,15 @@ const PROVIDER_ICONS_LIGHT: Record<SystemProviderId | 'default', ImageRequireSou
   voyageai: require('@/assets/images/llmIcons/light/voyage.png'),
   'aws-bedrock': require('@/assets/images/llmIcons/light/bedrock.png'),
   poe: require('@/assets/images/llmIcons/light/poe.png'),
-  default: require('@/assets/images/llmIcons/light/openai.png')
+  sophnet: require('@/assets/images/llmIcons/dark/sophnet.png'),
+  ovms: require('@/assets/images/llmIcons/dark/ovms.png'),
+  vertexai: require('@/assets/images/llmIcons/dark/vertexai.png'),
+  aionly: require('@/assets/images/llmIcons/dark/aiOnly.webp'),
+  longcat: require('@/assets/images/llmIcons/dark/longcat.png'),
+  huggingface: require('@/assets/images/llmIcons/dark/huggingface.png'),
+  'ai-gateway': require('@/assets/images/llmIcons/dark/vercel.png'),
+  cerebras: require('@/assets/images/llmIcons/dark/cerebras.png'),
+  default: require('@/assets/images/llmIcons/dark/openai.png')
 }
 
 export function getProviderIcon(providerId: string, isDark: boolean): ImageRequireSource {

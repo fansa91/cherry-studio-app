@@ -7,19 +7,22 @@
  * 2. 失败时fallback到原有实现
  * 3. 暂时保持接口兼容性
  */
+import type { GatewayLanguageModelEntry } from '@ai-sdk/gateway'
 import { createExecutor } from '@cherrystudio/ai-core'
-import { type ImageModel, type LanguageModel, type Provider as AiSdkProvider, wrapLanguageModel } from 'ai'
+import { gateway, type ImageModel, type LanguageModel, type Provider as AiSdkProvider, wrapLanguageModel } from 'ai'
 import { fetch as expoFetch } from 'expo/fetch'
 
 import { loggerService } from '@/services/LoggerService'
-import { AiSdkModel, StreamTextParams } from '@/types/aiCoretypes'
-import { Assistant, Model, Provider } from '@/types/assistant'
-import { GenerateImageParams } from '@/types/image'
+import type { AiSdkModel, StreamTextParams } from '@/types/aiCoretypes'
+import { type Assistant, type Model, type Provider, SystemProviderIds } from '@/types/assistant'
+import type { GenerateImageParams } from '@/types/image'
+import { SUPPORTED_IMAGE_ENDPOINT_LIST } from '@/utils/api'
 
-import AiSdkToChunkAdapter from './chunk/AiSdkToChunkAdapter'
+import { AiSdkToChunkAdapter } from './chunk/AiSdkToChunkAdapter'
 import LegacyAiProvider from './legacy/index'
-import { CompletionsParams, CompletionsResult } from './legacy/middleware/schemas'
-import { AiSdkMiddlewareConfig, buildAiSdkMiddlewares } from './middleware/AiSdkMiddlewareBuilder'
+import type { CompletionsParams, CompletionsResult } from './legacy/middleware/schemas'
+import type { AiSdkMiddlewareConfig } from './middleware/AiSdkMiddlewareBuilder'
+import { buildAiSdkMiddlewares } from './middleware/AiSdkMiddlewareBuilder'
 import { buildPlugins } from './plugins/PluginBuilder'
 import { buildClaudeCodeSystemMessage } from './provider/config/anthropic'
 import { createAiSdkProvider } from './provider/factory'
@@ -45,6 +48,7 @@ export default class ModernAiProvider {
   private actualProvider: Provider
   private model?: Model
   private localProvider: Awaited<AiSdkProvider> | null = null
+  private readonly customFetch: typeof expoFetch
 
   // 构造函数重载签名
   constructor(model: Model, provider?: Provider)
@@ -65,19 +69,17 @@ export default class ModernAiProvider {
 
     this.legacyProvider = new LegacyAiProvider(this.actualProvider)
 
-    const customFetch = async (url, options) => {
+    this.customFetch = async (url, options) => {
       const response = await expoFetch(url, {
         ...options,
         headers: {
-          ...options.headers
+          ...options?.headers
         }
       })
       return response
     }
 
-    if (this.config) {
-      this.config.options.fetch = customFetch
-    }
+    this.applyCustomFetchToConfig()
   }
 
   /**
@@ -90,33 +92,34 @@ export default class ModernAiProvider {
   public getActualProvider() {
     return this.actualProvider
   }
-  public async completions(modelId: string, params: StreamTextParams, config: ModernAiProviderConfig) {
+  public async completions(modelId: string, params: StreamTextParams, providerConfig: ModernAiProviderConfig) {
     // 检查model是否存在
     if (!this.model) {
       throw new Error('Model is required for completions. Please use constructor with model parameter.')
     }
 
-    // 确保配置存在
-    if (!this.config) {
-      this.config = providerToAiSdkConfig(this.actualProvider, this.model)
+    // 配置已在构造函数中初始化
+    if (SUPPORTED_IMAGE_ENDPOINT_LIST.includes(this.config!.options.endpoint)) {
+      providerConfig.isImageGenerationEndpoint = true
     }
 
     // 准备特殊配置
-    await prepareSpecialProviderConfig(this.actualProvider, this.config)
+    await prepareSpecialProviderConfig(this.actualProvider, this.config!)
 
     // 提前创建本地 provider 实例
     if (!this.localProvider) {
-      this.localProvider = await createAiSdkProvider(this.config)
+      this.localProvider = await createAiSdkProvider(this.config!)
     }
 
     // 提前构建中间件
     const middlewares = buildAiSdkMiddlewares({
-      ...config,
-      provider: this.actualProvider
+      ...providerConfig,
+      provider: this.actualProvider,
+      assistant: providerConfig.assistant
     })
     logger.debug('Built middlewares in completions', {
       middlewareCount: middlewares.length,
-      isImageGeneration: config.isImageGenerationEndpoint
+      isImageGeneration: providerConfig.isImageGenerationEndpoint
     })
 
     if (!this.localProvider) {
@@ -126,7 +129,7 @@ export default class ModernAiProvider {
     // 根据endpoint类型创建对应的模型
     let model: AiSdkModel | undefined
 
-    if (config.isImageGenerationEndpoint) {
+    if (providerConfig.isImageGenerationEndpoint) {
       model = this.localProvider.imageModel(modelId)
     } else {
       model = this.localProvider.languageModel(modelId)
@@ -140,26 +143,10 @@ export default class ModernAiProvider {
     if (this.actualProvider.id === 'anthropic' && this.actualProvider.authType === 'oauth') {
       const claudeCodeSystemMessage = buildClaudeCodeSystemMessage(params.system)
       params.system = undefined // 清除原有system，避免重复
-
-      if (Array.isArray(params.messages)) {
-        params.messages = [...claudeCodeSystemMessage, ...params.messages]
-      } else {
-        params.messages = claudeCodeSystemMessage
-      }
+      params.messages = [...claudeCodeSystemMessage, ...(params.messages || [])]
     }
 
-    // if (config.topicId && getEnableDeveloperMode()) {
-    //   // TypeScript类型窄化：确保topicId是string类型
-    //   const traceConfig = {
-    //     ...config,
-    //     topicId: config.topicId
-    //   }
-    //   return await this._completionsForTrace(model, params, traceConfig)
-    // } else {
-    //   return await this._completionsOrImageGeneration(model, params, config)
-    // }
-
-    return await this._completionsOrImageGeneration(model, params, config)
+    return await this._completionsOrImageGeneration(model, params, providerConfig)
   }
 
   private async _completionsOrImageGeneration(
@@ -459,6 +446,18 @@ export default class ModernAiProvider {
 
   // 代理其他方法到原有实现
   public async models() {
+    if (this.actualProvider.id === SystemProviderIds['ai-gateway']) {
+      const formatModel = function (models: GatewayLanguageModelEntry[]): Model[] {
+        return models.map(m => ({
+          id: m.id,
+          name: m.name,
+          provider: 'gateway',
+          group: m.id.split('/')[0],
+          description: m.description ?? undefined
+        }))
+      }
+      return formatModel((await gateway.getAvailableModels()).models)
+    }
     return this.legacyProvider.models()
   }
 
@@ -532,6 +531,12 @@ export default class ModernAiProvider {
 
   public getApiKey(): string {
     return this.legacyProvider.getApiKey()
+  }
+
+  private applyCustomFetchToConfig() {
+    if (this.config?.options) {
+      this.config.options.fetch = this.customFetch
+    }
   }
 }
 

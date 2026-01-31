@@ -1,5 +1,11 @@
 import { Dimensions, Platform } from 'react-native'
 
+/**
+ * 获取当前窗口尺寸 (支持动态更新)
+ * 注意: 对于需要响应屏幕旋转的场景,推荐使用 useResponsive hook
+ */
+export const getDimensions = () => Dimensions.get('window')
+
 const { width, height } = Dimensions.get('window')
 
 // screen
@@ -31,11 +37,31 @@ const SmallDevice = height <= 700
 
 const scale = width >= 375 ? 1 : width / 375
 
+/**
+ * 判断是否为平板设备
+ * 基于短边尺寸判断: >= 600 即为平板
+ */
+export const isTablet = (() => {
+  const { width, height } = getDimensions()
+  const minDimension = Math.min(width, height)
+  return minDimension >= 600
+})()
+
+/**
+ * 判断当前是否为横屏模式
+ */
+export const isLandscape = (() => {
+  const { width, height } = getDimensions()
+  return width > height
+})()
+
 export const isMobile = ['ios', 'android', 'armony'].includes(Platform.OS)
 
 export const isAndroid = Platform.OS === 'android'
 
 export const isIOS = Platform.OS === 'ios'
+
+export const isIOS26 = Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) === 26
 
 export const benchmarkRatio = width / 375
 

@@ -1,54 +1,78 @@
-import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { DrawerActions, useNavigation } from '@react-navigation/native'
-import React, { useCallback, useRef, useState } from 'react'
+import { FlashList } from '@shopify/flash-list'
+import { SymbolView } from 'expo-symbols'
+import React, { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, View } from 'react-native'
+import { View } from 'react-native'
 
 import {
-  DrawerGestureWrapper,
-  SafeAreaContainer,
   Container,
+  DrawerGestureWrapper,
   HeaderBar,
+  ListSkeleton,
+  presentDialog,
+  SafeAreaContainer,
+  SearchInput,
   Text,
-  YStack,
-  SearchInput
+  XStack,
+  YStack
 } from '@/componentsV2'
-import { Menu, Plus, Store } from '@/componentsV2/icons/LucideIcon'
-import { useExternalAssistants } from '@/hooks/useAssistant'
-import { useSearch } from '@/hooks/useSearch'
-import { createAssistant } from '@/services/AssistantService'
-import { Assistant } from '@/types/assistant'
-import { DrawerNavigationProps } from '@/types/naviagate'
+import { LiquidGlassButton } from '@/componentsV2/base/LiquidGlassButton'
 import AssistantItem from '@/componentsV2/features/Assistant/AssistantItem'
-import AssistantItemSheet from '@/componentsV2/features/Assistant/AssistantItemSheet'
-import { FlashList } from '@shopify/flash-list'
+import { presentAssistantItemSheet } from '@/componentsV2/features/Assistant/AssistantItemSheet'
+import { Menu, Plus, Trash2 } from '@/componentsV2/icons/LucideIcon'
+import { useAssistants } from '@/hooks/useAssistant'
+import { useSearch } from '@/hooks/useSearch'
+import { useSkeletonLoading } from '@/hooks/useSkeletonLoading'
+import { useToast } from '@/hooks/useToast'
+import { getCurrentTopicId } from '@/hooks/useTopic'
+import { assistantService, createAssistant, getDefaultAssistant } from '@/services/AssistantService'
+import { loggerService } from '@/services/LoggerService'
+import { topicService } from '@/services/TopicService'
+import type { Assistant } from '@/types/assistant'
+import type { DrawerNavigationProps } from '@/types/naviagate'
+import { isIOS } from '@/utils/device'
+
+const logger = loggerService.withContext('AssistantScreen')
 
 export default function AssistantScreen() {
   const { t } = useTranslation()
   const navigation = useNavigation<DrawerNavigationProps>()
+  const toast = useToast()
 
-  const { assistants, isLoading } = useExternalAssistants()
+  const { assistants, isLoading } = useAssistants()
 
-  const {
-    searchText,
-    setSearchText,
-    filteredItems: filteredAssistants
-  } = useSearch(
+  const { searchText, setSearchText, filteredItems } = useSearch(
     assistants,
     useCallback((assistant: Assistant) => [assistant.name, assistant.description || ''], []),
     { delay: 100 }
   )
+  // Filter out translate and quick assistants
+  const filteredAssistants = filteredItems.filter(assistant => assistant.id !== 'translate' && assistant.id !== 'quick')
 
-  const bottomSheetRef = useRef<BottomSheetModal>(null)
-  const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null)
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false)
+  const [selectedAssistantIds, setSelectedAssistantIds] = useState<string[]>([])
+  const [isDeleting, setIsDeleting] = useState(false)
+  const showSkeleton = useSkeletonLoading(isLoading)
 
-  const handleAssistantItemPress = (assistant: Assistant) => {
-    setSelectedAssistant(assistant)
-    bottomSheetRef.current?.present()
+  const selectionCount = selectedAssistantIds.length
+  const hasSelection = selectionCount > 0
+
+  const handleEditAssistant = (assistantId: string) => {
+    navigation.navigate('Assistant', { screen: 'AssistantDetailScreen', params: { assistantId } })
   }
 
-  const onNavigateToMarketScreen = () => {
-    navigation.navigate('Assistant', { screen: 'AssistantMarketScreen' })
+  const onChatNavigation = async (topicId: string) => {
+    navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId } })
+  }
+
+  const handleAssistantItemPress = (assistant: Assistant) => {
+    presentAssistantItemSheet({
+      assistant,
+      source: 'external',
+      onEdit: handleEditAssistant,
+      onChatNavigation
+    })
   }
 
   const onAddAssistant = async () => {
@@ -60,43 +84,118 @@ export default function AssistantScreen() {
     navigation.dispatch(DrawerActions.openDrawer())
   }
 
-  const handleEditAssistant = (assistantId: string) => {
-    navigation.navigate('Assistant', { screen: 'AssistantDetailScreen', params: { assistantId } })
-  }
+  const handleEnterMultiSelectMode = useCallback((assistantId: string) => {
+    setIsMultiSelectMode(true)
+    setSelectedAssistantIds(prev => {
+      if (prev.includes(assistantId)) {
+        return prev
+      }
+      return [...prev, assistantId]
+    })
+  }, [])
 
-  const onChatNavigation = async (topicId: string) => {
-    navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId } })
-  }
+  const handleToggleAssistantSelection = useCallback(
+    (assistantId: string) => {
+      if (!isMultiSelectMode) return
+      setSelectedAssistantIds(prev => {
+        if (prev.includes(assistantId)) {
+          return prev.filter(id => id !== assistantId)
+        }
+        return [...prev, assistantId]
+      })
+    },
+    [isMultiSelectMode]
+  )
 
-  if (isLoading) {
-    return (
-      <SafeAreaContainer style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator />
-      </SafeAreaContainer>
-    )
-  }
+  const handleCancelMultiSelect = useCallback(() => {
+    setIsMultiSelectMode(false)
+    setSelectedAssistantIds([])
+  }, [])
+
+  const performBatchDelete = useCallback(async () => {
+    if (!selectedAssistantIds.length) return
+    setIsDeleting(true)
+    const idsToDelete = [...selectedAssistantIds]
+
+    try {
+      const currentTopicId = getCurrentTopicId()
+
+      // Check if any selected assistant owns the current topic
+      let needsTopicSwitch = false
+      for (const assistantId of idsToDelete) {
+        const isOwner = await topicService.isTopicOwnedByAssistant(assistantId, currentTopicId)
+        if (isOwner) {
+          needsTopicSwitch = true
+          break
+        }
+      }
+
+      // If we need to switch topic, do it first
+      if (needsTopicSwitch) {
+        const defaultAssistant = await getDefaultAssistant()
+        const newTopic = await topicService.createTopic(defaultAssistant)
+        await topicService.switchToTopic(newTopic.id)
+        navigation.navigate('Home', { screen: 'ChatScreen', params: { topicId: newTopic.id } })
+      }
+
+      // Delete all selected assistants and their topics
+      for (const assistantId of idsToDelete) {
+        await topicService.deleteTopicsByAssistantId(assistantId)
+        await assistantService.deleteAssistant(assistantId)
+      }
+
+      toast.show(t('assistants.multi_select.delete_success', { count: idsToDelete.length }))
+      handleCancelMultiSelect()
+    } catch (error) {
+      logger.error('Error deleting assistants:', error)
+      toast.show(t('message.error_deleting_assistant'))
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [handleCancelMultiSelect, navigation, selectedAssistantIds, t, toast])
+
+  const handleBatchDelete = useCallback(() => {
+    if (!hasSelection || isDeleting) return
+    presentDialog('error', {
+      title: t('assistants.multi_select.delete_confirm_title', { count: selectionCount }),
+      content: t('assistants.multi_select.delete_confirm_message', { count: selectionCount }),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
+      showCancel: true,
+      onConfirm: () => {
+        void performBatchDelete()
+      }
+    })
+  }, [hasSelection, isDeleting, performBatchDelete, selectionCount, t])
 
   return (
     <SafeAreaContainer className="pb-0">
       <DrawerGestureWrapper>
         <View collapsable={false} className="flex-1">
-          <HeaderBar
-            title={t('assistants.title.mine')}
-            leftButton={{
-              icon: <Menu size={24} />,
-              onPress: handleMenuPress
-            }}
-            rightButtons={[
-              {
-                icon: <Store size={24} />,
-                onPress: onNavigateToMarketScreen
-              },
-              {
-                icon: <Plus size={24} />,
-                onPress: onAddAssistant
-              }
-            ]}
-          />
+          {isMultiSelectMode ? (
+            <HeaderBar
+              title={t('assistants.multi_select.selected_count', { count: selectionCount })}
+              showBackButton={false}
+              rightButton={{
+                icon: <Text className="text-base font-medium">{t('common.cancel')}</Text>,
+                onPress: handleCancelMultiSelect
+              }}
+            />
+          ) : (
+            <HeaderBar
+              title={t('assistants.title.mine')}
+              leftButton={{
+                icon: <Menu size={24} />,
+                onPress: handleMenuPress
+              }}
+              rightButtons={[
+                {
+                  icon: <Plus size={24} />,
+                  onPress: onAddAssistant
+                }
+              ]}
+            />
+          )}
           <Container className="p-0">
             <View className="px-4">
               <SearchInput
@@ -105,27 +204,43 @@ export default function AssistantScreen() {
                 onChangeText={setSearchText}
               />
             </View>
-            <FlashList
-              showsVerticalScrollIndicator={false}
-              data={filteredAssistants}
-              renderItem={({ item }) => <AssistantItem assistant={item} onAssistantPress={handleAssistantItemPress} />}
-              keyExtractor={item => item.id}
-              ItemSeparatorComponent={() => <YStack className="h-2" />}
-              ListEmptyComponent={
-                <YStack className="flex-1 justify-center items-center">
-                  <Text>{t('settings.assistant.empty')}</Text>
-                </YStack>
-              }
-              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
-            />
+            {showSkeleton ? (
+              <ListSkeleton variant="card" count={10} />
+            ) : (
+              <FlashList
+                showsVerticalScrollIndicator={false}
+                data={filteredAssistants}
+                extraData={{ isMultiSelectMode, selectedAssistantIds }}
+                renderItem={({ item }) => (
+                  <AssistantItem
+                    assistant={item}
+                    onAssistantPress={handleAssistantItemPress}
+                    isMultiSelectMode={isMultiSelectMode}
+                    isSelected={selectedAssistantIds.includes(item.id)}
+                    onToggleSelection={handleToggleAssistantSelection}
+                    onEnterMultiSelectMode={handleEnterMultiSelectMode}
+                  />
+                )}
+                keyExtractor={item => item.id}
+                ItemSeparatorComponent={() => <YStack className="h-2" />}
+                ListEmptyComponent={
+                  <YStack className="flex-1 items-center justify-center">
+                    <Text>{t('settings.assistant.empty')}</Text>
+                  </YStack>
+                }
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
+              />
+            )}
           </Container>
-          <AssistantItemSheet
-            ref={bottomSheetRef}
-            assistant={selectedAssistant}
-            source="external"
-            onEdit={handleEditAssistant}
-            onChatNavigation={onChatNavigation}
-          />
+          {isMultiSelectMode && (
+            <View className="absolute bottom-0 left-0 right-0 px-5">
+              <XStack className="items-center justify-end gap-2">
+                <LiquidGlassButton size={40} onPress={handleBatchDelete}>
+                  {isIOS ? <SymbolView name="trash" size={20} tintColor={'red'} /> : <Trash2 size={20} color="red" />}
+                </LiquidGlassButton>
+              </XStack>
+            </View>
+          )}
         </View>
       </DrawerGestureWrapper>
     </SafeAreaContainer>

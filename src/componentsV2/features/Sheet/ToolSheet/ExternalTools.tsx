@@ -1,53 +1,52 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { ActivityIndicator, Pressable } from 'react-native'
 
-import { Check, Globe, Palette } from '@/componentsV2/icons'
-
-import { Assistant, Model } from '@/types/assistant'
-import YStack from '@/componentsV2/layout/YStack'
 import Text from '@/componentsV2/base/Text'
+import { Check, ChevronsUpDown, Globe, Palette } from '@/componentsV2/icons'
 import PressableRow from '@/componentsV2/layout/PressableRow'
 import XStack from '@/componentsV2/layout/XStack'
+import YStack from '@/componentsV2/layout/YStack'
 import { isGenerateImageModels, isWebSearchModel } from '@/config/models'
+import type { Assistant, Model } from '@/types/assistant'
 
-interface ExternalTool {
-  key: string
-  label: string
-  icon: React.ReactElement
-  onPress: () => void
-  isActive: boolean
-  shouldShow: boolean
-}
+import type { ExternalToolConfig } from './types'
 
 interface ExternalToolsProps {
   mentions: Model[]
   assistant: Assistant
   onWebSearchToggle: () => void
+  onWebSearchSwitchPress?: () => void
   onGenerateImageToggle: () => void
+  isLoading?: boolean
 }
 
 export const ExternalTools: React.FC<ExternalToolsProps> = ({
   mentions,
   assistant,
   onWebSearchToggle,
-  onGenerateImageToggle
+  onWebSearchSwitchPress,
+  onGenerateImageToggle,
+  isLoading = false
 }) => {
   const { t } = useTranslation()
 
   const firstMention = mentions[0]
 
-  const options: ExternalTool[] = [
+  const options: ExternalToolConfig[] = [
     {
       key: 'webSearch',
-      label: t('common.websearch'),
+      label: assistant.webSearchProviderId
+        ? `${t('common.websearch')}(${t(`settings.websearch.providers.${assistant.webSearchProviderId}`)})`
+        : t('common.websearch'),
       icon: <Globe size={20} />,
       onPress: onWebSearchToggle,
+      onSwitchPress: onWebSearchSwitchPress,
       isActive: !!assistant.enableWebSearch,
       // 网络搜索模型 && 设置了工具调用 && 设置了网络搜索服务商 才能开启网络搜索
       shouldShow:
         !!firstMention &&
         (isWebSearchModel(firstMention) || (!!assistant.settings?.toolUseMode && !!assistant.webSearchProviderId))
-      // shouldShow: true
     },
     {
       key: 'generateImage',
@@ -56,7 +55,6 @@ export const ExternalTools: React.FC<ExternalToolsProps> = ({
       onPress: onGenerateImageToggle,
       isActive: !!assistant.enableGenerateImage,
       shouldShow: isGenerateImageModels(mentions)
-      // shouldShow: true
     }
   ]
 
@@ -69,20 +67,34 @@ export const ExternalTools: React.FC<ExternalToolsProps> = ({
   return (
     <YStack className="px-5">
       {visibleOptions.map(option => {
-        const activeColorClass = option.isActive
-          ? 'text-green-100 dark:text-green-dark-100'
-          : 'text-text-primary dark:text-text-primary-dark'
+        const activeColorClass = option.isActive ? 'primary-text' : 'text-foreground'
 
         return (
           <PressableRow
             key={option.key}
             className="my-1 w-full items-center justify-between rounded-xl px-0 py-2"
-            onPress={option.onPress}>
-            <XStack className="gap-5">
-              {React.cloneElement(option.icon, { className: activeColorClass } as any)}
-              <Text className={`text-base ${activeColorClass}`}>{option.label}</Text>
+            onPress={option.onPress}
+            disabled={isLoading}>
+            <XStack className="items-center gap-2">
+              {isLoading ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                React.cloneElement(option.icon, { className: activeColorClass })
+              )}
+              <Text className={`text-lg ${activeColorClass}`}>{option.label}</Text>
             </XStack>
-            {option.isActive && <Check size={20} className="text-green-100 dark:text-green-dark-100" />}
+            <XStack className="items-center gap-2">
+              {option.isActive && !isLoading && <Check size={20} className="primary-text" />}
+              {option.onSwitchPress && (
+                <Pressable
+                  onPress={option.onSwitchPress}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  className="ml-1 rounded-lg p-1 active:opacity-60"
+                  disabled={isLoading}>
+                  <ChevronsUpDown size={18} className="text-foreground-secondary" />
+                </Pressable>
+              )}
+            </XStack>
           </PressableRow>
         )
       })}

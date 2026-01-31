@@ -1,13 +1,17 @@
-import { BottomSheetBackdrop, BottomSheetModal, useBottomSheetScrollableCreator } from '@gorhom/bottom-sheet'
 import { LegendList } from '@legendapp/list'
+import { TrueSheet } from '@lodev09/react-native-true-sheet'
+import { Button, cn } from 'heroui-native'
 import React, { useEffect, useState } from 'react'
-import { BackHandler, TouchableOpacity, View } from 'react-native'
+import { BackHandler, Platform, View } from 'react-native'
 
-import { useTheme, cn } from 'heroui-native'
 import { Check } from '@/componentsV2/icons'
-import Text from '../Text'
 import XStack from '@/componentsV2/layout/XStack'
 import YStack from '@/componentsV2/layout/YStack'
+import { useBottom } from '@/hooks/useBottom'
+import { useTheme } from '@/hooks/useTheme'
+import { isIOS26 } from '@/utils/device'
+
+import Text from '../Text'
 
 export interface SelectionSheetItem {
   label: React.ReactNode | string
@@ -21,45 +25,57 @@ export interface SelectionSheetItem {
 }
 
 export interface SelectionSheetProps {
+  name: string
   items: SelectionSheetItem[]
   emptyContent?: React.ReactNode
-  snapPoints?: string[]
-  ref: React.RefObject<BottomSheetModal | null>
+  detents?: ('auto' | number)[]
   placeholder?: string
   shouldDismiss?: boolean
+  headerComponent?: React.ReactNode
 }
 
 /**
- * 用于在BottomSheetModal中显示列表
+ * Present the SelectionSheet globally by name
+ */
+export const presentSelectionSheet = (name: string) => TrueSheet.present(name)
+
+/**
+ * Dismiss the SelectionSheet globally by name
+ */
+export const dismissSelectionSheet = (name: string) => TrueSheet.dismiss(name)
+
+/**
+ * 用于在 TrueSheet 中显示列表
  */
 
 const SelectionSheet: React.FC<SelectionSheetProps> = ({
+  name,
   items,
   emptyContent,
-  snapPoints = [],
-  ref,
+  detents = ['auto'],
   placeholder,
-  shouldDismiss = true
+  shouldDismiss = true,
+  headerComponent
 }) => {
-  const { isDark } = useTheme()
   const [isVisible, setIsVisible] = useState(false)
-  const BottomSheetLegendListScrollable = useBottomSheetScrollableCreator()
+  const bottom = useBottom()
+  const { isDark } = useTheme()
 
   useEffect(() => {
-    if (!isVisible || !ref?.current) return
+    if (!isVisible) return
 
     const backAction = () => {
-      ref.current?.dismiss()
+      TrueSheet.dismiss(name)
       return true
     }
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction)
     return () => backHandler.remove()
-  }, [ref, isVisible])
+  }, [name, isVisible])
 
   const handleSelect = (item: SelectionSheetItem) => {
     if (shouldDismiss) {
-      ref.current?.dismiss()
+      TrueSheet.dismiss(name)
     }
 
     item.onSelect?.()
@@ -71,7 +87,7 @@ const SelectionSheet: React.FC<SelectionSheetProps> = ({
       typeof item.label === 'string' ? (
         <Text
           className={cn(
-            `text-base ${item.isSelected ? 'text-green-100 dark:text-green-dark-100' : 'text-text-primary dark:text-text-primary-dark'}`,
+            `text-base ${item.isSelected ? 'primary-text' : 'text-foreground'}`,
             item.color && !item.isSelected ? item.color : undefined
           )}>
           {item.label}
@@ -83,7 +99,7 @@ const SelectionSheet: React.FC<SelectionSheetProps> = ({
       typeof item.description === 'string' ? (
         <Text
           className={cn(
-            `text-[11px] opacity-70 flex-1 ${item.isSelected ? 'text-green-100 dark:text-green-dark-100' : 'text-text-secondary dark:text-text-secondary-dark'}`,
+            `flex-1 text-[11px] opacity-70 ${item.isSelected ? 'primary-text' : 'text-foreground-secondary'}`,
             item.color && !item.isSelected ? item.color : undefined
           )}
           numberOfLines={1}
@@ -94,71 +110,67 @@ const SelectionSheet: React.FC<SelectionSheetProps> = ({
         item.description
       )
     return (
-      <TouchableOpacity onPress={() => handleSelect(item)} activeOpacity={0.5}>
+      <Button onPress={() => handleSelect(item)} variant="ghost" className="h-auto min-h-0 rounded-xl p-0">
         <XStack
           className={cn(
-            `items-center gap-2.5 px-3.5 py-3 rounded-lg border ${
-              item.isSelected
-                ? 'border-green-20 bg-green-10 dark:border-green-dark-20 dark:bg-green-dark-10'
-                : 'border-transparent bg-ui-card-background dark:bg-ui-card-background-dark'
+            `items-center gap-2.5 rounded-lg border px-3.5 py-3 ${
+              item.isSelected ? 'secondary-container' : 'border-transparent bg-zinc-400/10'
             }`,
             item.backgroundColor && !item.isSelected ? item.backgroundColor : undefined
           )}>
           {iconElement}
-          <XStack className="flex-1 gap-2.5 items-center justify-between">
+          <XStack className="flex-1 items-center justify-between gap-2.5">
             {labelElement}
             {descriptionElement}
           </XStack>
-          {item.isSelected && <Check size={20} className="text-green-100 dark:text-green-dark-100" />}
+          {item.isSelected && <Check size={20} className="primary-text" />}
         </XStack>
-      </TouchableOpacity>
+      </Button>
     )
   }
 
   const keyExtractor = (item: SelectionSheetItem, index: number) =>
     item.key?.toString() || item.id?.toString() || item.label?.toString() || index.toString()
 
-  const renderBackdrop = (props: any) => (
-    <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.5} pressBehavior="close" />
-  )
+  const listHeaderComponent = () =>
+    placeholder || headerComponent ? (
+      <View className="gap-2 pb-2 pt-5">
+        {headerComponent}
+        {placeholder && <Text className="text-foreground-secondary text-center text-sm opacity-60">{placeholder}</Text>}
+      </View>
+    ) : (
+      <YStack className="h-5" />
+    )
 
   return (
-    <BottomSheetModal
-      ref={ref}
-      snapPoints={snapPoints}
-      enableDynamicSizing={snapPoints.length === 0}
-      backgroundStyle={{
-        borderRadius: 24,
-        backgroundColor: isDark ? '#121213ff' : '#f7f7f7ff'
-      }}
-      handleIndicatorStyle={{
-        backgroundColor: isDark ? '#f9f9f9ff' : '#202020ff'
-      }}
-      backdropComponent={renderBackdrop}
-      onDismiss={() => setIsVisible(false)}
-      onChange={index => setIsVisible(index >= 0)}>
-      <LegendList
-        data={items}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        estimatedItemSize={60}
-        ItemSeparatorComponent={() => <YStack className="h-2.5" />}
-        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 16 }}
-        renderScrollComponent={BottomSheetLegendListScrollable}
-        ListHeaderComponent={
-          placeholder ? (
-            <View className="px-4 pb-2">
-              <Text className="text-sm text-text-secondary dark:text-text-secondary-dark text-center opacity-60">
-                {placeholder}
-              </Text>
-            </View>
-          ) : undefined
-        }
-        ListEmptyComponent={emptyContent ? <YStack className="pb-7 px-4 gap-2.5">{emptyContent}</YStack> : undefined}
-        recycleItems
-      />
-    </BottomSheetModal>
+    <TrueSheet
+      name={name}
+      detents={detents}
+      cornerRadius={24}
+      grabber={Platform.OS === 'ios'}
+      dismissible
+      dimmed
+      scrollable
+      backgroundColor={isIOS26 ? undefined : isDark ? '#19191c' : '#ffffff'}
+      onDidDismiss={() => setIsVisible(false)}
+      onDidPresent={() => setIsVisible(true)}
+      style={{ paddingBottom: bottom + 10 }}>
+      <View className="flex-1">
+        <LegendList
+          data={items}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          nestedScrollEnabled={Platform.OS === 'android'}
+          showsVerticalScrollIndicator={false}
+          estimatedItemSize={60}
+          ListHeaderComponent={listHeaderComponent}
+          ItemSeparatorComponent={() => <YStack className="h-2.5" />}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          ListEmptyComponent={emptyContent ? <YStack className="gap-2.5 px-4 pb-7">{emptyContent}</YStack> : undefined}
+          recycleItems
+        />
+      </View>
+    </TrueSheet>
   )
 }
 

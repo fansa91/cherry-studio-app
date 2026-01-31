@@ -1,7 +1,9 @@
-import { MCPServer } from '@/types/mcp'
-import { MCPTool } from '@/types/tool'
-import { uuid } from '@/utils'
 import { t } from 'i18next'
+import { Platform } from 'react-native'
+
+import type { MCPServer } from '@/types/mcp'
+import type { MCPTool } from '@/types/tool'
+import { uuid } from '@/utils'
 
 export type BuiltinMcpId = keyof typeof BuiltinMcpIds
 
@@ -9,7 +11,8 @@ export const BuiltinMcpIds = {
   '@cherry/fetch': '@cherry/fetch',
   '@cherry/time': '@cherry/time',
   '@cherry/calendar': '@cherry/calendar',
-  '@cherry/reminder': '@cherry/reminder'
+  '@cherry/reminder': '@cherry/reminder',
+  '@cherry/shortcuts': '@cherry/shortcuts'
 }
 
 export const BUILTIN_TOOLS: Record<BuiltinMcpId, MCPTool[]> = {
@@ -86,9 +89,83 @@ export const BUILTIN_TOOLS: Record<BuiltinMcpId, MCPTool[]> = {
           duration: {
             type: 'number',
             description: 'Duration in minutes'
+          },
+          notes: {
+            type: 'string',
+            description: 'Event notes/description'
+          },
+          alarmMinutes: {
+            type: 'array',
+            items: { type: 'number' },
+            description:
+              'Array of minutes before event to trigger alarms (e.g., [5, 30] means reminders at 5 and 30 minutes before)'
           }
         },
         required: ['calendarId', 'title', 'date']
+      }
+    },
+    {
+      id: uuid(),
+      name: 'UpdateCalendarEvent',
+      serverId: uuid(),
+      serverName: '@cherry/calendar',
+      isBuiltIn: true,
+      type: 'mcp',
+      description: 'Update an existing calendar event',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          eventId: {
+            type: 'string',
+            description: 'ID of the event to update'
+          },
+          title: {
+            type: 'string',
+            description: 'New event title'
+          },
+          date: {
+            type: 'string',
+            description: 'New event date (YYYY-MM-DD)'
+          },
+          time: {
+            type: 'string',
+            description: 'New event time (HH:MM)'
+          },
+          duration: {
+            type: 'number',
+            description: 'New duration in minutes'
+          },
+          notes: {
+            type: 'string',
+            description: 'Event notes/description'
+          },
+          alarmMinutes: {
+            type: 'array',
+            items: { type: 'number' },
+            description:
+              'Array of minutes before event to trigger alarms (e.g., [5, 30] means reminders at 5 and 30 minutes before)'
+          }
+        },
+        required: ['eventId']
+      }
+    },
+    {
+      id: uuid(),
+      name: 'DeleteCalendarEvent',
+      serverId: uuid(),
+      serverName: '@cherry/calendar',
+      isBuiltIn: true,
+      type: 'mcp',
+      description: 'Delete a calendar event',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          eventId: {
+            type: 'string',
+            description: 'ID of the event to delete'
+          }
+        },
+        required: ['eventId']
       }
     }
   ],
@@ -247,11 +324,41 @@ export const BUILTIN_TOOLS: Record<BuiltinMcpId, MCPTool[]> = {
         required: ['reminderId']
       }
     }
+  ],
+  '@cherry/shortcuts': [
+    {
+      id: uuid(),
+      name: 'RunShortcut',
+      type: 'mcp',
+      serverId: uuid(),
+      serverName: '@cherry/shortcuts',
+      isBuiltIn: true,
+      description: 'Run an iOS Shortcut by name and return the result',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'The exact name of the iOS Shortcut to run'
+          },
+          input: {
+            type: 'string',
+            enum: ['text', 'clipboard'],
+            description: 'Type of input to pass to the shortcut (optional)'
+          },
+          text: {
+            type: 'string',
+            description: 'Text content to pass as input (only used when input is "text")'
+          }
+        },
+        required: ['name']
+      }
+    }
   ]
 }
 
 export function initBuiltinMcp(): MCPServer[] {
-  return [
+  const servers: MCPServer[] = [
     {
       id: '@cherry/fetch',
       name: '@cherry/fetch',
@@ -281,4 +388,16 @@ export function initBuiltinMcp(): MCPServer[] {
       isActive: false
     }
   ]
+
+  if (Platform.OS === 'ios') {
+    servers.push({
+      id: '@cherry/shortcuts',
+      name: '@cherry/shortcuts',
+      type: 'inMemory',
+      description: t('mcp.builtin.shortcuts.description'),
+      isActive: false
+    })
+  }
+
+  return servers
 }

@@ -6,17 +6,22 @@
 import type { FilePart, TextPart } from 'ai'
 import { File } from 'expo-file-system'
 
+import { extractPdfText } from '@/modules/pdf-text-extractor'
 import { loggerService } from '@/services/LoggerService'
 import { getProviderByModel } from '@/services/ProviderService'
-import { Model } from '@/types/assistant'
-import { FileMetadata, FileTypes } from '@/types/file'
-import { FileMessageBlock, Message } from '@/types/message'
+import type { Model } from '@/types/assistant'
+import type { FileMetadata } from '@/types/file'
+import { FileTypes } from '@/types/file'
+import type { FileMessageBlock, Message } from '@/types/message'
 import { findFileBlocks } from '@/utils/messageUtils/find'
 
 import { getAiSdkProviderId } from '../provider/factory'
 import { getFileSizeLimit, supportsImageInput, supportsLargeFileUpload, supportsPdfInput } from './modelCapabilities'
 
 const logger = loggerService.withContext('fileProcessor')
+
+/** PDF 文本提取的最大页数限制 */
+const PDF_MAX_PAGES = 20
 
 /**
  * 提取文件内容
@@ -35,7 +40,32 @@ export async function extractFileContent(message: Message): Promise<string> {
 
       for (const fileBlock of textFileBlocks) {
         const file = fileBlock.file
-        const fileContent = new File(file.path).textSync().trim()
+        let fileContent = ''
+
+        // PDF 文件使用原生模块提取文本
+        if (file.ext === '.pdf') {
+          try {
+            const result = await extractPdfText(file.path, { maxPages: PDF_MAX_PAGES })
+            if (result.extractionError) {
+              logger.warn(`PDF text extraction had errors for ${file.origin_name}`)
+              fileContent = `[PDF text extraction had errors for ${file.origin_name}]`
+            } else {
+              fileContent = result.text.trim()
+            }
+          } catch (error) {
+            logger.warn(`Failed to extract PDF text from ${file.origin_name}:`, error as Error)
+            fileContent = `[PDF text extraction failed for ${file.origin_name}]`
+          }
+        } else {
+          // 其他文件类型使用原有逻辑
+          try {
+            fileContent = new File(file.path).textSync().trim()
+          } catch (error) {
+            logger.warn(`Failed to read file ${file.origin_name}:`, error as Error)
+            fileContent = `[Failed to read file ${file.origin_name}]`
+          }
+        }
+
         const fileNameRow = 'file: ' + file.origin_name + '\n\n'
         text = text + fileNameRow + fileContent + divider
       }
@@ -68,6 +98,29 @@ export async function convertFileBlockToTextPart(fileBlock: FileMessageBlock): P
 
   // 处理文档文件（PDF、Word、Excel等）- 提取为文本内容
   if (file.type === FileTypes.DOCUMENT) {
+    // PDF 文件使用原生模块提取文本
+    if (file.ext === '.pdf') {
+      try {
+        const result = await extractPdfText(file.path, { maxPages: PDF_MAX_PAGES })
+        if (result.extractionError) {
+          logger.warn(`PDF text extraction had errors for ${file.origin_name}`)
+          return null
+        }
+        if (result.text.trim()) {
+          return {
+            type: 'text',
+            text: `${file.origin_name}\n${result.text.trim()}`
+          }
+        }
+        logger.warn(`No text extracted from PDF ${file.origin_name}`)
+        return null
+      } catch (error) {
+        logger.warn(`Failed to extract PDF text from ${file.origin_name}:`, error as Error)
+        return null
+      }
+    }
+
+    // 其他文档类型（Word、Excel等）保持原有逻辑
     try {
       const fileContent = new File(file.path).textSync().trim()
       return {
@@ -85,7 +138,7 @@ export async function convertFileBlockToTextPart(fileBlock: FileMessageBlock): P
 /**
  * 处理Gemini大文件上传
  */
-export async function handleGeminiFileUpload(file: FileMetadata, model: Model): Promise<FilePart | null> {
+export async function handleGeminiFileUpload(_file: FileMetadata, _model: Model): Promise<FilePart | null> {
   throw new Error('Not implemented')
 
   // try {

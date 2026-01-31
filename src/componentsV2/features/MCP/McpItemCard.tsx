@@ -1,44 +1,64 @@
+import { Button, Switch } from 'heroui-native'
+import type { FC } from 'react'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+
 import Text from '@/componentsV2/base/Text'
+import { Plus } from '@/componentsV2/icons/LucideIcon'
 import PressableRow from '@/componentsV2/layout/PressableRow'
 import YStack from '@/componentsV2/layout/YStack'
-import { MCPServer } from '@/types/mcp'
-import { Switch } from 'heroui-native'
-import React, { FC } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useToast } from '@/hooks/useToast'
+import { mcpService } from '@/services/McpService'
+import type { MCPServer } from '@/types/mcp'
 
 interface McpItemCardProps {
   mcp: MCPServer
-  updateMcpServers: (mcps: MCPServer[]) => Promise<void>
   handleMcpServerItemPress: (mcp: MCPServer) => void
+  mode?: 'add' | 'toggle'
+  onToggle?: (mcp: MCPServer, isActive: boolean) => void
 }
 
-export const McpItemCard: FC<McpItemCardProps> = ({ mcp, updateMcpServers, handleMcpServerItemPress }) => {
+export const McpItemCard: FC<McpItemCardProps> = ({ mcp, handleMcpServerItemPress, mode = 'toggle', onToggle }) => {
   const { t } = useTranslation()
+  const toast = useToast()
 
   const handlePress = () => {
     handleMcpServerItemPress(mcp)
   }
-  const handleSwitchChange = async (value: boolean) => {
-    console.log('handleSwitchChange', value)
-    await updateMcpServers([{ ...mcp, isActive: value }])
+
+  const handleAddMcp = async () => {
+    await mcpService.createMcpServer({
+      ...mcp,
+      isActive: true
+    })
+    toast.show(t('mcp.market.add.success', { mcp_name: mcp.name }))
+  }
+
+  const handleSwitchChange = (value: boolean) => {
+    onToggle?.(mcp, value)
   }
 
   return (
     <PressableRow
       onPress={handlePress}
-      className="py-2.5 px-2.5 justify-between items-center rounded-2xl bg-ui-card-background dark:bg-ui-card-background-dark">
-      <YStack className="h-full gap-2">
+      className="bg-card items-center justify-between gap-2 rounded-2xl px-2.5 py-2.5">
+      <YStack className="h-full flex-1 gap-2">
         <Text className="text-lg">{mcp.name}</Text>
-        <Text className="text-sm text-text-secondary dark:text-text-secondary-dark">{mcp.description}</Text>
-      </YStack>
-      <YStack className="justify-between gap-2">
-        <Switch color="success" isSelected={mcp.isActive} onSelectedChange={handleSwitchChange}>
-          <Switch.Thumb colors={{ defaultBackground: 'white', selectedBackground: 'white' }} />
-        </Switch>
-
-        <Text className="py-0.5 px-2 rounded-lg border-[0.5px] bg-green-10 border-green-20 text-green-100 text-sm dark:bg-green-dark-10 dark:border-green-dark-20 dark:text-green-dark-100">
-          {t(`mcp.type.${mcp.type}`)}
+        <Text className="text-foreground-secondary text-sm" numberOfLines={1} ellipsizeMode="tail">
+          {mcp.description}
         </Text>
+      </YStack>
+      <YStack className="items-end justify-between gap-2">
+        {mode === 'add' ? (
+          <Button size="sm" variant="ghost" isIconOnly onPress={handleAddMcp}>
+            <Button.Label>
+              <Plus size={24} />
+            </Button.Label>
+          </Button>
+        ) : (
+          <Switch isSelected={mcp.isActive} onSelectedChange={handleSwitchChange} />
+        )}
+        <Text className="primary-badge rounded-lg border-[0.5px] px-2 py-0.5 text-sm">{t(`mcp.type.${mcp.type}`)}</Text>
       </YStack>
     </PressableRow>
   )

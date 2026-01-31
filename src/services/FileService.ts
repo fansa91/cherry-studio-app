@@ -1,17 +1,20 @@
+import { fileDatabase } from '@database'
 import { Directory, File, Paths } from 'expo-file-system'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
+import { Platform } from 'react-native'
 
 import { DEFAULT_DOCUMENTS_STORAGE, DEFAULT_IMAGES_STORAGE, DEFAULT_STORAGE } from '@/constants/storage'
 import { loggerService } from '@/services/LoggerService'
-import { FileMetadata, FileTypes } from '@/types/file'
+import type { FileMetadata } from '@/types/file'
+import { FileTypes } from '@/types/file'
 import { uuid } from '@/utils'
-
-import { fileDatabase } from '@database'
+import { normalizeExtension } from '@/utils/file'
 
 export interface ShareFileResult {
   success: boolean
   message: string
+  savedUri?: string
 }
 
 const logger = loggerService.withContext('File Service')
@@ -22,7 +25,7 @@ async function ensureDirExists(dir: Directory) {
   const dirInfo = dir.info()
 
   if (!dirInfo.exists) {
-    dir.create()
+    dir.create({ intermediates: true })
   }
 }
 
@@ -64,6 +67,38 @@ export async function writeBase64File(data: string): Promise<FileMetadata> {
   }
 }
 
+export async function saveTextAsFile(text: string, fileName?: string): Promise<FileMetadata> {
+  await ensureDirExists(DEFAULT_DOCUMENTS_STORAGE)
+
+  const fileId = uuid()
+  const finalFileName = fileName || `pasted-text-${Date.now()}`
+  const fileUri = DEFAULT_DOCUMENTS_STORAGE.uri + `${fileId}.txt`
+
+  // Write text to file
+  await FileSystem.writeAsStringAsync(fileUri, text, {
+    encoding: FileSystem.EncodingType.UTF8
+  })
+
+  const file = new File(fileUri)
+
+  const fileMetadata: FileMetadata = {
+    id: fileId,
+    name: finalFileName,
+    origin_name: `${finalFileName}.txt`,
+    path: fileUri,
+    size: file.size,
+    ext: '.txt',
+    type: FileTypes.DOCUMENT,
+    created_at: Date.now(),
+    count: 1
+  }
+
+  // Save to database
+  fileDatabase.upsertFiles([fileMetadata])
+
+  return fileMetadata
+}
+
 export function readStreamFile(file: FileMetadata): ReadableStream {
   return new File(file.path).readableStream()
 }
@@ -83,7 +118,8 @@ export async function uploadFiles(
       const sourceUri = file.path
       const sourceFile = new File(sourceUri)
       // ios upload image will be .JPG
-      const destinationUri = `${storageDir.uri}${file.id}.${file.ext.toLowerCase()}`
+      const normalizedExt = normalizeExtension(file.ext)
+      const destinationUri = `${storageDir.uri}${file.id}${normalizedExt}`
       const destinationFile = new File(destinationUri)
 
       if (destinationFile.exists) {
@@ -98,9 +134,9 @@ export async function uploadFiles(
       const finalFile: FileMetadata = {
         ...file,
         path: destinationUri,
-        size: sourceFile.size
+        size: sourceFile.size,
+        ext: normalizedExt
       }
-      console.log('finalFile', finalFile)
       fileDatabase.upsertFiles([finalFile])
       return finalFile
     } catch (error) {
@@ -156,7 +192,7 @@ export async function resetCacheDirectory() {
     }
 
     // Recreate Files directory
-    DEFAULT_STORAGE.create()
+    DEFAULT_STORAGE.create({ intermediates: true })
   } catch (error) {
     logger.error('resetCacheDirectory', error)
   }
@@ -243,6 +279,68 @@ export async function shareFile(uri: string): Promise<ShareFileResult> {
   }
 }
 
+/**
+ * Save a file to a user-selected folder on Android using Directory.pickDirectoryAsync().
+ * Falls back to sharing on iOS.
+ *
+ * @param sourceUri - The file:// URI of the source file to save
+ * @param fileName - The desired file name (with extension)
+ * @param mimeType - The MIME type of the file (e.g., 'application/zip', 'text/plain')
+ * @returns ShareFileResult indicating success/failure
+ */
+export async function saveFileToFolder(
+  sourceUri: string,
+  fileName: string,
+  mimeType: string
+): Promise<ShareFileResult> {
+  // iOS: Use sharing
+  if (Platform.OS !== 'android') {
+    return shareFile(sourceUri)
+  }
+
+  try {
+    // Check source file exists
+    const sourceFile = new File(sourceUri)
+    if (!sourceFile.exists) {
+      logger.error('Source file not found:', sourceUri)
+      return { success: false, message: 'File not found.' }
+    }
+
+    // Open directory picker (returns Directory with content:// URI on Android)
+    const directory = await Directory.pickDirectoryAsync()
+    if (!directory) {
+      return { success: false, message: 'cancelled' }
+    }
+
+    // Create file in selected directory (without extension, mimeType determines it)
+    const fileNameWithoutExt =
+      fileName.lastIndexOf('.') > 0 ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName
+
+    const newFile = directory.createFile(fileNameWithoutExt, mimeType)
+
+    // Copy content: use bytes() for binary, text() for text
+    const isBinary = mimeType !== 'text/plain'
+    if (isBinary) {
+      newFile.write(await sourceFile.bytes())
+    } else {
+      newFile.write(await sourceFile.text())
+    }
+
+    logger.info('File saved successfully to:', newFile.uri)
+    return {
+      success: true,
+      message: 'File saved successfully.',
+      savedUri: newFile.uri
+    }
+  } catch (error) {
+    logger.error('Error saving file to folder:', error)
+    return {
+      success: false,
+      message: 'Failed to save file. Please try again.'
+    }
+  }
+}
+
 export async function downloadFileAsync(url: string, destination: File) {
   return File.downloadFileAsync(url, destination)
 }
@@ -251,6 +349,7 @@ export default {
   readFile,
   readBase64File,
   readStreamFile,
+  saveTextAsFile,
   getFile: getFileById,
   getAllFiles,
   uploadFiles,
@@ -259,5 +358,6 @@ export default {
   getDirectorySizeAsync,
   getCacheDirectorySize,
   shareFile,
+  saveFileToFolder,
   downloadFileAsync
 }

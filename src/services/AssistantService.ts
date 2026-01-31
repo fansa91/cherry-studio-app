@@ -25,11 +25,10 @@
  * ```
  */
 
-import { loggerService } from '@/services/LoggerService'
-import type { Assistant, AssistantSettings } from '@/types/assistant'
-import { uuid } from '@/utils'
 import { assistantDatabase } from '@database'
-import i18n from '@/i18n'
+
+import { getBuiltInAssistants } from '@/config/assistants'
+import { SYSTEM_MODELS } from '@/config/models/default'
 import {
   DEFAULT_CONTEXTCOUNT,
   DEFAULT_MAX_TOKENS,
@@ -37,8 +36,10 @@ import {
   MAX_CONTEXT_COUNT,
   UNLIMITED_CONTEXT_COUNT
 } from '@/constants'
-import { SYSTEM_MODELS } from '@/config/models/default'
-import { getBuiltInAssistants } from '@/config/assistants'
+import i18n from '@/i18n'
+import { loggerService } from '@/services/LoggerService'
+import type { Assistant, AssistantSettings } from '@/types/assistant'
+import { uuid } from '@/utils'
 
 const logger = loggerService.withContext('AssistantService')
 
@@ -421,6 +422,23 @@ export class AssistantService {
     this.notifyAllAssistantsSubscribers()
   }
 
+  /**
+   * Clear all caches and reset loading state
+   */
+  public clearCache(): void {
+    this.systemAssistantsCache.clear()
+    this.assistantCache.clear()
+    this.accessOrder = []
+    this.loadPromises.clear()
+    this.allAssistantsCache.clear()
+    this.allAssistantsCacheTimestamp = null
+    this.isLoadingAllAssistants = false
+    this.loadAllAssistantsPromise = null
+    this.builtInAssistantsCache = []
+
+    logger.info('AssistantService caches cleared')
+  }
+
   // ==================== Public API: Subscription ====================
 
   /**
@@ -568,8 +586,9 @@ export class AssistantService {
 
       // Update cache if it exists
       if (this.allAssistantsCache.size > 0 || this.allAssistantsCacheTimestamp !== null) {
-        this.allAssistantsCache.set(assistant.id, assistant)
-        logger.verbose(`Added new assistant to cache: ${assistant.id}`)
+        // Prepend new assistant to cache to maintain "newest first" order
+        this.allAssistantsCache = new Map([[assistant.id, assistant], ...this.allAssistantsCache])
+        logger.verbose(`Added new assistant to cache (prepended): ${assistant.id}`)
       }
 
       // Notify subscribers
@@ -583,18 +602,12 @@ export class AssistantService {
   }
 
   /**
-   * Perform optimistic assistant update with rollback on failure
+   * Perform assistant update with database-first approach
+   *
+   * Sequence: Database Transaction → Cache Update → Notify Subscribers
+   * This prevents race conditions with dual database connections
    */
   private async performAssistantUpdate(assistantId: string, updates: Partial<Omit<Assistant, 'id'>>): Promise<void> {
-    // Save old data for rollback
-    const oldSystemAssistant = this.systemAssistantsCache.get(assistantId)
-      ? { ...this.systemAssistantsCache.get(assistantId)! }
-      : null
-    const oldLRUAssistant = this.assistantCache.get(assistantId) ? { ...this.assistantCache.get(assistantId)! } : null
-    const oldAllAssistant = this.allAssistantsCache.get(assistantId)
-      ? { ...this.allAssistantsCache.get(assistantId)! }
-      : null
-
     try {
       // Fetch current assistant data
       let currentAssistantData: Assistant
@@ -620,44 +633,21 @@ export class AssistantService {
         id: assistantId
       }
 
-      // Optimistic update: update all caches
-      this.updateAssistantInCache(assistantId, updatedAssistant)
-
-      // Notify subscribers (UI updates immediately)
-      this.notifyAssistantSubscribers(assistantId)
-
-      // Persist to database
+      // Persist to database FIRST (before any cache updates or notifications)
       await assistantDatabase.upsertAssistants([updatedAssistant])
 
-      // Notify other subscribers
+      // Update caches after successful database operation
+      this.updateAssistantInCache(assistantId, updatedAssistant)
+
+      // Notify subscribers after database and cache are in sync
+      this.notifyAssistantSubscribers(assistantId)
       this.notifyGlobalSubscribers()
       this.notifyAllAssistantsSubscribers()
 
       logger.debug(`Assistant updated successfully: ${assistantId}`)
     } catch (error) {
-      // Rollback on failure
-      logger.error('Failed to update assistant, rolling back:', error as Error)
-
-      if (oldSystemAssistant) {
-        this.systemAssistantsCache.set(assistantId, oldSystemAssistant)
-      } else {
-        this.systemAssistantsCache.delete(assistantId)
-      }
-
-      if (oldLRUAssistant) {
-        this.assistantCache.set(assistantId, oldLRUAssistant)
-      } else {
-        this.assistantCache.delete(assistantId)
-      }
-
-      if (oldAllAssistant) {
-        this.allAssistantsCache.set(assistantId, oldAllAssistant)
-      } else {
-        this.allAssistantsCache.delete(assistantId)
-      }
-
-      this.notifyAssistantSubscribers(assistantId)
-
+      // No rollback needed since we didn't update caches before transaction
+      logger.error('Failed to update assistant:', error as Error)
       throw error
     }
   }
@@ -823,7 +813,7 @@ export async function getDefaultAssistant(): Promise<Assistant> {
  * Get default model
  */
 export function getDefaultModel() {
-  return SYSTEM_MODELS.cherryin[0]
+  return SYSTEM_MODELS.defaultModel[0]
 }
 
 /**
@@ -872,7 +862,10 @@ export async function createAssistant(): Promise<Assistant> {
     name: i18n.t('settings.assistant.title'),
     prompt: '',
     topics: [],
-    type: 'external'
+    type: 'external',
+    settings: {
+      toolUseMode: 'function'
+    }
   }
 
   await assistantService.createAssistant(newAssistant)

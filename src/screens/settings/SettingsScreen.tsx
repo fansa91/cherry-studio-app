@@ -1,26 +1,26 @@
 import { useNavigation } from '@react-navigation/native'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import { GestureDetector } from 'react-native-gesture-handler'
 
 import {
-  Image,
-  Text,
-  XStack,
-  YStack,
-  SafeAreaContainer,
-  HeaderBar,
   Container,
   Group,
-  PressableRow,
   GroupTitle,
-  RowRightArrow
+  HeaderBar,
+  Image,
+  PressableRow,
+  RowRightArrow,
+  SafeAreaContainer,
+  Text,
+  XStack,
+  YStack
 } from '@/componentsV2'
-import { Cloud, Package, Globe, Settings2, HardDrive, Info } from '@/componentsV2/icons/LucideIcon'
+import { Cloud, Globe, HardDrive, Info, Package, Settings2 } from '@/componentsV2/icons/LucideIcon'
 import { useSettings } from '@/hooks/useSettings'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
-import { HomeNavigationProps } from '@/types/naviagate'
+import type { HomeNavigationProps } from '@/types/naviagate'
 
 interface SettingItemConfig {
   title: string
@@ -110,21 +110,23 @@ export default function SettingsScreen() {
           <HeaderBar title={t('settings.title')} />
 
           <Container>
-            <YStack className="gap-6 flex-1">
-              {settingsItems.map((group, index) => (
-                <SettingGroup key={index} title={group.title}>
-                  {group.items.map((item, index) => (
-                    <SettingItem
-                      key={index}
-                      title={item.title}
-                      screen={item.screen}
-                      icon={item.icon}
-                      specificScreen={item.specificScreen}
-                    />
-                  ))}
-                </SettingGroup>
-              ))}
-            </YStack>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <YStack className="gap-6">
+                {settingsItems.map((group, index) => (
+                  <SettingGroup key={index} title={group.title}>
+                    {group.items.map((item, index) => (
+                      <SettingItem
+                        key={index}
+                        title={item.title}
+                        screen={item.screen}
+                        icon={item.icon}
+                        specificScreen={item.specificScreen}
+                      />
+                    ))}
+                  </SettingGroup>
+                ))}
+              </YStack>
+            </ScrollView>
           </Container>
         </View>
       </GestureDetector>
@@ -161,7 +163,7 @@ function SettingItem({ title, screen, icon, specificScreen }: SettingItemProps) 
       return (
         <Image
           source={icon ? { uri: icon } : require('@/assets/images/favicon.png')}
-          className="w-10 h-10 rounded-full"
+          className="h-10 w-10 rounded-full"
           accessibilityLabel={title}
         />
       )
