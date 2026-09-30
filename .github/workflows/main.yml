@@ -1,0 +1,172 @@
+name: Gradle Android and ios Build
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+    inputs:
+          tag:
+            description: 'Release Tag (e.g., v1.0.0)'
+            required: true
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      # 1. 检出代码
+      - uses: actions/checkout@v4
+
+      # 2. 设置 Node.js 环境（Expo/React Native）
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install Yarn (if not pre-installed)
+        run: npm install -g yarn
+
+      - name: Verify Yarn version
+        run: yarn --version
+      # 3. 安装依赖
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      # 4. 生成 ios 工程
+      - name: Expo prebuild
+        run: npx expo prebuild
+
+      # 5. 编译 iOS APP (不签名)
+      - name: Build iOS app
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace *.xcworkspace \
+            -scheme $(ls | grep .xcodeproj | sed 's/.xcodeproj//') \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+
+      # 6. 打包 ipa
+      - name: Package IPA
+        run: |
+          cd ios/build/Build/Products/Release-iphoneos
+          mkdir Payload
+          cp -r *.app Payload/
+          zip -r app-unsigned.ipa Payload
+
+      # 7. 上传 ipa 作为 artifact
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-ipa
+          path: ios/build/Build/Products/Release-iphoneos/app-unsigned.ipa
+      #上传至Release
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: "${{ github.event.inputs.tag }}"
+          # body: "${{ fromJson(steps.version.outputs.content).version_desc }}"
+          # prerelease: ${{ fromJson(steps.version.outputs.content).prerelease }}
+          # token: ${{ vars.TOKEN }}
+          # overwrite: true
+          files: |
+            ios/build/Build/Products/Release-iphoneos/*.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+
+      - name: Setup Java Env
+        uses: actions/setup-java@v4
+        with:
+         distribution: 'zulu' # See 'Supported distributions' for available options
+         java-version: '21'
+      - name: Enable Corepack
+        run: corepack enable
+      #APK签名设置
+      - name: Download Android keystore
+        id: android_keystore
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: keystore.jks
+          encodedString: ${{ vars.KEYSTORE_BASE64 }}
+
+      - name: Activate Yarn 4.9.1
+        run: corepack prepare yarn@4.9.1 --activate
+
+      - name: Verify Yarn version
+        run: yarn --version
+      - name: Install dependencies
+        run: yarn install
+      # - name: Setup Gradle
+      #   uses: gradle/actions/setup-gradle@v4
+      - name: Run Expo Prebuild (optional)
+        # env:
+        #   ABI_FILTERS: 'armeabi-v7a,arm64-v8a,x86,x86_64'
+        run: npx expo prebuild # --platform android
+      - name: Download bundletool
+        run: |
+          curl -L -o bundletool.jar https://github.com/google/bundletool/releases/download/1.15.6/bundletool-all-1.15.6.jar
+      - name: Build Packages
+        env:
+          KEYSTORE_FILE: ${{ steps.android_keystore.outputs.filePath }}
+          KEYSTORE_PASSWORD: ${{ vars.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ vars.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ vars.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          cd android
+          echo "org.gradle.version=8.13" >> gradle.properties
+          ./gradlew clean
+          ./gradlew assembleRelease
+          
+          # ./gradlew bundleRelease
+          # ./gradlew clean assembleRelease --no-daemon
+          
+          # ./gradlew clean
+          # ./gradlew bundleRelease  # --ks ${{ steps.android_keystore.outputs.filePath }} --ks-key-alias ${{ vars.KEY_ALIAS }} --ks-store-password ${{ vars.STORE_PASSWORD }} --ks-key-password ${{ vars.KEY_PASSWORD }}
+          # cd -
+          # java -jar bundletool.jar build-apks \
+          # --bundle=android/app/build/outputs/bundle/release/app-release.aab \
+          # --output=cherry_studio.apks \
+          # --ks="$KEYSTORE_FILE" \
+          # --ks-pass="pass:$KEYSTORE_PASSWORD" \
+          # --ks-key-alias="$KEY_ALIAS" \
+          # --key-pass="pass:$KEY_PASSWORD"
+          
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: |
+           # cherry_studio.apks
+           android/app/build/outputs/apk/release/*.apk
+           # android/app/build/outputs/apk/**/release/*.apk
+           # android/app/build/outputs/bundle/release/*.aab
+      #上传至Release
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: "${{ github.event.inputs.tag }}"
+          # body: "${{ fromJson(steps.version.outputs.content).version_desc }}"
+          # prerelease: ${{ fromJson(steps.version.outputs.content).prerelease }}
+          # token: ${{ vars.TOKEN }}
+          # overwrite: true
+          files: |
+            android/app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
